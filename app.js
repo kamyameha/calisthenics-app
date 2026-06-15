@@ -263,12 +263,12 @@ async function saveCloudState() {
   const { error } = await supabaseClient
     .from('workout_states')
     .upsert({ user_id: currentUser.id, state: publicState(), updated_at: new Date().toISOString() });
-  setSyncStatus(error ? 'Cloud save failed. Local progress is still saved.' : 'Cloud sync up to date.');
+  setSyncStatus(error ? 'Save failed. Local progress is still saved.' : 'Progress saved.');
 }
 
 async function loadCloudState() {
   if (!supabaseClient || !currentUser) return;
-  setSyncStatus('Loading cloud progress...');
+  setSyncStatus('Loading progress...');
   const { data, error } = await supabaseClient
     .from('workout_states')
     .select('state')
@@ -276,7 +276,7 @@ async function loadCloudState() {
     .maybeSingle();
 
   if (error) {
-    setSyncStatus('Could not load cloud progress. Local progress is still available.');
+    setSyncStatus('Could not load progress. Local progress is still available.');
     return;
   }
 
@@ -284,10 +284,10 @@ async function loadCloudState() {
     state = { ...defaultState(), ...data.state };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     renderAll();
-    setSyncStatus('Cloud progress loaded.');
+    setSyncStatus('Progress loaded.');
   } else {
     await saveCloudState();
-    setSyncStatus('New cloud profile created from this device.');
+    setSyncStatus('New profile created.');
   }
 }
 
@@ -316,13 +316,24 @@ function friendlyAuthError(message = '') {
 
 function setAuthMode(mode = 'welcome') {
   const welcome = document.getElementById('authWelcome');
-  const signup = document.getElementById('authSignupForm');
   const login = document.getElementById('authLoginForm');
-  if (!welcome || !signup || !login) return;
+  if (!welcome || !login) return;
   welcome.classList.toggle('hidden', mode !== 'welcome');
-  signup.classList.toggle('hidden', mode !== 'signup');
   login.classList.toggle('hidden', mode !== 'login');
   setAuthMessage('');
+}
+
+function clearAuthFields() {
+  ['signupEmailInput', 'signupPasswordInput', 'signupConfirmPasswordInput', 'loginEmailInput', 'loginPasswordInput'].forEach(id => {
+    const input = document.getElementById(id);
+    if (input) input.value = '';
+  });
+  document.querySelectorAll('[data-toggle-password]').forEach(button => {
+    const input = document.getElementById(button.dataset.togglePassword);
+    if (input) input.type = 'password';
+    button.textContent = 'Show';
+    button.setAttribute('aria-label', 'Show password');
+  });
 }
 
 function togglePasswordVisibility(button) {
@@ -715,6 +726,8 @@ function renderAccount() {
   const bottomNav = document.querySelector('.bottom-nav');
   const screens = document.querySelectorAll('.screen');
 
+  document.body.classList.toggle('logged-out', !currentUser);
+
   if (!panel || !loggedOut || !loggedIn) return;
 
   if (!SUPABASE_READY) {
@@ -725,7 +738,7 @@ function renderAccount() {
     if (bottomNav) bottomNav.classList.add('hidden');
     if (accountBtn) accountBtn.classList.add('hidden');
     const muted = loggedOut.querySelector('.muted');
-    if (muted) muted.textContent = 'Cloud sync is not configured yet. Add your Supabase URL and anon key in supabase-config.js.';
+    if (muted) muted.textContent = 'Account connection is not configured yet.';
     return;
   }
 
@@ -771,7 +784,7 @@ async function initCloudSync() {
 }
 
 async function signUp() {
-  if (!supabaseClient) return setAuthMessage('Cloud sync is not configured yet.', 'error');
+  if (!supabaseClient) return setAuthMessage('Account connection is not configured yet.', 'error');
   const email = document.getElementById('signupEmailInput')?.value.trim();
   const password = document.getElementById('signupPasswordInput')?.value;
   const confirmPassword = document.getElementById('signupConfirmPasswordInput')?.value;
@@ -788,7 +801,7 @@ async function signUp() {
 }
 
 async function login() {
-  if (!supabaseClient) return setAuthMessage('Cloud sync is not configured yet.', 'error');
+  if (!supabaseClient) return setAuthMessage('Account connection is not configured yet.', 'error');
   const email = document.getElementById('loginEmailInput')?.value.trim();
   const password = document.getElementById('loginPasswordInput')?.value;
   if (!email || !password) return setAuthMessage('Enter your email and password.', 'error');
@@ -805,7 +818,9 @@ async function logout() {
   if (!supabaseClient) return;
   await supabaseClient.auth.signOut();
   currentUser = null;
-  renderAccount();
+  clearAuthFields();
+  setAuthMode('welcome');
+  renderAll();
 }
 
 
@@ -843,9 +858,8 @@ document.addEventListener('click', event => {
   if (event.target.id === 'completeBtn') completeWorkout();
 
   if (event.target.id === 'accountBtn' && currentUser) document.getElementById('accountPanel').classList.toggle('hidden');
-  if (event.target.id === 'showSignupBtn') setAuthMode('signup');
   if (event.target.id === 'showLoginBtn') setAuthMode('login');
-  if (event.target.id === 'backToAuthWelcomeFromSignup' || event.target.id === 'backToAuthWelcomeFromLogin') setAuthMode('welcome');
+  if (event.target.id === 'backToAuthWelcomeFromLogin') setAuthMode('welcome');
   if (event.target.id === 'signupBtn') signUp();
   if (event.target.id === 'loginBtn') login();
   if (event.target.id === 'logoutBtn') logout();
