@@ -316,7 +316,10 @@ function renderGeneratedWorkout() {
 
 function startWorkout() {
   if (!state.generated) generateWorkout();
-  state.current = { ...state.generated, ratings: {} };
+  state.current = { ...state.generated, ratings: {}, sets: {} };
+  state.current.exercises.forEach(exercise => {
+    state.current.sets[exercise.trackKey] = [false, false, false];
+  });
   state.generated = null;
   saveState();
   renderExercises();
@@ -340,12 +343,15 @@ function renderExercises() {
     const card = document.createElement('div');
     card.className = 'exercise-card';
     const selectedRating = state.current.ratings[exercise.trackKey];
+    if (!state.current.sets) state.current.sets = {};
+    if (!state.current.sets[exercise.trackKey]) state.current.sets[exercise.trackKey] = [false, false, false];
+    const completedSets = state.current.sets[exercise.trackKey];
     card.innerHTML = `
       <h3>${exercise.name}<span>L${exercise.level}</span></h3>
       <p class="prescription">${exercise.prescription}</p>
-      <div class="set-row"><span>Set 1</span><input type="checkbox"></div>
-      <div class="set-row"><span>Set 2</span><input type="checkbox"></div>
-      <div class="set-row"><span>Set 3</span><input type="checkbox"></div>
+      <div class="set-row"><span>Set 1</span><input type="checkbox" data-track="${exercise.trackKey}" data-set-index="0" ${completedSets[0] ? 'checked' : ''}></div>
+      <div class="set-row"><span>Set 2</span><input type="checkbox" data-track="${exercise.trackKey}" data-set-index="1" ${completedSets[1] ? 'checked' : ''}></div>
+      <div class="set-row"><span>Set 3</span><input type="checkbox" data-track="${exercise.trackKey}" data-set-index="2" ${completedSets[2] ? 'checked' : ''}></div>
       <p class="rating-label">How was it?</p>
       <div class="rating-row" data-track="${exercise.trackKey}">
         <button data-rating="easy" class="${selectedRating === 'easy' ? 'selected' : ''}">Easy</button>
@@ -610,6 +616,16 @@ document.addEventListener('click', event => {
 
   if (event.target.id === 'generateWorkoutBtn') generateWorkout();
   if (event.target.id === 'startWorkoutBtn') startWorkout();
+
+  if (event.target.matches('input[type="checkbox"][data-set-index]')) {
+    if (!state.current) return;
+    const trackKey = event.target.dataset.track;
+    const setIndex = Number(event.target.dataset.setIndex);
+    if (!state.current.sets) state.current.sets = {};
+    if (!state.current.sets[trackKey]) state.current.sets[trackKey] = [false, false, false];
+    state.current.sets[trackKey][setIndex] = event.target.checked;
+    saveState();
+  }
 
   if (event.target.matches('.rating-row button')) {
     const row = event.target.closest('.rating-row');
