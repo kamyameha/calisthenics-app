@@ -1,10 +1,11 @@
-const CACHE_NAME = 'calisthenics-pwa-v7';
+const CACHE_NAME = 'calisthenics-pwa-v8';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
   './supabase-config.js',
+  './session-repair.js?v=1',
   './manifest.json',
   './apple-touch-icon.png?v=2',
   './icons/icon-192.png?v=3',
