@@ -24,7 +24,7 @@ window.appSupabaseClient = supabaseClient;
 let currentUser = null;
 let syncTimer = null;
 
-const tracks = {
+const baseTracks = {
   pushup: [
     { name: 'Incline push-up', prescription: '3 × 5' },
     { name: 'Incline push-up', prescription: '3 × 8' },
@@ -87,6 +87,20 @@ const tracks = {
     { name: 'One-leg L-sit', prescription: '5 × 10s/side' },
     { name: 'L-sit', prescription: '5 attempts' }
   ],
+  handstand: [
+    { name: 'Wall plank hold', prescription: '3 × 20s' },
+    { name: 'Pike hold', prescription: '3 × 20s' },
+    { name: 'Wall walk', prescription: '3 × 3' },
+    { name: 'Chest-to-wall handstand', prescription: '3 × 20s' },
+    { name: 'Handstand kick-up practice', prescription: '5 min' }
+  ],
+  muscleup: [
+    { name: 'Explosive row / pull practice', prescription: '3 × 5' },
+    { name: 'Negative pull-up', prescription: '3 × 3' },
+    { name: 'High pull-up practice', prescription: '3 × 3' },
+    { name: 'Transition drill', prescription: '5 attempts' },
+    { name: 'Muscle-up attempt', prescription: '5 attempts' }
+  ],
   rope: [
     { name: 'Jump rope', prescription: '3 × 30s' },
     { name: 'Jump rope', prescription: '3 × 45s' },
@@ -95,7 +109,96 @@ const tracks = {
   ]
 };
 
-const rotation = [
+const goalLabels = {
+  pullup: 'First Pull-Up',
+  handstand: 'First Handstand',
+  lsit: 'First L-Sit',
+  muscleup: 'First Muscle-Up',
+  general: 'General Fitness'
+};
+
+const equipmentLabels = {
+  none: 'No equipment',
+  pullupBar: 'Pull-up bar',
+  dipBars: 'Dip bars',
+  bands: 'Resistance bands'
+};
+
+function getProfile() {
+  return state?.profile || null;
+}
+
+function getTracks() {
+  const profile = getProfile();
+  const equipment = profile?.equipment || [];
+  const hasPullupBar = equipment.includes('pullupBar');
+  const hasDipBars = equipment.includes('dipBars');
+  const hasBands = equipment.includes('bands');
+  const tracks = JSON.parse(JSON.stringify(baseTracks));
+
+  if (!hasPullupBar) {
+    tracks.pullup = [
+      { name: 'Prone Y raise', prescription: '3 × 8' },
+      { name: 'Superman hold', prescription: '3 × 20s' },
+      { name: 'Reverse snow angel', prescription: '3 × 8' },
+      { name: 'Table row', prescription: '3 × 5' },
+      { name: 'Table row', prescription: '3 × 8' },
+      { name: 'Pull-up bar recommended', prescription: 'Keep building pulling strength' }
+    ];
+  } else if (hasBands) {
+    tracks.pullup[5] = { name: 'Band-assisted pull-up', prescription: '3 × 3' };
+  }
+
+  if (!hasDipBars) {
+    tracks.dip = [
+      { name: 'Bench dip prep', prescription: '3 × 5' },
+      { name: 'Bench dip', prescription: '3 × 8' },
+      { name: 'Bench dip', prescription: '3 × 10' },
+      { name: 'Close-grip push-up', prescription: '3 × 5' },
+      { name: 'Dip bars recommended', prescription: 'Keep building pushing strength' }
+    ];
+  }
+
+  tracks.legs = [
+    { name: 'Bodyweight squat', prescription: '3 × 10' },
+    { name: 'Bodyweight squat', prescription: '3 × 15' },
+    { name: 'Reverse lunge', prescription: '3 × 8/side' },
+    { name: 'Reverse lunge', prescription: '3 × 10/side' },
+    { name: 'Split squat', prescription: '3 × 6/side' },
+    { name: 'Split squat', prescription: '3 × 8/side' }
+  ];
+
+  if (!hasPullupBar) {
+    tracks.core = [
+      { name: 'Plank', prescription: '3 × 20s' },
+      { name: 'Plank', prescription: '3 × 30s' },
+      { name: 'Plank', prescription: '3 × 45s' },
+      { name: 'Hollow hold', prescription: '3 × 15s' },
+      { name: 'Hollow hold', prescription: '3 × 30s' },
+      { name: 'Reverse crunch', prescription: '3 × 8' },
+      { name: 'Reverse crunch', prescription: '3 × 12' }
+    ];
+  }
+  return tracks;
+}
+
+function getRotation() {
+  const goal = getProfile()?.goal || 'pullup';
+  const skillTrack = goal === 'handstand' ? 'handstand' : goal === 'lsit' ? 'lsit' : goal === 'muscleup' ? 'muscleup' : goal === 'general' ? 'crow' : 'pullup';
+  return [
+    { name: 'Push', tracks: ['pushup', 'dip', 'core'] },
+    { name: 'Pull', tracks: ['pullup', 'core'] },
+    { name: 'Legs + Core', tracks: ['legs', 'core'] },
+    { name: 'Skills', tracks: [skillTrack, 'lsit', 'core'].filter((v, i, a) => a.indexOf(v) === i).slice(0, 3) }
+  ];
+}
+
+function hasCompletedProfile() {
+  return Boolean(state.profile?.goal && state.profile?.equipment && state.profile?.pushups && state.profile?.squats);
+}
+
+
+const legacyRotation = [
   { name: 'Push', tracks: ['pushup', 'dip', 'core'] },
   { name: 'Pull', tracks: ['pullup', 'core', 'rope'] },
   { name: 'Legs + Core', tracks: ['legs', 'core', 'rope'] },
@@ -111,8 +214,8 @@ const energyOptions = {
 
 function defaultState() {
   const levels = {};
-  Object.keys(tracks).forEach(key => levels[key] = { level: 0, points: 0 });
-  return { rotationIndex: 0, levels, history: [], current: null, selectedEnergy: null, generated: null };
+  Object.keys(baseTracks).forEach(key => levels[key] = { level: 0, points: 0 });
+  return { rotationIndex: 0, levels, history: [], current: null, selectedEnergy: null, generated: null, profile: null };
 }
 
 let state = loadState();
@@ -121,7 +224,10 @@ function loadState() {
   const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY) || localStorage.getItem(OLDER_LEGACY_STORAGE_KEY);
   if (!saved) return defaultState();
   try {
-    return { ...defaultState(), ...JSON.parse(saved) };
+    const parsed = JSON.parse(saved);
+    const merged = { ...defaultState(), ...parsed };
+    merged.levels = { ...defaultState().levels, ...(parsed.levels || {}) };
+    return merged;
   } catch {
     return defaultState();
   }
@@ -140,7 +246,8 @@ function publicState() {
     history: state.history,
     current: state.current,
     selectedEnergy: state.selectedEnergy,
-    generated: state.generated
+    generated: state.generated,
+    profile: state.profile
   };
 }
 
@@ -220,12 +327,13 @@ function togglePasswordVisibility() {
 
 function getExercise(trackKey) {
   const trackState = state.levels[trackKey];
-  const track = tracks[trackKey];
+  const track = getTracks()[trackKey] || baseTracks[trackKey];
   return { trackKey, ...track[Math.min(trackState.level, track.length - 1)], level: trackState.level + 1 };
 }
 
 function getTodayWorkout(mode = 'normal') {
-  const workout = rotation[state.rotationIndex];
+  const rotation = getRotation();
+  const workout = rotation[state.rotationIndex % rotation.length];
   const count = mode === 'minimum' ? 2 : workout.tracks.length;
   return {
     mode,
@@ -371,7 +479,7 @@ function applyRating(trackKey, rating) {
   trackState.points += delta;
 
   if (trackState.points >= 3) {
-    trackState.level = Math.min(trackState.level + 1, tracks[trackKey].length - 1);
+    trackState.level = Math.min(trackState.level + 1, (getTracks()[trackKey] || baseTracks[trackKey]).length - 1);
     trackState.points = 0;
   }
   if (trackState.points <= -2) {
@@ -390,7 +498,7 @@ function completeWorkout() {
 
   Object.entries(state.current.ratings).forEach(([trackKey, rating]) => applyRating(trackKey, rating));
   state.history.push({ date: new Date().toISOString(), workout: state.current.workoutName, mode: state.current.mode });
-  state.rotationIndex = (state.rotationIndex + 1) % rotation.length;
+  state.rotationIndex = (state.rotationIndex + 1) % getRotation().length;
   state.current = null;
   state.selectedEnergy = null;
   state.generated = null;
@@ -406,41 +514,46 @@ function getTrackLevel(trackKey) {
 }
 
 function renderGoals() {
-  const pullLevel = getTrackLevel('pullup');
-  const pullTrack = tracks.pullup;
-  const current = pullTrack[Math.min(pullLevel, pullTrack.length - 1)];
-  const next = pullTrack[Math.min(pullLevel + 1, pullTrack.length - 1)];
-  const percent = Math.round(((pullLevel + 1) / pullTrack.length) * 100);
+  const profile = getProfile();
+  const goal = profile?.goal || 'pullup';
+  const goalTrackKey = goal === 'handstand' ? 'handstand' : goal === 'lsit' ? 'lsit' : goal === 'muscleup' ? 'muscleup' : 'pullup';
+  const tracks = getTracks();
+  const track = tracks[goalTrackKey] || tracks.pullup;
+  const level = getTrackLevel(goalTrackKey);
+  const current = track[Math.min(level, track.length - 1)];
+  const next = track[Math.min(level + 1, track.length - 1)];
+  const percent = Math.round(((level + 1) / track.length) * 100);
 
+  const heroTitle = document.getElementById('goalHeroTitle');
+  if (heroTitle) heroTitle.textContent = goalLabels[goal] || 'First Pull-Up';
   document.getElementById('pullupStage').textContent = `Current stage: ${current.name}`;
   document.getElementById('pullupProgressBar').style.width = `${percent}%`;
-  document.getElementById('pullupNext').textContent = pullLevel >= pullTrack.length - 1
-    ? 'Milestone reached: First Pull-Up attempt unlocked'
+  document.getElementById('pullupNext').textContent = level >= track.length - 1
+    ? `Milestone reached: ${goalLabels[goal] || 'Goal'} unlocked`
     : `Next milestone: ${next.name}`;
 
   const journey = document.getElementById('pullupJourney');
-  journey.innerHTML = '';
-  pullTrack.forEach((step, index) => {
-    const item = document.createElement('div');
-    item.className = `journey-item ${index < pullLevel ? 'done' : index === pullLevel ? 'current' : ''}`;
-    const icon = index < pullLevel ? '✅' : index === pullLevel ? '●' : '⬜';
-    item.innerHTML = `<span>${icon}</span><div><strong>${step.name}</strong><p>${step.prescription}</p></div>`;
-    journey.appendChild(item);
-  });
+  journey.innerHTML = `
+    <div class="journey-summary current-stage"><p class="eyebrow">Current stage</p><strong>${current.name}</strong><span>${current.prescription}</span></div>
+    <div class="journey-summary"><p class="eyebrow">Next milestone</p><strong>${level >= track.length - 1 ? 'Goal unlocked' : next.name}</strong><span>${level >= track.length - 1 ? 'Keep training and consolidate.' : next.prescription}</span></div>
+    <div class="journey-summary"><p class="eyebrow">Completed</p><strong>${level === 0 ? 'Starting now' : `${level} milestone${level > 1 ? 's' : ''} completed`}</strong><span>${level === 0 ? 'Your first milestone is in progress.' : track.slice(0, level).map(s => s.name).join(' · ')}</span></div>
+  `;
 
   const skills = [
-    { key: 'crow', label: 'Crow Pose' },
-    { key: 'lsit', label: 'L-Sit' }
-  ];
+    { key: 'pullup', label: 'Pull-Up' },
+    { key: 'handstand', label: 'Handstand' },
+    { key: 'lsit', label: 'L-Sit' },
+    { key: 'muscleup', label: 'Muscle-Up' }
+  ].filter(skill => skill.key !== goalTrackKey).slice(0, 3);
   const skillList = document.getElementById('skillList');
   skillList.innerHTML = '';
   skills.forEach(skill => {
-    const level = getTrackLevel(skill.key);
-    const track = tracks[skill.key];
-    const currentSkill = track[Math.min(level, track.length - 1)];
+    const skillTrack = tracks[skill.key] || baseTracks[skill.key];
+    const skillLevel = getTrackLevel(skill.key);
+    const currentSkill = skillTrack[Math.min(skillLevel, skillTrack.length - 1)];
     const row = document.createElement('div');
     row.className = 'skill-row';
-    row.innerHTML = `<div><strong>${skill.label}</strong><p>${currentSkill.name} · ${currentSkill.prescription}</p></div><span>Level ${level + 1}/${track.length}</span>`;
+    row.innerHTML = `<div><strong>${skill.label}</strong><p>${currentSkill.name} · ${currentSkill.prescription}</p></div><span>Level ${skillLevel + 1}/${skillTrack.length}</span>`;
     skillList.appendChild(row);
   });
 }
@@ -463,12 +576,15 @@ function renderProgress() {
     core: 'Core',
     crow: 'Crow Pose',
     lsit: 'L-Sit',
+    handstand: 'Handstand',
+    muscleup: 'Muscle-Up',
     rope: 'Jump Rope'
   };
 
   Object.keys(labels).forEach(key => {
     const item = state.levels[key];
-    const exercise = tracks[key][item.level];
+    const exerciseTrack = getTracks()[key] || baseTracks[key];
+    const exercise = exerciseTrack[Math.min(item.level, exerciseTrack.length - 1)];
     const row = document.createElement('div');
     row.className = 'level-row';
     row.innerHTML = `<div><strong>${labels[key]}</strong><p>${exercise.name} · ${exercise.prescription}</p></div><span>L${item.level + 1}</span>`;
@@ -503,11 +619,80 @@ function importProgress(file) {
 }
 
 
+function renderOnboarding() {
+  const onboarding = document.getElementById('onboarding');
+  if (!onboarding) return;
+  if (!currentUser || hasCompletedProfile()) {
+    onboarding.classList.add('hidden');
+    return;
+  }
+  onboarding.classList.remove('hidden');
+}
+
+function saveProfileFromOnboarding() {
+  const goal = document.querySelector('input[name="goal"]:checked')?.value;
+  const equipment = Array.from(document.querySelectorAll('input[name="equipment"]:checked')).map(input => input.value);
+  const pushups = document.querySelector('input[name="pushups"]:checked')?.value;
+  const squats = document.querySelector('input[name="squats"]:checked')?.value;
+  const deadHang = equipment.includes('pullupBar') ? document.querySelector('input[name="deadHang"]:checked')?.value : null;
+  const negativePullup = equipment.includes('pullupBar') ? document.querySelector('input[name="negativePullup"]:checked')?.value : null;
+  const dip = equipment.includes('dipBars') ? document.querySelector('input[name="dip"]:checked')?.value : null;
+
+  if (!goal || !pushups || !squats || equipment.length === 0) {
+    alert('Please complete goal, equipment, push-ups and squats.');
+    return;
+  }
+  if (equipment.includes('pullupBar') && (!deadHang || !negativePullup)) {
+    alert('Please answer the pull-up bar questions.');
+    return;
+  }
+  if (equipment.includes('dipBars') && !dip) {
+    alert('Please answer the dip bars question.');
+    return;
+  }
+
+  state.profile = { goal, equipment, pushups, squats, deadHang, negativePullup, dip, createdAt: new Date().toISOString() };
+  state.levels = initialLevelsFromProfile(state.profile, state.levels);
+  state.rotationIndex = 0;
+  state.current = null;
+  state.generated = null;
+  state.selectedEnergy = null;
+  saveState();
+  renderAll();
+}
+
+function initialLevelsFromProfile(profile, existingLevels) {
+  const levels = { ...defaultState().levels, ...(existingLevels || {}) };
+  const pushMap = { zero: 0, oneFive: 0, sixTen: 5, tenPlus: 7 };
+  const squatMap = { zeroFive: 0, sixTen: 0, tenPlus: 1 };
+  levels.pushup = { level: pushMap[profile.pushups] ?? 0, points: 0 };
+  levels.legs = { level: squatMap[profile.squats] ?? 0, points: 0 };
+  if (profile.equipment.includes('pullupBar')) {
+    levels.pullup = { level: profile.negativePullup === 'yes' ? 1 : profile.deadHang === 'yes' ? 0 : 0, points: 0 };
+  } else {
+    levels.pullup = { level: 0, points: 0 };
+  }
+  if (profile.equipment.includes('dipBars')) {
+    levels.dip = { level: profile.dip === 'yes' ? 2 : 0, points: 0 };
+  } else {
+    levels.dip = { level: 0, points: 0 };
+  }
+  return levels;
+}
+
+function updateConditionalQuestions() {
+  const equipment = Array.from(document.querySelectorAll('input[name="equipment"]:checked')).map(input => input.value);
+  document.getElementById('pullupAssessment')?.classList.toggle('hidden', !equipment.includes('pullupBar'));
+  document.getElementById('dipAssessment')?.classList.toggle('hidden', !equipment.includes('dipBars'));
+}
+
+
 function renderAll() {
   renderToday();
   renderGoals();
   renderProgress();
   renderAccount();
+  renderOnboarding();
 }
 
 function renderAccount() {
@@ -538,8 +723,9 @@ function renderAccount() {
     panel.classList.add('hidden');
     loggedOut.classList.add('hidden');
     loggedIn.classList.remove('hidden');
-    screens.forEach(screen => screen.classList.remove('auth-locked'));
-    if (bottomNav) bottomNav.classList.remove('hidden');
+    const profileDone = hasCompletedProfile();
+    screens.forEach(screen => screen.classList.toggle('auth-locked', !profileDone));
+    if (bottomNav) bottomNav.classList.toggle('hidden', !profileDone);
     if (accountBtn) {
       accountBtn.classList.remove('hidden');
       accountBtn.textContent = 'Account';
@@ -642,6 +828,7 @@ document.addEventListener('click', event => {
   if (event.target.id === 'loginBtn') login();
   if (event.target.id === 'logoutBtn') logout();
   if (event.target.id === 'togglePasswordBtn') togglePasswordVisibility();
+  if (event.target.id === 'saveProfileBtn') saveProfileFromOnboarding();
   if (event.target.id === 'exportBtn' || event.target.id === 'backupBtn') exportProgress();
 
   if (event.target.id === 'resetBtn' && confirm('Reset all progress?')) {
@@ -660,6 +847,16 @@ document.addEventListener('click', event => {
     document.getElementById('screenTitle').textContent = event.target.textContent;
     renderGoals();
     renderProgress();
+  }
+});
+
+document.addEventListener('change', event => {
+  if (event.target.matches('input[name="equipment"]')) {
+    const none = document.querySelector('input[name="equipment"][value="none"]');
+    const others = Array.from(document.querySelectorAll('input[name="equipment"]:not([value="none"])'));
+    if (event.target.value === 'none' && event.target.checked) others.forEach(input => input.checked = false);
+    if (event.target.value !== 'none' && event.target.checked && none) none.checked = false;
+    updateConditionalQuestions();
   }
 });
 
