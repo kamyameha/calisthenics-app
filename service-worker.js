@@ -1,13 +1,14 @@
-const CACHE_NAME = 'calisthenics-pwa-v4';
+const CACHE_NAME = 'calisthenics-pwa-v5';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
   './manifest.json',
-  './apple-touch-icon.png',
-  './icons/icon-512.png',
-  './icons/icon-maskable-512.png'
+  './apple-touch-icon.png?v=2',
+  './icons/icon-192.png?v=3',
+  './icons/icon-512.png?v=3',
+  './icons/icon-maskable-512.png?v=3'
 ];
 
 self.addEventListener('install', event => {
