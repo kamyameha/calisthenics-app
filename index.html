@@ -29,7 +29,11 @@
         <h2>Create account / Log in</h2>
         <p class="muted">Create an account first so your workout progress is saved online and synced across devices.</p>
         <input id="emailInput" class="text-input" type="email" placeholder="Email" autocomplete="email" />
-        <input id="passwordInput" class="text-input" type="password" placeholder="Password" autocomplete="current-password" />
+        <div class="password-field">
+          <input id="passwordInput" class="text-input" type="password" placeholder="Password" autocomplete="current-password" />
+          <button id="togglePasswordBtn" class="password-toggle" type="button" aria-label="Show password">Show</button>
+        </div>
+        <p id="authMessage" class="auth-message" aria-live="polite"></p>
         <div class="button-row account-actions">
           <button id="loginBtn" class="primary-btn">Log in</button>
           <button id="signupBtn" class="ghost-btn">Create account</button>

@@ -11,7 +11,13 @@ const SUPABASE_READY = Boolean(
 );
 
 const supabaseClient = SUPABASE_READY
-  ? window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY)
+  ? window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    })
   : null;
 window.appSupabaseClient = supabaseClient;
 
@@ -181,6 +187,34 @@ async function loadCloudState() {
 function setSyncStatus(message) {
   const el = document.getElementById('syncStatus');
   if (el) el.textContent = message;
+}
+
+
+function setAuthMessage(message, type = 'info') {
+  const el = document.getElementById('authMessage');
+  if (!el) return;
+  el.textContent = message || '';
+  el.dataset.type = type;
+}
+
+function friendlyAuthError(message = '') {
+  const lower = message.toLowerCase();
+  if (lower.includes('invalid login') || lower.includes('invalid credentials')) return 'Email or password is incorrect.';
+  if (lower.includes('already registered') || lower.includes('already exists')) return 'An account already exists with this email. Try logging in instead.';
+  if (lower.includes('password') && lower.includes('characters')) return 'Password is too short. Use at least 6 characters.';
+  if (lower.includes('email')) return 'Please enter a valid email address.';
+  if (lower.includes('rate limit')) return 'Too many attempts. Wait a minute and try again.';
+  return message || 'Something went wrong. Please try again.';
+}
+
+function togglePasswordVisibility() {
+  const input = document.getElementById('passwordInput');
+  const btn = document.getElementById('togglePasswordBtn');
+  if (!input || !btn) return;
+  const isHidden = input.type === 'password';
+  input.type = isHidden ? 'text' : 'password';
+  btn.textContent = isHidden ? 'Hide' : 'Show';
+  btn.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
 }
 
 
@@ -494,6 +528,7 @@ function renderAccount() {
   }
 
   if (currentUser) {
+    setAuthMessage('');
     panel.classList.add('hidden');
     loggedOut.classList.add('hidden');
     loggedIn.classList.remove('hidden');
@@ -533,22 +568,26 @@ async function initCloudSync() {
 }
 
 async function signUp() {
-  if (!supabaseClient) return alert('Cloud sync is not configured yet.');
+  if (!supabaseClient) return setAuthMessage('Cloud sync is not configured yet.', 'error');
   const email = document.getElementById('emailInput').value.trim();
   const password = document.getElementById('passwordInput').value;
-  if (!email || !password) return alert('Enter email and password.');
+  if (!email || !password) return setAuthMessage('Enter your email and password.', 'error');
+  if (password.length < 6) return setAuthMessage('Password must be at least 6 characters.', 'error');
+  setAuthMessage('Creating your account...', 'info');
   const { error } = await supabaseClient.auth.signUp({ email, password });
-  if (error) return alert(error.message);
-  alert('Account created. If you are not logged in automatically, check your email confirmation or disable email confirmation in Supabase Auth settings.');
+  if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
+  setAuthMessage('Account created. You are logged in.', 'success');
 }
 
 async function login() {
-  if (!supabaseClient) return alert('Cloud sync is not configured yet.');
+  if (!supabaseClient) return setAuthMessage('Cloud sync is not configured yet.', 'error');
   const email = document.getElementById('emailInput').value.trim();
   const password = document.getElementById('passwordInput').value;
-  if (!email || !password) return alert('Enter email and password.');
+  if (!email || !password) return setAuthMessage('Enter your email and password.', 'error');
+  setAuthMessage('Logging in...', 'info');
   const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-  if (error) return alert(error.message);
+  if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
+  setAuthMessage('Logged in. Loading your progress...', 'success');
 }
 
 async function logout() {
@@ -586,6 +625,7 @@ document.addEventListener('click', event => {
   if (event.target.id === 'signupBtn') signUp();
   if (event.target.id === 'loginBtn') login();
   if (event.target.id === 'logoutBtn') logout();
+  if (event.target.id === 'togglePasswordBtn') togglePasswordVisibility();
   if (event.target.id === 'exportBtn' || event.target.id === 'backupBtn') exportProgress();
 
   if (event.target.id === 'resetBtn' && confirm('Reset all progress?')) {
