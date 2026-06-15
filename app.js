@@ -13,6 +13,7 @@ const SUPABASE_READY = Boolean(
 const supabaseClient = SUPABASE_READY
   ? window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY)
   : null;
+window.appSupabaseClient = supabaseClient;
 
 let currentUser = null;
 let syncTimer = null;
@@ -470,27 +471,46 @@ function renderAll() {
 }
 
 function renderAccount() {
+  const panel = document.getElementById('accountPanel');
   const loggedOut = document.getElementById('loggedOutAccount');
   const loggedIn = document.getElementById('loggedInAccount');
   const email = document.getElementById('accountEmail');
+  const accountBtn = document.getElementById('accountBtn');
+  const bottomNav = document.querySelector('.bottom-nav');
+  const screens = document.querySelectorAll('.screen');
 
-  if (!loggedOut || !loggedIn) return;
+  if (!panel || !loggedOut || !loggedIn) return;
 
   if (!SUPABASE_READY) {
+    panel.classList.remove('hidden');
     loggedOut.classList.remove('hidden');
     loggedIn.classList.add('hidden');
+    screens.forEach(screen => screen.classList.add('auth-locked'));
+    if (bottomNav) bottomNav.classList.add('hidden');
+    if (accountBtn) accountBtn.classList.add('hidden');
     const muted = loggedOut.querySelector('.muted');
     if (muted) muted.textContent = 'Cloud sync is not configured yet. Add your Supabase URL and anon key in supabase-config.js.';
     return;
   }
 
   if (currentUser) {
+    panel.classList.add('hidden');
     loggedOut.classList.add('hidden');
     loggedIn.classList.remove('hidden');
-    email.textContent = currentUser.email;
+    screens.forEach(screen => screen.classList.remove('auth-locked'));
+    if (bottomNav) bottomNav.classList.remove('hidden');
+    if (accountBtn) {
+      accountBtn.classList.remove('hidden');
+      accountBtn.textContent = 'Account';
+    }
+    if (email) email.textContent = currentUser.email;
   } else {
+    panel.classList.remove('hidden');
     loggedOut.classList.remove('hidden');
     loggedIn.classList.add('hidden');
+    screens.forEach(screen => screen.classList.add('auth-locked'));
+    if (bottomNav) bottomNav.classList.add('hidden');
+    if (accountBtn) accountBtn.classList.add('hidden');
   }
 }
 
@@ -519,7 +539,7 @@ async function signUp() {
   if (!email || !password) return alert('Enter email and password.');
   const { error } = await supabaseClient.auth.signUp({ email, password });
   if (error) return alert(error.message);
-  alert('Account created. If Supabase asks for email confirmation, check your inbox.');
+  alert('Account created. If you are not logged in automatically, check your email confirmation or disable email confirmation in Supabase Auth settings.');
 }
 
 async function login() {
@@ -562,7 +582,7 @@ document.addEventListener('click', event => {
 
   if (event.target.id === 'completeBtn') completeWorkout();
 
-  if (event.target.id === 'accountBtn') document.getElementById('accountPanel').classList.toggle('hidden');
+  if (event.target.id === 'accountBtn' && currentUser) document.getElementById('accountPanel').classList.toggle('hidden');
   if (event.target.id === 'signupBtn') signUp();
   if (event.target.id === 'loginBtn') login();
   if (event.target.id === 'logoutBtn') logout();

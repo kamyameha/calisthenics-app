@@ -324,3 +324,41 @@ button, .import-label {
 
 .account-actions { margin-top: 10px; }
 .sync-status { font-weight: 900; }
+
+.account-panel {
+  margin-top: 16px;
+}
+
+.account-panel h2 {
+  font-size: 28px;
+}
+
+.text-input {
+  width: 100%;
+  border: 1px solid var(--border);
+  color: var(--main);
+  background: white;
+  border-radius: 18px;
+  padding: 14px 16px;
+  font: inherit;
+  font-weight: 700;
+  margin: 8px 0;
+  outline: none;
+}
+
+.text-input::placeholder {
+  color: rgba(1, 45, 237, 0.45);
+}
+
+.account-actions {
+  margin-top: 8px;
+}
+
+.auth-locked {
+  display: none !important;
+}
+
+.sync-status {
+  font-weight: 900;
+  opacity: 0.75;
+}
