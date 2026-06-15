@@ -26,18 +26,44 @@
     <section id="accountPanel" class="card account-panel">
       <p class="eyebrow">Cloud sync</p>
       <div id="loggedOutAccount">
-        <h2>Create account / Log in</h2>
-        <p class="muted">Create an account first so your workout progress is saved online and synced across devices.</p>
-        <input id="emailInput" class="text-input" type="email" placeholder="Email" autocomplete="email" />
-        <div class="password-field">
-          <input id="passwordInput" class="text-input" type="password" placeholder="Password" autocomplete="current-password" />
-          <button id="togglePasswordBtn" class="password-toggle" type="button" aria-label="Show password">Show</button>
+        <div id="authWelcome">
+          <h2>Welcome</h2>
+          <p class="muted">Create an account or log in so your workout progress is saved online and synced across devices.</p>
+          <div class="auth-choice-grid">
+            <button id="showSignupBtn" class="primary-btn" type="button">Create account</button>
+            <button id="showLoginBtn" class="ghost-btn" type="button">Log in</button>
+          </div>
         </div>
+
+        <div id="authSignupForm" class="hidden">
+          <button id="backToAuthWelcomeFromSignup" class="text-btn" type="button">← Back</button>
+          <h2>Create account</h2>
+          <p class="muted">Start with your email and a password. Then we’ll build your calisthenics plan.</p>
+          <input id="signupEmailInput" class="text-input" type="email" placeholder="Email" autocomplete="email" />
+          <div class="password-field">
+            <input id="signupPasswordInput" class="text-input" type="password" placeholder="Password" autocomplete="new-password" />
+            <button class="password-toggle" type="button" data-toggle-password="signupPasswordInput" aria-label="Show password">Show</button>
+          </div>
+          <div class="password-field">
+            <input id="signupConfirmPasswordInput" class="text-input" type="password" placeholder="Confirm password" autocomplete="new-password" />
+            <button class="password-toggle" type="button" data-toggle-password="signupConfirmPasswordInput" aria-label="Show password">Show</button>
+          </div>
+          <button id="signupBtn" class="primary-btn account-submit" type="button">Create account</button>
+        </div>
+
+        <div id="authLoginForm" class="hidden">
+          <button id="backToAuthWelcomeFromLogin" class="text-btn" type="button">← Back</button>
+          <h2>Log in</h2>
+          <p class="muted">Welcome back. Your progress will load after login.</p>
+          <input id="loginEmailInput" class="text-input" type="email" placeholder="Email" autocomplete="email" />
+          <div class="password-field">
+            <input id="loginPasswordInput" class="text-input" type="password" placeholder="Password" autocomplete="current-password" />
+            <button class="password-toggle" type="button" data-toggle-password="loginPasswordInput" aria-label="Show password">Show</button>
+          </div>
+          <button id="loginBtn" class="primary-btn account-submit" type="button">Log in</button>
+        </div>
+
         <p id="authMessage" class="auth-message" aria-live="polite"></p>
-        <div class="button-row account-actions">
-          <button id="loginBtn" class="primary-btn">Log in</button>
-          <button id="signupBtn" class="ghost-btn">Create account</button>
-        </div>
       </div>
       <div id="loggedInAccount" class="hidden">
         <h2>Account</h2>
