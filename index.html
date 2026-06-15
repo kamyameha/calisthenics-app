@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#012ded" />
+  <title>Calisthenics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Calisthenics</p>
+        <h1 id="screenTitle">Today</h1>
+      </div>
+      <button id="accountBtn" class="ghost-btn compact">Account</button>
+    </header>
+
+    <section id="accountPanel" class="card account-panel hidden">
+      <p class="eyebrow">Cloud sync</p>
+      <div id="loggedOutAccount">
+        <h2>Sign in</h2>
+        <p class="muted">Save your progress online so you do not lose it when changing phone or clearing browser data.</p>
+        <input id="emailInput" class="text-input" type="email" placeholder="Email" autocomplete="email" />
+        <input id="passwordInput" class="text-input" type="password" placeholder="Password" autocomplete="current-password" />
+        <div class="button-row account-actions">
+          <button id="loginBtn" class="primary-btn">Log in</button>
+          <button id="signupBtn" class="ghost-btn">Create account</button>
+        </div>
+      </div>
+      <div id="loggedInAccount" class="hidden">
+        <h2>Synced</h2>
+        <p class="muted" id="accountEmail"></p>
+        <p class="sync-status" id="syncStatus">Cloud sync ready.</p>
+        <button id="logoutBtn" class="ghost-btn">Log out</button>
+      </div>
+    </section>
+
+    <section id="today" class="screen active">
+      <section id="energyCard" class="card step-card">
+        <p class="eyebrow">Step 1</p>
+        <h2>Energy check</h2>
+        <p class="muted">How's your energy today? We'll adjust today's workout intensity.</p>
+        <div class="button-grid energy-grid">
+          <button class="feel-btn" data-feel="great">😊 Great</button>
+          <button class="feel-btn" data-feel="normal">🙂 Normal</button>
+          <button class="feel-btn" data-feel="tired">😴 Tired</button>
+          <button class="feel-btn" data-feel="exhausted">🤒 Exhausted</button>
+        </div>
+      </section>
+
+      <section id="selectedEnergyCard" class="card hidden">
+        <p class="eyebrow">Selected</p>
+        <h2 id="selectedEnergyTitle">Normal</h2>
+        <p class="muted" id="selectedEnergyDescription">Standard workout · estimated duration 20 min.</p>
+        <div class="button-row">
+          <button class="primary-btn" id="generateWorkoutBtn">Generate Today's Workout</button>
+          <button class="ghost-btn" id="changeEnergyBtn">Change</button>
+        </div>
+      </section>
+
+      <section id="generatedWorkoutCard" class="hero-card hidden">
+        <p class="muted-light">Today's workout</p>
+        <h2 id="workoutName">Push</h2>
+        <p id="workoutMeta">20 min · Standard Mode</p>
+        <button class="hero-action" id="startWorkoutBtn">Start Workout</button>
+      </section>
+
+      <section id="exercisePreview" class="card hidden">
+        <h3>Checklist</h3>
+        <div id="previewList"></div>
+      </section>
+
+      <section id="exerciseList"></section>
+      <button id="completeBtn" class="primary-btn hidden">Complete Workout</button>
+    </section>
+
+    <section id="goals" class="screen">
+      <section class="hero-card goal-hero">
+        <p class="muted-light">Main goal</p>
+        <h2>First Pull-Up</h2>
+        <p id="pullupStage">Current stage: Negative Pull-Ups</p>
+        <div class="progress-bar"><span id="pullupProgressBar"></span></div>
+        <p id="pullupNext" class="goal-next">Next milestone: Scapular Pull-Ups</p>
+      </section>
+
+      <section class="card">
+        <p class="eyebrow">Pull-Up Journey</p>
+        <div id="pullupJourney" class="journey-list"></div>
+      </section>
+
+      <section class="card">
+        <p class="eyebrow">Skills</p>
+        <div id="skillList" class="skill-list"></div>
+      </section>
+    </section>
+
+    <section id="progress" class="screen">
+      <section class="card stat-card">
+        <p class="eyebrow">This month</p>
+        <p class="big-number"><span id="monthlyCount">0</span></p>
+        <p class="muted">Workouts completed</p>
+      </section>
+
+      <section class="card">
+        <p class="eyebrow">Current levels</p>
+        <div id="levelsList"></div>
+      </section>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-screen="today">Today</button>
+    <button class="nav-btn" data-screen="goals">Goals</button>
+    <button class="nav-btn" data-screen="progress">Progress</button>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>
