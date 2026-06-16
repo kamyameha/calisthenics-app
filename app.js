@@ -1,3 +1,5 @@
+const INITIAL_AUTH_SEARCH = window.location.search || '';
+const INITIAL_AUTH_HASH = window.location.hash || '';
 const STORAGE_KEY = 'camille-calisthenics-v4';
 const LEGACY_STORAGE_KEY = 'camille-calisthenics-v2';
 const OLDER_LEGACY_STORAGE_KEY = 'camille-calisthenics-v1';
@@ -25,8 +27,18 @@ let currentProfileId = null;
 let syncTimer = null;
 let welcomeDismissed = false;
 function isPasswordRecoveryUrl() {
-  const params = new URLSearchParams(`${window.location.search.replace(/^\?/, '')}&${window.location.hash.replace(/^#/, '')}`);
-  return params.get('type') === 'recovery' || params.get('event') === 'PASSWORD_RECOVERY';
+  // Use the original URL captured before Supabase can consume/clean auth params.
+  // A password-reset redirect can look like:
+  //   ?reset-password=1#access_token=...&type=recovery
+  // or, depending on provider/browser, only carry the custom reset-password flag.
+  const current = `${window.location.search.replace(/^\?/, '')}&${window.location.hash.replace(/^#/, '')}`;
+  const initial = `${INITIAL_AUTH_SEARCH.replace(/^\?/, '')}&${INITIAL_AUTH_HASH.replace(/^#/, '')}`;
+  const params = new URLSearchParams(`${initial}&${current}`);
+  return (
+    params.get('reset-password') === '1' ||
+    params.get('type') === 'recovery' ||
+    params.get('event') === 'PASSWORD_RECOVERY'
+  );
 }
 
 function clearAuthUrlParams() {
@@ -891,6 +903,7 @@ async function initCloudSync() {
   const { data } = await supabaseClient.auth.getSession();
   currentUser = data.session?.user || null;
   currentProfileId = null;
+  passwordRecoveryMode = passwordRecoveryMode || isPasswordRecoveryUrl();
   // Supabase turns a password reset link into a temporary logged-in session.
   // If the page was opened from a recovery URL, keep the user on the reset form
   // instead of continuing into the app like a normal login.
@@ -947,7 +960,11 @@ async function sendPasswordReset() {
   const email = document.getElementById('loginEmailInput')?.value.trim();
   if (!email) return setAuthMessage('Enter your email first, then tap Forgot password.', 'error');
 
-  const redirectTo = `${window.location.origin}${window.location.pathname}`;
+  const redirectUrl = new URL(window.location.href);
+  redirectUrl.searchParams.set('reset-password', '1');
+  redirectUrl.hash = '';
+  const redirectTo = redirectUrl.toString();
+
   setAuthMessage('Sending reset link...', 'info');
   const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
   if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
