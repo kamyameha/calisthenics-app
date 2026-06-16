@@ -31,7 +31,9 @@ function setWelcomeVisible(visible) {
 
   if (welcome) welcome.classList.toggle('hidden', !visible);
   if (app) app.classList.toggle('hidden', visible);
-  if (bottomNav) bottomNav.classList.add('hidden');
+  // Only force-hide the bottom nav while the welcome screen is open.
+  // When the welcome screen closes, renderAccount() decides if the nav should show.
+  if (bottomNav && visible) bottomNav.classList.add('hidden');
 }
 
 function setupStarAnimation() {
