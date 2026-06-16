@@ -24,7 +24,17 @@ let currentUser = null;
 let currentProfileId = null;
 let syncTimer = null;
 let welcomeDismissed = false;
-let passwordRecoveryMode = false;
+function isPasswordRecoveryUrl() {
+  const params = new URLSearchParams(`${window.location.search.replace(/^\?/, '')}&${window.location.hash.replace(/^#/, '')}`);
+  return params.get('type') === 'recovery' || params.get('event') === 'PASSWORD_RECOVERY';
+}
+
+function clearAuthUrlParams() {
+  if (!window.location.hash && !window.location.search) return;
+  window.history.replaceState({}, document.title, `${window.location.origin}${window.location.pathname}`);
+}
+
+let passwordRecoveryMode = isPasswordRecoveryUrl();
 
 function setWelcomeVisible(visible) {
   const welcome = document.getElementById('welcomeScreen');
@@ -881,14 +891,19 @@ async function initCloudSync() {
   const { data } = await supabaseClient.auth.getSession();
   currentUser = data.session?.user || null;
   currentProfileId = null;
-  if (currentUser) await loadCloudState();
+  // Supabase turns a password reset link into a temporary logged-in session.
+  // If the page was opened from a recovery URL, keep the user on the reset form
+  // instead of continuing into the app like a normal login.
+  if (currentUser && !passwordRecoveryMode) await loadCloudState();
   renderAll();
 
   supabaseClient.auth.onAuthStateChange(async (event, session) => {
     currentUser = session?.user || null;
     currentProfileId = null;
-    passwordRecoveryMode = event === 'PASSWORD_RECOVERY';
-    if (currentUser) await loadCloudState();
+    if (event === 'PASSWORD_RECOVERY') passwordRecoveryMode = true;
+    if (event === 'SIGNED_IN' && !passwordRecoveryMode) passwordRecoveryMode = false;
+    if (event === 'SIGNED_OUT') passwordRecoveryMode = false;
+    if (currentUser && !passwordRecoveryMode) await loadCloudState();
     renderAll();
   });
 }
@@ -919,6 +934,7 @@ async function login() {
   setAuthMessage('Logging in...', 'info');
   const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
   if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
+  passwordRecoveryMode = false;
   currentUser = data?.session?.user || currentUser;
   currentProfileId = null;
   if (currentUser) await loadCloudState();
@@ -950,6 +966,9 @@ async function updatePasswordFromRecovery() {
   const { error } = await supabaseClient.auth.updateUser({ password });
   if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
   passwordRecoveryMode = false;
+  clearAuthUrlParams();
+  currentProfileId = null;
+  if (currentUser) await loadCloudState();
   clearAuthFields();
   setAuthMessage('Password updated. You are logged in.', 'success');
   renderAll();
