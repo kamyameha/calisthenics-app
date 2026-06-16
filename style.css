@@ -518,3 +518,62 @@ button, .import-label {
   font: inherit;
   font-weight: 500;
 }
+
+
+/* Welcome screen */
+.welcome-screen {
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--main);
+  display: flex;
+  justify-content: center;
+}
+
+.welcome-inner {
+  width: 100%;
+  max-width: 560px;
+  min-height: 100svh;
+  padding: 56px 28px 48px;
+  display: flex;
+  flex-direction: column;
+}
+
+.welcome-logo {
+  margin: 0 0 28px;
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.welcome-star {
+  width: min(330px, 82vw);
+  height: min(330px, 82vw);
+  object-fit: contain;
+  align-self: center;
+  margin: 8px 0 30px;
+}
+
+.welcome-copy {
+  margin-top: auto;
+}
+
+.welcome-copy h1 {
+  font-size: 26px;
+  line-height: 1.08;
+  margin-bottom: 14px;
+}
+
+.welcome-copy p {
+  font-size: 18px;
+  line-height: 1.36;
+  opacity: 0.78;
+  margin-bottom: 34px;
+}
+
+.welcome-next {
+  width: 100%;
+  padding: 18px;
+  border-radius: 28px;
+  font-size: 18px;
+  margin-top: 0;
+}

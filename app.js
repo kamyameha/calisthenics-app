@@ -1,20 +1,6 @@
 const STORAGE_KEY = 'camille-calisthenics-v4';
 const LEGACY_STORAGE_KEY = 'camille-calisthenics-v2';
 const OLDER_LEGACY_STORAGE_KEY = 'camille-calisthenics-v1';
-import React, { useState } from 'react';
-import WelcomeScreen from './screens/WelcomeScreen';
-import LoginScreen from './screens/LoginScreen';
-
-export default function App() {
-  const [showWelcome, setShowWelcome] = useState(true);
-
-  if (showWelcome) {
-    return <WelcomeScreen onNext={() => setShowWelcome(false)} />;
-  }
-
-  return <LoginScreen />;
-}
-
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -36,6 +22,41 @@ window.appSupabaseClient = supabaseClient;
 
 let currentUser = null;
 let syncTimer = null;
+let welcomeDismissed = false;
+
+function setWelcomeVisible(visible) {
+  const welcome = document.getElementById('welcomeScreen');
+  const app = document.querySelector('.app');
+  const bottomNav = document.querySelector('.bottom-nav');
+
+  if (welcome) welcome.classList.toggle('hidden', !visible);
+  if (app) app.classList.toggle('hidden', visible);
+  if (bottomNav) bottomNav.classList.toggle('hidden', visible);
+}
+
+function setupStarAnimation() {
+  const star = document.getElementById('welcomeStar');
+  if (!star) return;
+
+  const frames = [
+    'Assets/Animations/start1.png',
+    'Assets/Animations/start2.png',
+    'Assets/Animations/start3.png'
+  ];
+
+  let frame = 0;
+  star.src = frames[frame];
+
+  window.setInterval(() => {
+    frame = (frame + 1) % frames.length;
+    star.src = frames[frame];
+  }, 600);
+}
+
+function updateWelcomeGate() {
+  setWelcomeVisible(!welcomeDismissed && !currentUser);
+}
+
 
 const baseTracks = {
   pushup: [
@@ -728,6 +749,7 @@ function renderAll() {
   renderProgress();
   renderAccount();
   renderOnboarding();
+  updateWelcomeGate();
 }
 
 function renderAccount() {
@@ -838,6 +860,12 @@ async function logout() {
 
 
 document.addEventListener('click', event => {
+  if (event.target.id === 'welcomeNextBtn') {
+    welcomeDismissed = true;
+    updateWelcomeGate();
+    return;
+  }
+
   if (event.target.matches('.feel-btn')) selectEnergy(event.target.dataset.feel);
 
   if (event.target.id === 'changeEnergyBtn') {
@@ -920,5 +948,6 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./service-worker.js');
 }
 
+setupStarAnimation();
 renderAll();
 initCloudSync();
