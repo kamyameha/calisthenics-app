@@ -21,8 +21,10 @@ const supabaseClient = SUPABASE_READY
 window.appSupabaseClient = supabaseClient;
 
 let currentUser = null;
+let currentProfileId = null;
 let syncTimer = null;
 let welcomeDismissed = false;
+let passwordRecoveryMode = false;
 
 function setWelcomeVisible(visible) {
   const welcome = document.getElementById('welcomeScreen');
@@ -288,27 +290,77 @@ function publicState() {
 }
 
 function queueCloudSave() {
-  if (!supabaseClient || !currentUser) return;
+  if (!supabaseClient || !currentUser || !currentProfileId) return;
   clearTimeout(syncTimer);
   syncTimer = setTimeout(saveCloudState, 500);
 }
 
+function normaliseEmail(email = '') {
+  return email.trim().toLowerCase();
+}
+
+async function ensureWorkoutProfile() {
+  if (!supabaseClient || !currentUser?.email) return null;
+
+  const email = normaliseEmail(currentUser.email);
+  const payload = {
+    email,
+    current_auth_user_id: currentUser.id,
+    deleted_at: null,
+    updated_at: new Date().toISOString()
+  };
+
+  const { data, error } = await supabaseClient
+    .from('workout_profiles')
+    .upsert(payload, { onConflict: 'email' })
+    .select('id')
+    .single();
+
+  if (error) {
+    setSyncStatus('Could not connect your recovery profile. Local progress is still saved.');
+    return null;
+  }
+
+  currentProfileId = data.id;
+  return data.id;
+}
+
 async function saveCloudState() {
   if (!supabaseClient || !currentUser) return;
+  const profileId = currentProfileId || await ensureWorkoutProfile();
+  if (!profileId) return;
+
   setSyncStatus('Saving...');
   const { error } = await supabaseClient
-    .from('workout_states')
-    .upsert({ user_id: currentUser.id, state: publicState(), updated_at: new Date().toISOString() });
+    .from('workout_states_v2')
+    .upsert({ profile_id: profileId, state: publicState(), updated_at: new Date().toISOString() }, { onConflict: 'profile_id' });
   setSyncStatus(error ? 'Save failed. Local progress is still saved.' : 'Progress saved.');
+}
+
+async function loadLegacyCloudState() {
+  if (!supabaseClient || !currentUser) return null;
+
+  const { data, error } = await supabaseClient
+    .from('workout_states')
+    .select('state')
+    .eq('user_id', currentUser.id)
+    .maybeSingle();
+
+  if (error) return null;
+  return data?.state || null;
 }
 
 async function loadCloudState() {
   if (!supabaseClient || !currentUser) return;
   setSyncStatus('Loading progress...');
+
+  const profileId = await ensureWorkoutProfile();
+  if (!profileId) return;
+
   const { data, error } = await supabaseClient
-    .from('workout_states')
+    .from('workout_states_v2')
     .select('state')
-    .eq('user_id', currentUser.id)
+    .eq('profile_id', profileId)
     .maybeSingle();
 
   if (error) {
@@ -316,14 +368,19 @@ async function loadCloudState() {
     return;
   }
 
-  if (data?.state) {
-    state = { ...defaultState(), ...data.state };
+  const legacyState = !data?.state ? await loadLegacyCloudState() : null;
+  const cloudState = data?.state || legacyState;
+
+  if (cloudState) {
+    state = { ...defaultState(), ...cloudState };
+    state.levels = { ...defaultState().levels, ...(cloudState.levels || {}) };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if (legacyState) await saveCloudState();
     renderAll();
-    setSyncStatus('Progress loaded.');
+    setSyncStatus(legacyState ? 'Progress recovered and upgraded.' : 'Progress loaded.');
   } else {
     await saveCloudState();
-    setSyncStatus('New profile created.');
+    setSyncStatus('New recovery profile created.');
   }
 }
 
@@ -353,14 +410,16 @@ function friendlyAuthError(message = '') {
 function setAuthMode(mode = 'welcome') {
   const welcome = document.getElementById('authWelcome');
   const login = document.getElementById('authLoginForm');
-  if (!welcome || !login) return;
+  const reset = document.getElementById('authResetForm');
+  if (!welcome || !login || !reset) return;
   welcome.classList.toggle('hidden', mode !== 'welcome');
   login.classList.toggle('hidden', mode !== 'login');
+  reset.classList.toggle('hidden', mode !== 'reset');
   setAuthMessage('');
 }
 
 function clearAuthFields() {
-  ['signupEmailInput', 'signupPasswordInput', 'signupConfirmPasswordInput', 'loginEmailInput', 'loginPasswordInput'].forEach(id => {
+  ['signupEmailInput', 'signupPasswordInput', 'signupConfirmPasswordInput', 'loginEmailInput', 'loginPasswordInput', 'resetPasswordInput', 'resetConfirmPasswordInput'].forEach(id => {
     const input = document.getElementById(id);
     if (input) input.value = '';
   });
@@ -779,6 +838,17 @@ function renderAccount() {
     return;
   }
 
+  if (passwordRecoveryMode && currentUser) {
+    panel.classList.remove('hidden');
+    loggedOut.classList.remove('hidden');
+    loggedIn.classList.add('hidden');
+    setAuthMode('reset');
+    screens.forEach(screen => screen.classList.add('auth-locked'));
+    if (bottomNav) bottomNav.classList.add('hidden');
+    if (accountBtn) accountBtn.classList.add('hidden');
+    return;
+  }
+
   if (currentUser) {
     setAuthMessage('');
     panel.classList.add('hidden');
@@ -810,11 +880,14 @@ async function initCloudSync() {
 
   const { data } = await supabaseClient.auth.getSession();
   currentUser = data.session?.user || null;
+  currentProfileId = null;
   if (currentUser) await loadCloudState();
   renderAll();
 
-  supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+  supabaseClient.auth.onAuthStateChange(async (event, session) => {
     currentUser = session?.user || null;
+    currentProfileId = null;
+    passwordRecoveryMode = event === 'PASSWORD_RECOVERY';
     if (currentUser) await loadCloudState();
     renderAll();
   });
@@ -832,6 +905,7 @@ async function signUp() {
   const { data, error } = await supabaseClient.auth.signUp({ email, password });
   if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
   currentUser = data?.session?.user || data?.user || currentUser;
+  currentProfileId = null;
   if (currentUser) await loadCloudState();
   setAuthMessage('Account created. Let’s build your plan.', 'success');
   renderAll();
@@ -846,8 +920,38 @@ async function login() {
   const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
   if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
   currentUser = data?.session?.user || currentUser;
+  currentProfileId = null;
   if (currentUser) await loadCloudState();
   setAuthMessage('Logged in. Loading your progress...', 'success');
+  renderAll();
+}
+
+async function sendPasswordReset() {
+  if (!supabaseClient) return setAuthMessage('Account connection is not configured yet.', 'error');
+  const email = document.getElementById('loginEmailInput')?.value.trim();
+  if (!email) return setAuthMessage('Enter your email first, then tap Forgot password.', 'error');
+
+  const redirectTo = `${window.location.origin}${window.location.pathname}`;
+  setAuthMessage('Sending reset link...', 'info');
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
+  setAuthMessage('Password reset link sent. Check your email.', 'success');
+}
+
+async function updatePasswordFromRecovery() {
+  if (!supabaseClient || !currentUser) return setAuthMessage('Open the reset link from your email first.', 'error');
+  const password = document.getElementById('resetPasswordInput')?.value;
+  const confirmPassword = document.getElementById('resetConfirmPasswordInput')?.value;
+  if (!password || !confirmPassword) return setAuthMessage('Enter and confirm your new password.', 'error');
+  if (password.length < 6) return setAuthMessage('Password must be at least 6 characters.', 'error');
+  if (password !== confirmPassword) return setAuthMessage('Passwords do not match.', 'error');
+
+  setAuthMessage('Updating password...', 'info');
+  const { error } = await supabaseClient.auth.updateUser({ password });
+  if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
+  passwordRecoveryMode = false;
+  clearAuthFields();
+  setAuthMessage('Password updated. You are logged in.', 'success');
   renderAll();
 }
 
@@ -855,6 +959,8 @@ async function logout() {
   if (!supabaseClient) return;
   await supabaseClient.auth.signOut();
   currentUser = null;
+  currentProfileId = null;
+  passwordRecoveryMode = false;
   clearAuthFields();
   setAuthMode('welcome');
   renderAll();
@@ -905,6 +1011,8 @@ document.addEventListener('click', event => {
   if (event.target.id === 'backToAuthWelcomeFromLogin') setAuthMode('welcome');
   if (event.target.id === 'signupBtn') signUp();
   if (event.target.id === 'loginBtn') login();
+  if (event.target.id === 'forgotPasswordBtn') sendPasswordReset();
+  if (event.target.id === 'resetPasswordBtn') updatePasswordFromRecovery();
   if (event.target.id === 'logoutBtn') logout();
   if (event.target.matches('[data-toggle-password]')) togglePasswordVisibility(event.target);
   if (event.target.id === 'saveProfileBtn') saveProfileFromOnboarding();

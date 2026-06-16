@@ -66,6 +66,21 @@
             <button class="password-toggle" type="button" data-toggle-password="loginPasswordInput" aria-label="Show password">Show</button>
           </div>
           <button id="loginBtn" class="primary-btn account-submit" type="button">Log in</button>
+          <p class="auth-switch"><button id="forgotPasswordBtn" class="inline-link" type="button">Forgot password?</button></p>
+        </div>
+
+        <div id="authResetForm" class="hidden">
+          <h2>Reset password</h2>
+          <p class="muted">Choose a new password for your account.</p>
+          <div class="password-field">
+            <input id="resetPasswordInput" class="text-input" type="password" placeholder="New password" autocomplete="new-password" />
+            <button class="password-toggle" type="button" data-toggle-password="resetPasswordInput" aria-label="Show password">Show</button>
+          </div>
+          <div class="password-field">
+            <input id="resetConfirmPasswordInput" class="text-input" type="password" placeholder="Confirm new password" autocomplete="new-password" />
+            <button class="password-toggle" type="button" data-toggle-password="resetConfirmPasswordInput" aria-label="Show password">Show</button>
+          </div>
+          <button id="resetPasswordBtn" class="primary-btn account-submit" type="button">Update password</button>
         </div>
 
         <p id="authMessage" class="auth-message" aria-live="polite"></p>
