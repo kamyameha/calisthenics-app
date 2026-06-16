@@ -537,7 +537,7 @@ button, .import-label {
 .welcome-inner {
   width: 100%;
   max-width: 560px;
-  min-height: 100svh;
+  min-height: 100dvh;
   padding: 56px 28px 48px;
   display: flex;
   flex-direction: column;
