@@ -9,6 +9,44 @@ const SUPABASE_READY = Boolean(
   !window.SUPABASE_URL.includes('PASTE_') &&
   !window.SUPABASE_ANON_KEY.includes('PASTE_')
 );
+import React, { useEffect, useState } from 'react';
+import { View, Image } from 'react-native';
+
+const frames = [
+  require('./Assets/Animations/star1.png'),
+  require('./Assets/Animations/star2.png'),
+  require('./Assets/Animations/star3.png'),
+];
+
+export default function App() {
+  const [frame, setFrame] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFrame((prev) => (prev + 1) % frames.length);
+    }, 300);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <Image
+        source={frames[frame]}
+        style={{
+          width: 200,
+          height: 200,
+        }}
+      />
+    </View>
+  );
+}
 
 const supabaseClient = SUPABASE_READY
   ? window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
