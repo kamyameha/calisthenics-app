@@ -203,6 +203,10 @@ button, .import-label {
   box-shadow: 0 12px 36px rgba(1, 45, 237, 0.12);
 }
 
+.bottom-nav.is-hidden {
+  display: none;
+}
+
 .nav-btn {
   background: transparent;
   color: var(--main);
