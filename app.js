@@ -276,7 +276,8 @@ const energyOptions = {
     exerciseCount: 4,
     setMultiplier: 1,
     repMultiplier: 1,
-    levelShift: 0
+    levelShift: 0,
+    icon: 'Assets/Energy/great-icon.png'
   },
   normal: {
     label: 'Normal',
@@ -286,7 +287,8 @@ const energyOptions = {
     exerciseCount: 4,
     setMultiplier: 0.8,
     repMultiplier: 0.85,
-    levelShift: 0
+    levelShift: 0,
+    icon: 'Assets/Energy/normal-icon.png'
   },
   tired: {
     label: 'Tired',
@@ -296,7 +298,8 @@ const energyOptions = {
     exerciseCount: 3,
     setMultiplier: 0.8,
     repMultiplier: 0.85,
-    levelShift: 0
+    levelShift: 0,
+    icon: 'Assets/Energy/tired-icon.png'
   },
   exhausted: {
     label: 'Exhausted',
@@ -306,7 +309,8 @@ const energyOptions = {
     exerciseCount: 3,
     setMultiplier: 0.55,
     repMultiplier: 0.65,
-    levelShift: -1
+    levelShift: -1,
+    icon: 'Assets/Energy/exhaustive-icon.png'
   }
 };
 
@@ -683,6 +687,8 @@ function renderSelectedEnergy() {
   document.getElementById('selectedEnergyCard').classList.remove('hidden');
   document.getElementById('generatedWorkoutCard').classList.add('hidden');
   document.getElementById('exercisePreview').classList.add('hidden');
+  const mascot = document.getElementById('selectedEnergyMascot');
+  if (mascot) mascot.src = option.icon || 'Assets/Energy/normal-icon.png';
   document.getElementById('selectedEnergyTitle').textContent = option.title;
   document.getElementById('selectedEnergyDescription').textContent = option.description;
 }
@@ -696,6 +702,8 @@ function generateWorkout() {
 
 function renderGeneratedWorkout() {
   const generated = state.generated || getTodayWorkout('normal');
+  document.getElementById('energyCard').classList.add('hidden');
+  document.getElementById('selectedEnergyCard').classList.add('hidden');
   document.getElementById('generatedWorkoutCard').classList.remove('hidden');
   document.getElementById('exercisePreview').classList.remove('hidden');
   document.getElementById('workoutName').textContent = generated.workoutName;
@@ -1417,6 +1425,12 @@ document.addEventListener('click', event => {
   }
 
   if (event.target.id === 'generateWorkoutBtn') generateWorkout();
+  if (event.target.id === 'regenerateWorkoutBtn') {
+    state.generated = null;
+    state.selectedEnergy = null;
+    saveState();
+    renderToday();
+  }
   if (event.target.id === 'startWorkoutBtn') startWorkout();
 
   if (event.target.matches('input[type="checkbox"][data-set-index]')) {

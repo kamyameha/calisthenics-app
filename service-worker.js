@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calisthenics-pwa-v6-admin-dashboard';
+const CACHE_NAME = 'calisthenics-pwa-v7-energy-flow';
 const ASSETS = ['./', './index.html', './style.css', './app.js', './manifest.json'];
 
 self.addEventListener('install', event => {
