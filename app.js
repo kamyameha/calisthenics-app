@@ -856,9 +856,9 @@ function renderGoals() {
 
   const journey = document.getElementById('pullupJourney');
   journey.innerHTML = `
-    <div class="journey-summary current-stage"><p class="eyebrow">Current stage</p><strong>${current.name}</strong><span>${current.prescription}</span></div>
-    <div class="journey-summary"><p class="eyebrow">Next milestone</p><strong>${level >= track.length - 1 ? 'Goal unlocked' : next.name}</strong><span>${level >= track.length - 1 ? 'Keep training and consolidate.' : next.prescription}</span></div>
-    <div class="journey-summary"><p class="eyebrow">Completed</p><strong>${level === 0 ? 'Starting now' : `${level} milestone${level > 1 ? 's' : ''} completed`}</strong><span>${level === 0 ? 'Your first milestone is in progress.' : track.slice(0, level).map(s => s.name).join(' · ')}</span></div>
+    <div class="journey-summary current-stage"><div><p class="eyebrow">Current stage</p><strong>${current.name}</strong><span>${current.prescription}</span></div><em>Now</em></div>
+    <div class="journey-summary"><div><p class="eyebrow">Next milestone</p><strong>${level >= track.length - 1 ? 'Goal unlocked' : next.name}</strong><span>${level >= track.length - 1 ? 'Keep training and consolidate.' : next.prescription}</span></div><em>Next</em></div>
+    <div class="journey-summary"><div><p class="eyebrow">Completed</p><strong>${level === 0 ? 'Starting now' : `${level} milestone${level > 1 ? 's' : ''} completed`}</strong><span>${level === 0 ? 'Your first milestone is in progress.' : track.slice(0, level).map(s => s.name).join(' · ')}</span></div><em>${level}/${track.length}</em></div>
   `;
 
   const skills = [
