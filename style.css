@@ -1397,3 +1397,212 @@ h2,
   bottom: calc(20px + env(safe-area-inset-bottom));
 }
 
+
+/* Final layout correction pass 2026-06-16 */
+html,
+body {
+  background: #f7f7f7 !important;
+}
+
+/* Keep the app header at the original compact height on logged-in screens */
+.app {
+  padding-top: 24px;
+}
+
+.topbar,
+.logged-out .topbar {
+  margin-bottom: 42px;
+}
+
+/* Welcome/auth CTA alignment */
+.welcome-screen {
+  padding: 24px 18px calc(32px + env(safe-area-inset-bottom));
+}
+
+.welcome-inner {
+  min-height: calc(100dvh - 56px - env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+}
+
+.welcome-star {
+  width: min(359px, 88vw);
+  height: min(359px, 88vw);
+  margin: 0 auto;
+}
+
+.welcome-copy {
+  align-self: end;
+  margin-top: 0;
+  margin-bottom: 44px;
+}
+
+.welcome-copy h1,
+#loggedOutAccount h2,
+#energyCard h2,
+.account-panel h2,
+.account-modal-header h2,
+.hero-card h2 {
+  font-size: 24px !important;
+  line-height: 1.08;
+}
+
+.welcome-copy p,
+#loggedOutAccount .muted,
+.muted,
+.muted-light {
+  font-size: 16px !important;
+  line-height: 1.28;
+}
+
+.welcome-next {
+  margin-top: 0;
+  margin-bottom: 68px;
+}
+
+.logged-out .app {
+  min-height: 100dvh;
+  padding-top: 24px;
+  padding-bottom: calc(32px + env(safe-area-inset-bottom));
+}
+
+.logged-out #loggedOutAccount {
+  min-height: calc(100dvh - 24px - 18px - 42px - 32px - env(safe-area-inset-bottom));
+}
+
+.logged-out #authWelcome,
+.logged-out #authLoginForm {
+  min-height: inherit;
+  display: grid;
+  grid-template-rows: auto auto auto auto auto 52px auto;
+}
+
+.logged-out #authLoginForm {
+  grid-template-rows: auto auto auto auto auto 52px auto;
+}
+
+.logged-out #authWelcome.hidden,
+.logged-out #authLoginForm.hidden,
+.logged-out #authResetForm.hidden {
+  display: none !important;
+}
+
+#loggedOutAccount .text-input,
+#loggedOutAccount .password-field {
+  margin-bottom: 14px;
+}
+
+.logged-out .account-submit {
+  margin-top: auto;
+  align-self: end;
+}
+
+.logged-out .auth-switch {
+  margin-top: 34px;
+  padding-top: 0;
+  padding-bottom: 0;
+  align-self: start;
+}
+
+#authLoginForm .text-btn {
+  align-self: start;
+  justify-self: start;
+  margin: 0 0 28px;
+}
+
+/* Energy check: direct page content and exact square buttons */
+#energyCard.card {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.energy-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 172px);
+  gap: 12px;
+  justify-content: center;
+  margin-top: 34px;
+}
+
+.energy-option {
+  width: 172px;
+  height: 172px;
+  min-height: 172px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
+/* Selected energy: top-aligned, square mascot panel */
+.selected-energy-stack {
+  margin-top: 0;
+}
+
+.selected-energy-mascot-card {
+  width: min(353px, 100%);
+  max-width: 353px;
+  height: auto;
+  aspect-ratio: 1 / 1;
+}
+
+.selected-energy-mascot {
+  width: 92%;
+  height: 92%;
+  object-fit: contain;
+}
+
+.selected-back-btn,
+.workout-regenerate-btn,
+#authLoginForm .text-btn,
+.account-view > .text-btn {
+  font-size: 16px !important;
+  line-height: 1.2;
+  font-weight: 900 !important;
+  text-decoration: none;
+}
+
+/* Generated workout: regenerate link above title, no huge empty button-like gap */
+.generated-workout-hero {
+  gap: 12px;
+}
+
+.workout-regenerate-btn {
+  color: #fff;
+  justify-self: start;
+  margin: 0 0 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.generated-workout-hero .hero-action {
+  margin-top: 18px;
+}
+
+/* Account modal: prevent broken/visible background and start panels at the top */
+.account-panel.account-modal {
+  background: #f7f7f7 !important;
+  align-items: flex-start;
+  padding: calc(24px + env(safe-area-inset-top)) 18px calc(24px + env(safe-area-inset-bottom));
+}
+
+.account-modal-content {
+  max-height: calc(100dvh - 48px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  border-radius: 20px !important;
+}
+
+#accountHistoryView {
+  padding-top: 0;
+}
+
+.history-header {
+  margin-top: 10px;
+}
+
+/* Bottom nav breathing room */
+.bottom-nav {
+  bottom: calc(20px + env(safe-area-inset-bottom)) !important;
+}

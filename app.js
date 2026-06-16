@@ -1119,6 +1119,10 @@ function showAccountView(view) {
   if (title) title.textContent = titles[view] || 'Account';
   const closeBtn = document.getElementById('closeAccountModalBtn');
   if (closeBtn) closeBtn.classList.toggle('hidden', view !== 'main');
+  const panel = document.getElementById('accountPanel');
+  const content = document.getElementById('loggedInAccount');
+  if (panel) panel.scrollTop = 0;
+  if (content) content.scrollTop = 0;
   if (view === 'goal') populateAccountGoal();
   if (view === 'equipment') populateAccountEquipment();
   if (view === 'history') renderAccountHistory();
