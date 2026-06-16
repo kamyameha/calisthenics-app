@@ -1214,3 +1214,186 @@ h3 {
   box-shadow: 0 10px 28px rgba(1, 45, 237, 0.05);
   padding: 18px;
 }
+
+/* Final Figma polish fixes */
+.app {
+  padding-top: 24px;
+  padding-bottom: 128px;
+}
+
+.topbar {
+  margin-bottom: 42px;
+}
+
+.logged-out .topbar {
+  margin-bottom: 112px;
+}
+
+h1,
+h2,
+.account-panel h2,
+.hero-card h2,
+.welcome-copy h1,
+#loggedOutAccount h2 {
+  font-size: 24px;
+  line-height: 1.08;
+}
+
+.muted,
+.muted-light,
+.welcome-copy p,
+#loggedOutAccount .muted {
+  font-size: 16px;
+  line-height: 1.28;
+}
+
+/* Welcome screen: bigger star, no scroll, stable bottom CTA */
+.welcome-screen {
+  padding: 24px 18px calc(32px + env(safe-area-inset-bottom));
+  overflow: hidden;
+}
+
+.welcome-inner {
+  min-height: calc(100dvh - 56px - env(safe-area-inset-bottom));
+  padding: 0;
+}
+
+.welcome-star {
+  width: min(359px, 88vw);
+  height: min(359px, 88vw);
+  margin: 0 auto 28px;
+}
+
+.welcome-copy {
+  margin-top: auto;
+}
+
+.welcome-copy h1 {
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+
+.welcome-copy p {
+  margin-bottom: 44px;
+  opacity: 1;
+}
+
+/* Auth screens: keep CTA level aligned with welcome */
+.logged-out .app {
+  min-height: 100dvh;
+  padding-top: 24px;
+  padding-bottom: calc(32px + env(safe-area-inset-bottom));
+}
+
+.logged-out #loggedOutAccount {
+  min-height: calc(100dvh - 24px - 18px - 18px - 112px - 32px - env(safe-area-inset-bottom));
+}
+
+.logged-out #authWelcome,
+.logged-out #authLoginForm {
+  min-height: inherit;
+}
+
+.logged-out .account-submit {
+  margin-top: auto;
+}
+
+.logged-out .auth-switch {
+  margin-top: 34px;
+  padding-top: 0;
+}
+
+#authLoginForm .text-btn {
+  align-self: flex-start;
+  margin-bottom: 28px;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+/* Energy check should be content directly on the page, not a bento box */
+#energyCard.card {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  margin-bottom: 0;
+}
+
+#energyCard h2 {
+  font-size: 24px;
+}
+
+.energy-grid {
+  gap: 12px;
+  margin-top: 34px;
+}
+
+.energy-option {
+  min-height: 136px;
+  border-radius: 20px !important;
+}
+
+/* Selected energy: square mascot panel and account-style back link */
+.selected-energy-mascot-card {
+  width: 100%;
+  max-width: 353px;
+  aspect-ratio: 1 / 1;
+  min-height: 0;
+  height: auto;
+  padding: 0;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.selected-energy-mascot {
+  width: 88%;
+  height: 88%;
+  object-fit: contain;
+}
+
+.selected-back-btn,
+#authLoginForm .text-btn,
+.account-view > .text-btn {
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.2;
+  text-decoration: none;
+}
+
+.selected-workout-preview .selected-back-btn {
+  color: #ffffff;
+  align-self: flex-start;
+  margin-bottom: 18px;
+}
+
+/* Generated workout: put regenerate action as a small link above the workout title */
+.generated-workout-hero {
+  display: grid;
+  gap: 12px;
+}
+
+.workout-regenerate-btn {
+  color: #ffffff;
+  text-align: left;
+  justify-self: start;
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.generated-workout-hero .hero-action {
+  margin-top: 26px;
+}
+
+.generated-workout-hero .muted-light,
+.generated-workout-hero h2,
+.generated-workout-hero p {
+  margin-bottom: 0;
+}
+
+/* Bottom nav safe spacing */
+.bottom-nav {
+  bottom: calc(20px + env(safe-area-inset-bottom));
+}
+

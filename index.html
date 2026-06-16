@@ -253,19 +253,19 @@
           <img id="selectedEnergyMascot" class="selected-energy-mascot" src="Assets/Energy/normal-icon.png" alt="" aria-hidden="true" />
         </div>
         <div class="hero-card selected-workout-preview">
-          <button class="text-btn selected-back-btn" id="changeEnergyBtn" type="button">Back</button>
+          <button class="text-btn selected-back-btn" id="changeEnergyBtn" type="button">← Back</button>
           <h2 id="selectedWorkoutName">Push</h2>
           <p id="selectedWorkoutMeta">4 exercises · Full volume</p>
           <button class="hero-action" id="generateWorkoutBtn" type="button">Generate today's workout</button>
         </div>
       </section>
 
-      <section id="generatedWorkoutCard" class="hero-card hidden">
+      <section id="generatedWorkoutCard" class="hero-card generated-workout-hero hidden">
+        <button class="text-btn workout-regenerate-btn" id="regenerateWorkoutBtn" type="button">↻ Generate new workout</button>
         <p class="muted-light">Today's workout</p>
         <h2 id="workoutName">Push</h2>
         <p id="workoutMeta">20 min · Standard Mode</p>
         <button class="hero-action" id="startWorkoutBtn">Start Workout</button>
-        <button class="hero-action hero-action-secondary" id="regenerateWorkoutBtn">Generate New Workout</button>
       </section>
 
       <section id="exercisePreview" class="card hidden">

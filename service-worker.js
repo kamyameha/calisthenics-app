@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calisthenics-pwa-v8-figma-polish';
+const CACHE_NAME = 'calisthenics-pwa-v9-final-polish';
 const ASSETS = ['./', './index.html', './style.css', './app.js', './manifest.json'];
 
 self.addEventListener('install', event => {
