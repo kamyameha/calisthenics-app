@@ -2092,3 +2092,55 @@ html, body { background: #f7f7f7 !important; }
   margin-bottom: 12px !important;
 }
 
+
+/* v5 targeted welcome/auth alignment fixes */
+/* Keep auth footer links centered */
+.logged-out #authWelcome .auth-switch,
+.logged-out #authLoginForm .auth-switch {
+  text-align: center !important;
+  margin: 60px auto 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+}
+
+/* Welcome CTA sits near the bottom like the bottom navigation */
+.welcome-screen {
+  padding: 24px var(--screen-x) calc(20px + env(safe-area-inset-bottom)) !important;
+  overflow: hidden !important;
+}
+
+.welcome-inner {
+  min-height: calc(100dvh - 24px - 20px - env(safe-area-inset-bottom)) !important;
+  position: relative !important;
+}
+
+.welcome-next {
+  position: fixed !important;
+  left: var(--screen-x) !important;
+  right: var(--screen-x) !important;
+  bottom: calc(20px + env(safe-area-inset-bottom)) !important;
+  width: auto !important;
+  height: 52px !important;
+  min-height: 52px !important;
+  padding: 0 18px !important;
+  margin: 0 !important;
+  border-radius: 20px !important;
+  z-index: 20 !important;
+}
+
+/* Keep a consistent 60px gap between welcome paragraph and CTA */
+.welcome-copy {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: calc(20px + 52px + 60px + env(safe-area-inset-bottom)) !important;
+  margin: 0 !important;
+}
+
+.welcome-copy h1 {
+  margin: 0 0 12px !important;
+}
+
+.welcome-copy p {
+  margin: 0 !important;
+}
