@@ -905,3 +905,312 @@ button, .import-label {
   border-color: rgba(255,255,255,0.72);
   margin-top: 10px;
 }
+
+/* Figma alignment pass */
+html,
+body {
+  background: #f7f7f7;
+}
+
+:root {
+  --radius: 20px;
+}
+
+.app {
+  padding: 56px 18px 104px;
+}
+
+.topbar {
+  align-items: center;
+  margin-bottom: 42px;
+}
+
+.brand-logo {
+  width: 134px;
+  height: 18px;
+  object-fit: contain;
+}
+
+#screenTitle {
+  display: none !important;
+}
+
+#accountBtn {
+  margin-top: 0;
+  align-self: center;
+}
+
+.card,
+.hero-card,
+.exercise-card,
+.text-input,
+.option-row,
+.journey-summary,
+.set-row,
+.account-modal-content,
+.account-list-btn,
+.admin-user-row,
+.history-day,
+.energy-option,
+.welcome-next,
+button,
+.import-label,
+.hero-action,
+.bottom-nav,
+.nav-btn {
+  border-radius: var(--radius) !important;
+}
+
+.bottom-nav {
+  border-radius: 999px !important;
+}
+
+.card,
+.hero-card,
+.exercise-card {
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+h1,
+h2,
+.account-panel h2,
+.hero-card h2,
+.welcome-copy h1 {
+  font-size: 22px;
+  line-height: 1.08;
+  font-weight: 900;
+}
+
+h3 {
+  font-size: 18px;
+}
+
+/* Welcome/auth screens */
+.welcome-screen {
+  background: #f7f7f7;
+  padding: 56px 18px calc(56px + env(safe-area-inset-bottom));
+}
+
+.welcome-inner {
+  min-height: calc(100dvh - 112px - env(safe-area-inset-bottom));
+  padding: 0;
+  max-width: 560px;
+}
+
+.welcome-star {
+  width: min(276px, 74vw);
+  height: min(276px, 74vw);
+  margin: 0 auto 48px;
+}
+
+.welcome-copy {
+  margin-top: auto;
+}
+
+.welcome-copy h1 {
+  margin-bottom: 8px;
+}
+
+.welcome-copy p {
+  font-size: 14px;
+  line-height: 1.25;
+  margin-bottom: 48px;
+  opacity: 1;
+}
+
+.welcome-next,
+.account-submit,
+.primary-btn {
+  min-height: 52px;
+}
+
+#loggedOutAccount h2 {
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+
+#loggedOutAccount .muted {
+  font-size: 14px;
+  line-height: 1.25;
+  margin-bottom: 36px;
+}
+
+#loggedOutAccount .text-input,
+#loggedOutAccount .password-field {
+  margin-bottom: 14px;
+}
+
+#loggedOutAccount .password-field .text-input {
+  margin: 0;
+}
+
+.auth-switch {
+  margin-top: 44px;
+  font-size: 14px;
+}
+
+/* Energy check: text bento cards */
+.energy-grid {
+  gap: 10px;
+  margin-top: 36px;
+}
+
+.energy-option {
+  min-height: 136px;
+  background: var(--main);
+  color: #ffffff;
+  border-color: var(--main);
+  box-shadow: none;
+}
+
+.energy-option img {
+  display: none;
+}
+
+.energy-option span {
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.energy-option:active,
+.energy-option.selected {
+  background: var(--main);
+  color: #ffffff;
+  border-color: var(--main);
+}
+
+/* Selected energy preview */
+.selected-energy-stack {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.selected-energy-stack.hidden {
+  display: none !important;
+}
+
+.selected-energy-mascot-card {
+  position: relative;
+  min-height: 280px;
+  display: grid;
+  place-items: center;
+}
+
+.energy-pill {
+  position: absolute;
+  left: 18px;
+  top: 14px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 4px 16px;
+  border-radius: 999px;
+  background: var(--main);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.selected-energy-mascot {
+  width: min(250px, 68vw);
+  height: min(250px, 68vw);
+  margin: 0 auto;
+}
+
+.selected-workout-preview {
+  display: grid;
+  gap: 8px;
+}
+
+.selected-workout-preview .text-btn,
+.selected-back-btn {
+  color: #ffffff;
+  text-align: left;
+  margin: 0 0 10px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.selected-workout-preview h2 {
+  margin: 0;
+}
+
+.selected-workout-preview p {
+  margin-bottom: 18px;
+}
+
+.selected-workout-preview .hero-action {
+  margin-top: 8px;
+}
+
+.hero-action-secondary {
+  margin-top: 10px;
+  background: transparent;
+  color: var(--main);
+  border-color: var(--border);
+}
+
+/* Remove nested-card feeling where possible */
+#generatedWorkoutCard + #exercisePreview {
+  margin-top: 0;
+}
+
+.logged-out .app {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.logged-out .topbar {
+  margin-bottom: 148px;
+}
+
+.logged-out #accountPanel:not(.account-modal) {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+}
+
+.logged-out #loggedOutAccount {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 56px - 18px - 104px - 148px);
+}
+
+.logged-out #authWelcome,
+.logged-out #authLoginForm {
+  display: flex;
+  flex-direction: column;
+  min-height: inherit;
+}
+
+.logged-out #authWelcome.hidden,
+.logged-out #authLoginForm.hidden,
+.logged-out #authResetForm.hidden {
+  display: none !important;
+}
+
+.logged-out .account-submit {
+  margin-top: 22px;
+}
+
+.logged-out .auth-switch {
+  margin-top: auto;
+  padding-top: 44px;
+  padding-bottom: 0;
+}
+
+.logged-out #authLoginForm .auth-switch {
+  margin-top: auto;
+}
+
+.password-recovery-mode #accountPanel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 28px rgba(1, 45, 237, 0.05);
+  padding: 18px;
+}

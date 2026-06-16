@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#012ded" />
+  <meta name="theme-color" content="#f7f7f7" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>Somthingreat</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,7 +22,7 @@
       <img id="welcomeStar" class="welcome-star" src="Assets/Animations/start1.png" alt="Somthingreat star" />
 
       <div class="welcome-copy">
-        <h1>Just show up. We'll handle the rest.</h1>
+        <h1>Just show up.<br>We'll handle the rest.</h1>
         <p>Somthingreat removes the decision fatigue from calisthenics. Open the app, follow today's workout, and keep making progress.</p>
       </div>
 
@@ -33,7 +34,6 @@
     <header class="topbar">
       <div class="brand-block">
         <img src="somthingreat.svg" alt="Somthingreat" class="brand-logo" />
-        <h1 id="screenTitle">Today</h1>
       </div>
       <button id="accountBtn" class="ghost-btn compact">Account</button>
     </header>
@@ -41,8 +41,8 @@
     <section id="accountPanel" class="card account-panel">
       <div id="loggedOutAccount">
         <div id="authWelcome">
-          <h2>Just show up. We'll handle the rest.</h2>
-          <p class="muted">Somthingreat removes the decision fatigue from calisthenics. Open the app, follow today's workout, and keep making progress.</p>
+          <h2>Welcome!</h2>
+          <p class="muted">Create an account so your progress can be saved.</p>
           <input id="signupEmailInput" class="text-input" type="email" placeholder="Email" autocomplete="email" />
           <div class="password-field">
             <input id="signupPasswordInput" class="text-input" type="password" placeholder="Password" autocomplete="new-password" />
@@ -58,8 +58,8 @@
 
         <div id="authLoginForm" class="hidden">
           <button id="backToAuthWelcomeFromLogin" class="text-btn" type="button">← Back</button>
-          <h2>Log in</h2>
-          <p class="muted">Welcome back. Your progress will load after login.</p>
+          <h2>Welcome back!</h2>
+          <p class="muted">Your progress will load after login.</p>
           <input id="loginEmailInput" class="text-input" type="email" placeholder="Email" autocomplete="email" />
           <div class="password-field">
             <input id="loginPasswordInput" class="text-input" type="password" placeholder="Password" autocomplete="current-password" />
@@ -240,32 +240,23 @@
         <h2>Energy check</h2>
         <p class="muted">How's your energy today? We'll adjust today's workout intensity.</p>
         <div class="energy-grid" role="group" aria-label="Choose your energy level">
-          <button class="feel-btn energy-option" type="button" data-feel="great">
-            <img src="Assets/Energy/great-icon.png" alt="" aria-hidden="true" />
-            <span>Great</span>
-          </button>
-          <button class="feel-btn energy-option" type="button" data-feel="normal">
-            <img src="Assets/Energy/normal-icon.png" alt="" aria-hidden="true" />
-            <span>Normal</span>
-          </button>
-          <button class="feel-btn energy-option" type="button" data-feel="tired">
-            <img src="Assets/Energy/tired-icon.png" alt="" aria-hidden="true" />
-            <span>Tired</span>
-          </button>
-          <button class="feel-btn energy-option" type="button" data-feel="exhausted">
-            <img src="Assets/Energy/exhaustive-icon.png" alt="" aria-hidden="true" />
-            <span>Exhausted</span>
-          </button>
+          <button class="feel-btn energy-option" type="button" data-feel="great"><span>Great</span></button>
+          <button class="feel-btn energy-option" type="button" data-feel="normal"><span>Normal</span></button>
+          <button class="feel-btn energy-option" type="button" data-feel="tired"><span>Tired</span></button>
+          <button class="feel-btn energy-option" type="button" data-feel="exhausted"><span>Exhausted</span></button>
         </div>
       </section>
 
-      <section id="selectedEnergyCard" class="card selected-energy-card hidden">
-        <img id="selectedEnergyMascot" class="selected-energy-mascot" src="Assets/Energy/normal-icon.png" alt="" aria-hidden="true" />
-        <h2 id="selectedEnergyTitle">Normal</h2>
-        <p class="muted" id="selectedEnergyDescription">Standard workout · estimated duration 20 min.</p>
-        <div class="button-row">
-          <button class="primary-btn" id="generateWorkoutBtn">Generate Today's Workout</button>
-          <button class="ghost-btn" id="changeEnergyBtn">Change</button>
+      <section id="selectedEnergyCard" class="selected-energy-stack hidden">
+        <div class="card selected-energy-mascot-card">
+          <span id="selectedEnergyPill" class="energy-pill">Normal</span>
+          <img id="selectedEnergyMascot" class="selected-energy-mascot" src="Assets/Energy/normal-icon.png" alt="" aria-hidden="true" />
+        </div>
+        <div class="hero-card selected-workout-preview">
+          <button class="text-btn selected-back-btn" id="changeEnergyBtn" type="button">Back</button>
+          <h2 id="selectedWorkoutName">Push</h2>
+          <p id="selectedWorkoutMeta">4 exercises · Full volume</p>
+          <button class="hero-action" id="generateWorkoutBtn" type="button">Generate today's workout</button>
         </div>
       </section>
 

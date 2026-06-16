@@ -540,10 +540,23 @@ function togglePasswordVisibility(button) {
   const inputId = button?.dataset?.togglePassword;
   const input = inputId ? document.getElementById(inputId) : null;
   if (!input || !button) return;
+
+  const cursorStart = input.selectionStart;
+  const cursorEnd = input.selectionEnd;
   const isHidden = input.type === 'password';
+
   input.type = isHidden ? 'text' : 'password';
   button.textContent = isHidden ? 'Hide' : 'Show';
   button.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+
+  // Mobile browsers often drop focus when the input type changes.
+  // Re-focus immediately so the keyboard stays open.
+  window.requestAnimationFrame(() => {
+    input.focus({ preventScroll: true });
+    if (cursorStart !== null && cursorEnd !== null) {
+      try { input.setSelectionRange(cursorStart, cursorEnd); } catch (_) {}
+    }
+  });
 }
 
 
@@ -683,14 +696,24 @@ function selectEnergy(feel) {
 
 function renderSelectedEnergy() {
   const option = energyOptions[state.selectedEnergy || 'normal'];
+  const previewWorkout = getTodayWorkout(option.mode);
+
   document.getElementById('energyCard').classList.add('hidden');
   document.getElementById('selectedEnergyCard').classList.remove('hidden');
   document.getElementById('generatedWorkoutCard').classList.add('hidden');
   document.getElementById('exercisePreview').classList.add('hidden');
+
   const mascot = document.getElementById('selectedEnergyMascot');
   if (mascot) mascot.src = option.icon || 'Assets/Energy/normal-icon.png';
-  document.getElementById('selectedEnergyTitle').textContent = option.title;
-  document.getElementById('selectedEnergyDescription').textContent = option.description;
+
+  const pill = document.getElementById('selectedEnergyPill');
+  if (pill) pill.textContent = option.title;
+
+  const workoutName = document.getElementById('selectedWorkoutName');
+  if (workoutName) workoutName.textContent = previewWorkout.workoutName;
+
+  const workoutMeta = document.getElementById('selectedWorkoutMeta');
+  if (workoutMeta) workoutMeta.textContent = modeLabel(previewWorkout.mode).replace(/^\w+ · /, '');
 }
 
 function generateWorkout() {
@@ -1402,10 +1425,21 @@ async function logout() {
   currentProfileId = null;
   passwordRecoveryMode = false;
   clearAuthFields();
+  welcomeDismissed = false;
   setAuthMode('welcome');
   renderAll();
 }
 
+
+document.addEventListener('mousedown', event => {
+  if (event.target.matches('[data-toggle-password]')) event.preventDefault();
+});
+
+document.addEventListener('touchend', event => {
+  if (!event.target.matches('[data-toggle-password]')) return;
+  event.preventDefault();
+  togglePasswordVisibility(event.target);
+}, { passive: false });
 
 document.addEventListener('click', event => {
   if (event.target.id === 'welcomeNextBtn') {
@@ -1488,7 +1522,8 @@ document.addEventListener('click', event => {
     event.target.classList.add('active');
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(event.target.dataset.screen).classList.add('active');
-    document.getElementById('screenTitle').textContent = event.target.textContent;
+    const title = document.getElementById('screenTitle');
+    if (title) title.textContent = event.target.textContent;
     renderGoals();
     renderProgress();
   }
