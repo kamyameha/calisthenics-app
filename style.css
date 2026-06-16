@@ -1951,3 +1951,153 @@ html, body { background: #f7f7f7 !important; }
   font-size: 14px !important;
   line-height: 1 !important;
 }
+
+
+/* v4.3 final auth layout repair */
+/* Undo the v4.1 oversized CTA/toggle side effects and keep only the intended positions. */
+.welcome-next,
+.logged-out #authWelcome .account-submit,
+.logged-out #authLoginForm .account-submit,
+.account-submit {
+  min-height: 52px !important;
+  height: 52px !important;
+  padding: 13px 16px !important;
+  border-radius: 20px !important;
+  line-height: 1.1 !important;
+}
+
+/* Welcome: CTA 60px from bottom; text block kept 38px above CTA. */
+.welcome-next {
+  position: fixed !important;
+  left: var(--screen-x) !important;
+  right: var(--screen-x) !important;
+  bottom: calc(60px + env(safe-area-inset-bottom)) !important;
+  width: auto !important;
+  margin: 0 !important;
+}
+.welcome-copy {
+  bottom: calc(60px + 52px + 38px + env(safe-area-inset-bottom)) !important;
+}
+.welcome-copy p {
+  margin: 0 !important;
+}
+
+/* Auth forms: keep content high enough so fields never sit behind the fixed CTA. */
+.logged-out #authWelcome,
+.logged-out #authLoginForm {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: auto !important;
+  padding-top: 210px !important;
+  position: static !important;
+}
+
+/* Login back button: normal in-flow placement, aligned left, same style as account modal back links. */
+#authLoginForm .text-btn {
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  width: max-content !important;
+  margin: 0 0 54px 0 !important;
+  padding: 0 !important;
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  line-height: 1.2 !important;
+  text-align: left !important;
+  color: var(--main) !important;
+}
+#authLoginForm h2 {
+  margin-top: 0 !important;
+}
+
+/* Auth text rhythm */
+#loggedOutAccount h2 {
+  margin: 0 0 12px !important;
+}
+#loggedOutAccount .muted {
+  margin: 0 0 38px !important;
+}
+
+/* Auth fields: restore normal height and make show/hide sit inside the field. */
+#loggedOutAccount .text-input,
+#loggedOutAccount .password-field {
+  height: 52px !important;
+  min-height: 52px !important;
+  margin: 0 0 16px !important;
+  border-radius: 20px !important;
+}
+#loggedOutAccount .text-input {
+  width: 100% !important;
+  padding: 0 16px !important;
+  font-size: 16px !important;
+  line-height: 52px !important;
+}
+#loggedOutAccount .password-field {
+  position: relative !important;
+  display: block !important;
+}
+#loggedOutAccount .password-field .text-input {
+  width: 100% !important;
+  margin: 0 !important;
+  padding-right: 88px !important;
+}
+#loggedOutAccount .password-toggle {
+  position: absolute !important;
+  right: 8px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 68px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 !important;
+  border-radius: 18px !important;
+  display: grid !important;
+  place-items: center !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+  background: #fff !important;
+}
+
+/* Auth CTAs remain at the Figma level. */
+.logged-out #authWelcome .account-submit,
+.logged-out #authLoginForm .account-submit {
+  position: fixed !important;
+  left: var(--screen-x) !important;
+  right: var(--screen-x) !important;
+  bottom: calc(224px + env(safe-area-inset-bottom)) !important;
+  width: auto !important;
+  margin: 0 !important;
+  z-index: 30 !important;
+}
+.logged-out #authWelcome .auth-switch,
+.logged-out #authLoginForm .auth-switch {
+  position: fixed !important;
+  left: var(--screen-x) !important;
+  right: var(--screen-x) !important;
+  bottom: calc(60px + env(safe-area-inset-bottom)) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: center !important;
+  z-index: 30 !important;
+}
+
+/* Auth messages: placed below CTA and above bottom helper link, so never behind fields or CTA. */
+.logged-out #authMessage {
+  position: fixed !important;
+  left: var(--screen-x) !important;
+  right: var(--screen-x) !important;
+  bottom: calc(138px + env(safe-area-inset-bottom)) !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 0 4px !important;
+  z-index: 35 !important;
+  text-align: center !important;
+  font-size: 14px !important;
+  line-height: 1.25 !important;
+  pointer-events: none !important;
+}
+.logged-out #authMessage:empty {
+  display: none !important;
+}
