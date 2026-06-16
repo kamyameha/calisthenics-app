@@ -485,6 +485,14 @@ function setSyncStatus(message) {
 function setAuthMessage(message, type = 'info') {
   const el = document.getElementById('authMessage');
   if (!el) return;
+  const activeAuthForm = document.querySelector('#loggedOutAccount > div:not(.hidden)');
+  const submit = activeAuthForm?.querySelector('.account-submit');
+  const switchLink = activeAuthForm?.querySelector('.auth-switch');
+  if (activeAuthForm && submit && el.parentElement !== activeAuthForm) {
+    activeAuthForm.insertBefore(el, switchLink || submit.nextSibling);
+  } else if (activeAuthForm && submit && el.previousElementSibling !== submit) {
+    activeAuthForm.insertBefore(el, switchLink || submit.nextSibling);
+  }
   el.textContent = message || '';
   el.dataset.type = type;
 }

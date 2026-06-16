@@ -128,7 +128,7 @@ button, .import-label {
   background: white;
   color: var(--main);
   border-color: white;
-  margin-top: 38px;
+  margin-top: 10px;
 }
 
 .preview-row {
@@ -402,7 +402,7 @@ button, .import-label {
 
 .auth-message {
   min-height: 20px;
-  margin: 16px 0 16px;
+  margin: 4px 0 0;
   font-size: 14px;
   font-weight: 700;
   opacity: 0.85;
@@ -460,7 +460,7 @@ button, .import-label {
 }
 
 .journey-summary + .journey-summary {
-  margin-top: 38px;
+  margin-top: 10px;
 }
 
 .journey-summary strong,
@@ -488,7 +488,7 @@ button, .import-label {
 
 .account-submit {
   width: 100%;
-  margin-top: 38px;
+  margin-top: 10px;
 }
 
 .text-btn {
@@ -498,13 +498,13 @@ button, .import-label {
   font: inherit;
   font-weight: 900;
   padding: 0;
-  margin: 0 0 2px;
+  margin: 0 0 12px;
   cursor: pointer;
 }
 
 
 .auth-switch {
-  margin: 60px 0 0;
+  margin: 28px 0 0;
   text-align: center;
   font-weight: 500;
 }
@@ -573,7 +573,7 @@ button, .import-label {
   font-size: 18px;
   line-height: 1.36;
   opacity: 0.78;
-  margin-bottom: 60px;
+  margin-bottom: 34px;
 }
 
 .welcome-next {
@@ -681,7 +681,7 @@ button, .import-label {
 
 .account-full-btn {
   width: 100%;
-  margin-top: 38px;
+  margin-top: 10px;
 }
 
 .history-header {
@@ -903,7 +903,7 @@ button, .import-label {
   background: transparent;
   color: white;
   border-color: rgba(255,255,255,0.72);
-  margin-top: 38px;
+  margin-top: 10px;
 }
 
 /* Figma alignment pass */
@@ -1195,17 +1195,17 @@ h3 {
 }
 
 .logged-out .account-submit {
-  margin-top: 38px;
+  margin-top: 22px;
 }
 
 .logged-out .auth-switch {
-  margin-top: 60px;
-  padding-top: 0;
+  margin-top: auto;
+  padding-top: 44px;
   padding-bottom: 0;
 }
 
 .logged-out #authLoginForm .auth-switch {
-  margin-top: 60px;
+  margin-top: auto;
 }
 
 .password-recovery-mode #accountPanel {
@@ -1599,7 +1599,7 @@ body {
 }
 
 .history-header {
-  margin-top: 38px;
+  margin-top: 10px;
 }
 
 /* Bottom nav breathing room */
@@ -1839,197 +1839,108 @@ html, body { background: #f7f7f7 !important; }
   border:none;
 }
 
-/* v4.2 precise auth layout fixes */
-/* Restore CTA internal sizing to the auth CTA baseline; only reposition welcome CTA. */
-.welcome-next,
-.logged-out #authWelcome .account-submit,
-.logged-out #authLoginForm .account-submit,
-.account-submit {
+
+/* v4.8 auth layout repair — flow-based, no CTA overlap */
+:root { --screen-x: 18px; }
+html, body { background: #f7f7f7 !important; }
+
+/* CTA baseline: keep the existing auth CTA height/padding */
+.account-submit,
+.welcome-next {
   min-height: 52px !important;
   height: 52px !important;
   padding: 13px 16px !important;
   border-radius: 20px !important;
   line-height: 1.1 !important;
+  box-sizing: border-box !important;
 }
 
-/* Welcome page: CTA is 60px from the outside bottom and text sits 38px above it. */
-.welcome-next {
-  position: fixed !important;
-  left: var(--screen-x) !important;
-  right: var(--screen-x) !important;
-  bottom: calc(60px + env(safe-area-inset-bottom)) !important;
-  width: auto !important;
-  margin: 0 !important;
+/* Welcome: keep CTA inside the normal layout with correct breathing room */
+.welcome-screen {
+  min-height: 100dvh !important;
+  overflow: hidden !important;
+  background: #f7f7f7 !important;
+  padding: 24px var(--screen-x) calc(60px + env(safe-area-inset-bottom)) !important;
+}
+.welcome-inner {
+  min-height: calc(100dvh - 84px - env(safe-area-inset-bottom)) !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+.welcome-star {
+  width: min(430px, 94vw) !important;
+  height: min(430px, 94vw) !important;
+  margin: 0 auto !important;
+  object-fit: contain !important;
 }
 .welcome-copy {
-  bottom: calc(60px + 52px + 38px + env(safe-area-inset-bottom)) !important;
+  margin-top: auto !important;
+  margin-bottom: 38px !important;
+}
+.welcome-copy h1 {
+  font-size: 24px !important;
+  line-height: 1.08 !important;
+  margin: 0 0 12px !important;
 }
 .welcome-copy p {
-  margin: 0 !important;
-}
-
-/* Auth CTAs keep the figma/auth-screen level and internal sizing. */
-.logged-out #authWelcome .account-submit,
-.logged-out #authLoginForm .account-submit {
-  position: fixed !important;
-  left: var(--screen-x) !important;
-  right: var(--screen-x) !important;
-  bottom: calc(224px + env(safe-area-inset-bottom)) !important;
-  width: auto !important;
-  margin: 0 !important;
-}
-.logged-out #authWelcome .auth-switch,
-.logged-out #authLoginForm .auth-switch {
-  position: fixed !important;
-  left: var(--screen-x) !important;
-  right: var(--screen-x) !important;
-  bottom: calc(60px + env(safe-area-inset-bottom)) !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  text-align: center !important;
-}
-
-/* Make login back sit with the login title, not floating alone high above it. */
-#authLoginForm .text-btn {
-  position: absolute !important;
-  left: var(--screen-x) !important;
-  top: 250px !important;
-  margin: 0 !important;
-  padding: 0 !important;
   font-size: 16px !important;
-  font-weight: 900 !important;
-  line-height: 1.2 !important;
-  text-align: left !important;
-}
-#authLoginForm h2 {
-  margin-top: 130px !important;
-}
-
-/* Error/success messages need a reserved visible area above the fixed CTA. */
-.logged-out #authMessage {
-  position: fixed !important;
-  left: var(--screen-x) !important;
-  right: var(--screen-x) !important;
-  bottom: calc(224px + 52px + 14px + env(safe-area-inset-bottom)) !important;
-  min-height: 34px !important;
+  line-height: 1.28 !important;
+  opacity: 1 !important;
   margin: 0 !important;
-  padding: 0 4px !important;
-  z-index: 40 !important;
-  text-align: center !important;
-  font-size: 14px !important;
-  line-height: 1.25 !important;
-  pointer-events: none !important;
 }
-.logged-out #authMessage:empty {
-  display: none !important;
-}
-
-/* Repair auth field and show/hide control size after v4.1. */
-#loggedOutAccount .text-input,
-#loggedOutAccount .password-field {
-  height: 52px !important;
-  min-height: 52px !important;
-  margin: 0 0 16px !important;
-  border-radius: 20px !important;
-}
-#loggedOutAccount .text-input {
-  padding: 0 16px !important;
-  font-size: 16px !important;
-  line-height: 52px !important;
-}
-#loggedOutAccount .password-field .text-input {
-  padding-right: 88px !important;
-}
-#loggedOutAccount .password-toggle {
-  width: 68px !important;
-  height: 36px !important;
-  right: 8px !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  padding: 0 !important;
-  border-radius: 18px !important;
-  font-size: 14px !important;
-  line-height: 1 !important;
-}
-
-
-/* v4.3 final auth layout repair */
-/* Undo the v4.1 oversized CTA/toggle side effects and keep only the intended positions. */
-.welcome-next,
-.logged-out #authWelcome .account-submit,
-.logged-out #authLoginForm .account-submit,
-.account-submit {
-  min-height: 52px !important;
-  height: 52px !important;
-  padding: 13px 16px !important;
-  border-radius: 20px !important;
-  line-height: 1.1 !important;
-}
-
-/* Welcome: CTA 60px from bottom; text block kept 38px above CTA. */
 .welcome-next {
-  position: fixed !important;
-  left: var(--screen-x) !important;
-  right: var(--screen-x) !important;
-  bottom: calc(60px + env(safe-area-inset-bottom)) !important;
-  width: auto !important;
-  margin: 0 !important;
-}
-.welcome-copy {
-  bottom: calc(60px + 52px + 38px + env(safe-area-inset-bottom)) !important;
-}
-.welcome-copy p {
+  position: static !important;
+  width: 100% !important;
   margin: 0 !important;
 }
 
-/* Auth forms: keep content high enough so fields never sit behind the fixed CTA. */
+/* Auth screens: no fixed buttons, no auto-pushing CTA into fields */
+.logged-out .app {
+  min-height: 100dvh !important;
+  padding: 24px var(--screen-x) calc(60px + env(safe-area-inset-bottom)) !important;
+  background: #f7f7f7 !important;
+}
+.logged-out .topbar { margin-bottom: 42px !important; }
+.logged-out #accountPanel.card {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.logged-out #loggedOutAccount { min-height: 0 !important; }
 .logged-out #authWelcome,
 .logged-out #authLoginForm {
   display: flex !important;
   flex-direction: column !important;
-  min-height: auto !important;
-  padding-top: 210px !important;
-  position: static !important;
+  min-height: 0 !important;
+  padding-top: 168px !important;
+  position: relative !important;
 }
+.logged-out #authWelcome.hidden,
+.logged-out #authLoginForm.hidden,
+.logged-out #authResetForm.hidden { display: none !important; }
 
-/* Login back button: normal in-flow placement, aligned left, same style as account modal back links. */
-#authLoginForm .text-btn {
-  position: static !important;
-  left: auto !important;
-  top: auto !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  width: max-content !important;
-  margin: 0 0 54px 0 !important;
-  padding: 0 !important;
-  font-size: 16px !important;
-  font-weight: 900 !important;
-  line-height: 1.2 !important;
-  text-align: left !important;
-  color: var(--main) !important;
-}
-#authLoginForm h2 {
-  margin-top: 0 !important;
-}
-
-/* Auth text rhythm */
 #loggedOutAccount h2 {
+  font-size: 24px !important;
+  line-height: 1.08 !important;
   margin: 0 0 12px !important;
 }
 #loggedOutAccount .muted {
+  font-size: 16px !important;
+  line-height: 1.28 !important;
   margin: 0 0 38px !important;
 }
-
-/* Auth fields: restore normal height and make show/hide sit inside the field. */
 #loggedOutAccount .text-input,
 #loggedOutAccount .password-field {
   height: 52px !important;
   min-height: 52px !important;
   margin: 0 0 16px !important;
   border-radius: 20px !important;
+  box-sizing: border-box !important;
 }
 #loggedOutAccount .text-input {
-  width: 100% !important;
   padding: 0 16px !important;
   font-size: 16px !important;
   line-height: 52px !important;
@@ -2040,8 +1951,9 @@ html, body { background: #f7f7f7 !important; }
 }
 #loggedOutAccount .password-field .text-input {
   width: 100% !important;
-  margin: 0 !important;
+  height: 52px !important;
   padding-right: 88px !important;
+  margin: 0 !important;
 }
 #loggedOutAccount .password-toggle {
   position: absolute !important;
@@ -2050,7 +1962,6 @@ html, body { background: #f7f7f7 !important; }
   transform: translateY(-50%) !important;
   width: 68px !important;
   height: 36px !important;
-  min-height: 36px !important;
   padding: 0 !important;
   border-radius: 18px !important;
   display: grid !important;
@@ -2060,114 +1971,91 @@ html, body { background: #f7f7f7 !important; }
   background: #fff !important;
 }
 
-/* Auth CTAs remain at the Figma level. */
-.logged-out #authWelcome .account-submit,
-.logged-out #authLoginForm .account-submit {
-  position: fixed !important;
-  left: var(--screen-x) !important;
-  right: var(--screen-x) !important;
-  bottom: calc(224px + env(safe-area-inset-bottom)) !important;
-  width: auto !important;
-  margin: 0 !important;
-  z-index: 30 !important;
-}
-.logged-out #authWelcome .auth-switch,
-.logged-out #authLoginForm .auth-switch {
-  position: fixed !important;
-  left: var(--screen-x) !important;
-  right: var(--screen-x) !important;
-  bottom: calc(60px + env(safe-area-inset-bottom)) !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  text-align: center !important;
-  z-index: 30 !important;
-}
-
-/* Auth messages: placed below CTA and above bottom helper link, so never behind fields or CTA. */
-.logged-out #authMessage {
-  position: fixed !important;
-  left: var(--screen-x) !important;
-  right: var(--screen-x) !important;
-  bottom: calc(138px + env(safe-area-inset-bottom)) !important;
-  min-height: 34px !important;
-  margin: 0 !important;
+#loggedOutAccount .auth-message {
+  position: static !important;
+  min-height: 0 !important;
+  margin: 4px 0 0 !important;
   padding: 0 4px !important;
-  z-index: 35 !important;
   text-align: center !important;
   font-size: 14px !important;
   line-height: 1.25 !important;
-  pointer-events: none !important;
+  pointer-events: auto !important;
 }
-.logged-out #authMessage:empty {
-  display: none !important;
-}
+#loggedOutAccount .auth-message:empty { display: none !important; }
 
-/* v4.6 auth layout hard fix: stop fixed CTAs overlapping fields */
-.logged-out #authWelcome,
-.logged-out #authLoginForm {
-  padding-top: 118px !important;
-  display: block !important;
-  min-height: auto !important;
+.logged-out #authWelcome .account-submit,
+.logged-out #authLoginForm .account-submit,
+#loggedOutAccount .account-submit {
   position: static !important;
+  width: 100% !important;
+  margin: 38px 0 0 !important;
+  z-index: 1 !important;
 }
-
+.logged-out #authWelcome .auth-switch,
+.logged-out #authLoginForm .auth-switch {
+  position: static !important;
+  margin: 60px 0 0 !important;
+  padding: 0 !important;
+  text-align: center !important;
+  font-size: 16px !important;
+  line-height: 1.2 !important;
+}
 #authLoginForm .text-btn {
   position: static !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  width: max-content !important;
-  margin: 0 0 44px 0 !important;
+  align-self: flex-start !important;
+  margin: 0 0 20px !important;
   padding: 0 !important;
   font-size: 16px !important;
   font-weight: 900 !important;
   line-height: 1.2 !important;
-  color: var(--main) !important;
   text-align: left !important;
 }
+#authLoginForm h2 { margin-top: 0 !important; }
+#authLoginForm .auth-switch .inline-link { text-decoration: underline !important; }
 
-#authLoginForm h2 {
-  margin-top: 0 !important;
-}
-
-.logged-out #authWelcome .account-submit,
-.logged-out #authLoginForm .account-submit {
-  position: fixed !important;
-  left: var(--screen-x) !important;
-  right: var(--screen-x) !important;
-  bottom: calc(224px + env(safe-area-inset-bottom)) !important;
-  width: auto !important;
-  height: 52px !important;
-  min-height: 52px !important;
-  padding: 13px 16px !important;
-  margin: 0 !important;
-  border-radius: 20px !important;
-  z-index: 30 !important;
-}
-
-.logged-out #authWelcome .auth-switch,
-.logged-out #authLoginForm .auth-switch {
-  position: fixed !important;
-  left: var(--screen-x) !important;
-  right: var(--screen-x) !important;
-  bottom: calc(60px + env(safe-area-inset-bottom)) !important;
-  margin: 0 !important;
+/* Preserve latest square energy cards */
+#energyCard.card {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
   padding: 0 !important;
-  text-align: center !important;
-  z-index: 30 !important;
+  margin: 0 !important;
+}
+.energy-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 172px) !important;
+  gap: 12px !important;
+  justify-content: center !important;
+  margin-top: 34px !important;
+}
+.energy-option {
+  width: 172px !important;
+  height: 172px !important;
+  min-height: 172px !important;
+  border-radius: 20px !important;
 }
 
-.logged-out #authMessage {
-  position: fixed !important;
-  left: var(--screen-x) !important;
-  right: var(--screen-x) !important;
-  bottom: calc(224px + 52px + 14px + env(safe-area-inset-bottom)) !important;
-  min-height: 24px !important;
-  margin: 0 !important;
-  padding: 0 4px !important;
-  z-index: 35 !important;
-  text-align: center !important;
-  font-size: 14px !important;
-  line-height: 1.25 !important;
-  pointer-events: none !important;
+/* Preserve goal page simplification: no box-in-box for journey stages */
+.journey-list { gap: 0 !important; }
+.journey-summary,
+.journey-summary.current-stage {
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 16px 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--main) !important;
 }
-.logged-out #authMessage:empty { display: none !important; }
+.journey-summary:last-child { border-bottom: 0 !important; }
+.journey-summary .kicker,
+.journey-summary.current-stage .kicker,
+.journey-summary h3,
+.journey-summary.current-stage h3,
+.journey-summary p,
+.journey-summary.current-stage p { color: var(--main) !important; }
+
+.bottom-nav { bottom: calc(20px + env(safe-area-inset-bottom)) !important; }
