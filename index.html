@@ -87,8 +87,7 @@
       </div>
       <div id="loggedInAccount" class="hidden account-modal-content">
         <div class="account-modal-header">
-          <div>
-            <p class="eyebrow">Account</p>
+            <div>
             <h2 id="accountModalTitle">Account</h2>
           </div>
           <button id="closeAccountModalBtn" class="ghost-btn compact" type="button" aria-label="Close account">×</button>
@@ -238,19 +237,29 @@
 
     <section id="today" class="screen active">
       <section id="energyCard" class="card step-card">
-        <p class="eyebrow">Step 1</p>
         <h2>Energy check</h2>
         <p class="muted">How's your energy today? We'll adjust today's workout intensity.</p>
-        <div class="button-grid energy-grid">
-          <button class="feel-btn" data-feel="great">😊 Great</button>
-          <button class="feel-btn" data-feel="normal">🙂 Normal</button>
-          <button class="feel-btn" data-feel="tired">😴 Tired</button>
-          <button class="feel-btn" data-feel="exhausted">🤒 Exhausted</button>
+        <div class="energy-grid" role="group" aria-label="Choose your energy level">
+          <button class="feel-btn energy-option" type="button" data-feel="great">
+            <img src="Assets/Energy/great-icon.png" alt="" aria-hidden="true" />
+            <span>Great</span>
+          </button>
+          <button class="feel-btn energy-option" type="button" data-feel="normal">
+            <img src="Assets/Energy/normal-icon.png" alt="" aria-hidden="true" />
+            <span>Normal</span>
+          </button>
+          <button class="feel-btn energy-option" type="button" data-feel="tired">
+            <img src="Assets/Energy/tired-icon.png" alt="" aria-hidden="true" />
+            <span>Tired</span>
+          </button>
+          <button class="feel-btn energy-option" type="button" data-feel="exhausted">
+            <img src="Assets/Energy/exhaustive-icon.png" alt="" aria-hidden="true" />
+            <span>Exhausted</span>
+          </button>
         </div>
       </section>
 
       <section id="selectedEnergyCard" class="card hidden">
-        <p class="eyebrow">Selected</p>
         <h2 id="selectedEnergyTitle">Normal</h2>
         <p class="muted" id="selectedEnergyDescription">Standard workout · estimated duration 20 min.</p>
         <div class="button-row">
@@ -311,7 +320,7 @@
 
   <nav class="bottom-nav hidden">
     <button class="nav-btn active" data-screen="today">Today</button>
-    <button class="nav-btn" data-screen="goals">Goals</button>
+    <button class="nav-btn" data-screen="goals">Goal</button>
     <button class="nav-btn" data-screen="progress">Progress</button>
   </nav>
 

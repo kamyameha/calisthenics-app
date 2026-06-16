@@ -269,7 +269,7 @@ const legacyRotation = [
 
 const energyOptions = {
   great: {
-    label: '😊 Great',
+    label: 'Great',
     mode: 'great',
     title: 'Great',
     description: 'Full session · 4 exercises · full sets and reps.',
@@ -279,7 +279,7 @@ const energyOptions = {
     levelShift: 0
   },
   normal: {
-    label: '🙂 Normal',
+    label: 'Normal',
     mode: 'normal',
     title: 'Normal',
     description: 'Standard session · 4 exercises · slightly reduced sets and reps.',
@@ -289,7 +289,7 @@ const energyOptions = {
     levelShift: 0
   },
   tired: {
-    label: '😴 Tired',
+    label: 'Tired',
     mode: 'tired',
     title: 'Tired',
     description: 'Shorter session · 3 exercises · reduced volume.',
@@ -299,7 +299,7 @@ const energyOptions = {
     levelShift: 0
   },
   exhausted: {
-    label: '🤒 Exhausted',
+    label: 'Exhausted',
     mode: 'exhausted',
     title: 'Exhausted',
     description: 'Minimum session · 3 easier exercises · low sets and reps.',
@@ -683,7 +683,7 @@ function renderSelectedEnergy() {
   document.getElementById('selectedEnergyCard').classList.remove('hidden');
   document.getElementById('generatedWorkoutCard').classList.add('hidden');
   document.getElementById('exercisePreview').classList.add('hidden');
-  document.getElementById('selectedEnergyTitle').textContent = option.label;
+  document.getElementById('selectedEnergyTitle').textContent = option.title;
   document.getElementById('selectedEnergyDescription').textContent = option.description;
 }
 
@@ -1406,7 +1406,8 @@ document.addEventListener('click', event => {
     return;
   }
 
-  if (event.target.matches('.feel-btn')) selectEnergy(event.target.dataset.feel);
+  const feelButton = event.target.closest('.feel-btn');
+  if (feelButton) selectEnergy(feelButton.dataset.feel);
 
   if (event.target.id === 'changeEnergyBtn') {
     state.selectedEnergy = null;
