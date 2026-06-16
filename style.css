@@ -1838,3 +1838,116 @@ html, body { background: #f7f7f7 !important; }
 .journey-list{
   border:none;
 }
+
+/* v4.2 precise auth layout fixes */
+/* Restore CTA internal sizing to the auth CTA baseline; only reposition welcome CTA. */
+.welcome-next,
+.logged-out #authWelcome .account-submit,
+.logged-out #authLoginForm .account-submit,
+.account-submit {
+  min-height: 52px !important;
+  height: 52px !important;
+  padding: 13px 16px !important;
+  border-radius: 20px !important;
+  line-height: 1.1 !important;
+}
+
+/* Welcome page: CTA is 60px from the outside bottom and text sits 38px above it. */
+.welcome-next {
+  position: fixed !important;
+  left: var(--screen-x) !important;
+  right: var(--screen-x) !important;
+  bottom: calc(60px + env(safe-area-inset-bottom)) !important;
+  width: auto !important;
+  margin: 0 !important;
+}
+.welcome-copy {
+  bottom: calc(60px + 52px + 38px + env(safe-area-inset-bottom)) !important;
+}
+.welcome-copy p {
+  margin: 0 !important;
+}
+
+/* Auth CTAs keep the figma/auth-screen level and internal sizing. */
+.logged-out #authWelcome .account-submit,
+.logged-out #authLoginForm .account-submit {
+  position: fixed !important;
+  left: var(--screen-x) !important;
+  right: var(--screen-x) !important;
+  bottom: calc(224px + env(safe-area-inset-bottom)) !important;
+  width: auto !important;
+  margin: 0 !important;
+}
+.logged-out #authWelcome .auth-switch,
+.logged-out #authLoginForm .auth-switch {
+  position: fixed !important;
+  left: var(--screen-x) !important;
+  right: var(--screen-x) !important;
+  bottom: calc(60px + env(safe-area-inset-bottom)) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: center !important;
+}
+
+/* Make login back sit with the login title, not floating alone high above it. */
+#authLoginForm .text-btn {
+  position: absolute !important;
+  left: var(--screen-x) !important;
+  top: 250px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  line-height: 1.2 !important;
+  text-align: left !important;
+}
+#authLoginForm h2 {
+  margin-top: 130px !important;
+}
+
+/* Error/success messages need a reserved visible area above the fixed CTA. */
+.logged-out #authMessage {
+  position: fixed !important;
+  left: var(--screen-x) !important;
+  right: var(--screen-x) !important;
+  bottom: calc(224px + 52px + 14px + env(safe-area-inset-bottom)) !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 0 4px !important;
+  z-index: 40 !important;
+  text-align: center !important;
+  font-size: 14px !important;
+  line-height: 1.25 !important;
+  pointer-events: none !important;
+}
+.logged-out #authMessage:empty {
+  display: none !important;
+}
+
+/* Repair auth field and show/hide control size after v4.1. */
+#loggedOutAccount .text-input,
+#loggedOutAccount .password-field {
+  height: 52px !important;
+  min-height: 52px !important;
+  margin: 0 0 16px !important;
+  border-radius: 20px !important;
+}
+#loggedOutAccount .text-input {
+  padding: 0 16px !important;
+  font-size: 16px !important;
+  line-height: 52px !important;
+}
+#loggedOutAccount .password-field .text-input {
+  padding-right: 88px !important;
+}
+#loggedOutAccount .password-toggle {
+  width: 68px !important;
+  height: 36px !important;
+  right: 8px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  padding: 0 !important;
+  border-radius: 18px !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+}

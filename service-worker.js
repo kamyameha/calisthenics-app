@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calisthenics-pwa-v10-layout-fixes';
+const CACHE_NAME = 'calisthenics-pwa-v10-layout-fixes-v4.2';
 const ASSETS = ['./', './index.html', './style.css', './app.js', './manifest.json'];
 
 self.addEventListener('install', event => {
