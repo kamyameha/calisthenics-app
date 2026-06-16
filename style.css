@@ -2059,3 +2059,36 @@ html, body { background: #f7f7f7 !important; }
 .journey-summary.current-stage p { color: var(--main) !important; }
 
 .bottom-nav { bottom: calc(20px + env(safe-area-inset-bottom)) !important; }
+
+/* v4.9 final auth/welcome alignment fixes */
+.logged-out #authWelcome .auth-switch,
+.logged-out #authLoginForm .auth-switch {
+  width: 100% !important;
+  display: block !important;
+  text-align: center !important;
+  margin: 60px auto 0 !important;
+  padding: 0 !important;
+}
+
+.logged-out #authWelcome .auth-switch *,
+.logged-out #authLoginForm .auth-switch * {
+  text-align: center !important;
+}
+
+.welcome-screen {
+  padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important;
+}
+
+.welcome-copy {
+  margin-bottom: 38px !important;
+}
+
+.welcome-next {
+  margin-bottom: 0 !important;
+}
+
+/* Login back button: same style, slightly tighter spacing below */
+#authLoginForm .text-btn {
+  margin-bottom: 12px !important;
+}
+
