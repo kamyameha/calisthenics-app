@@ -48,6 +48,7 @@ function clearAuthUrlParams() {
 
 let passwordRecoveryMode = isPasswordRecoveryUrl();
 let accountHistoryMonth = new Date();
+const ADMIN_EMAILS = ['grascam@gmail.com'];
 
 function setWelcomeVisible(visible) {
   const welcome = document.getElementById('welcomeScreen');
@@ -357,6 +358,34 @@ function queueCloudSave() {
 function normaliseEmail(email = '') {
   return email.trim().toLowerCase();
 }
+function isAdminUser() {
+  return Boolean(currentUser?.email && ADMIN_EMAILS.includes(normaliseEmail(currentUser.email)));
+}
+
+function getCompletedWorkoutCount(savedState) {
+  return Array.isArray(savedState?.history) ? savedState.history.length : 0;
+}
+
+function formatAdminGoal(savedState) {
+  const goal = savedState?.profile?.goal;
+  return goalLabels[goal] || goal || 'Not set';
+}
+
+function formatAdminActive(profile, savedState) {
+  if (profile?.deleted_at) return 'N';
+  if (profile?.current_auth_user_id) return 'Y';
+  return savedState ? 'Y' : 'N';
+}
+
+function escapeHTML(value = '') {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
 
 async function ensureWorkoutProfile() {
   if (!supabaseClient || !currentUser?.email) return null;
@@ -1049,16 +1078,20 @@ function showAccountView(view) {
     goal: 'Change goal',
     equipment: 'Change equipment',
     password: 'Change password',
-    history: 'Workout history'
+    history: 'Workout history',
+    admin: 'Admin dashboard'
   };
   document.querySelectorAll('#loggedInAccount .account-view').forEach(item => item.classList.add('hidden'));
   const target = document.getElementById(`account${view[0].toUpperCase()}${view.slice(1)}View`);
   if (target) target.classList.remove('hidden');
   const title = document.getElementById('accountModalTitle');
   if (title) title.textContent = titles[view] || 'Account';
+  const closeBtn = document.getElementById('closeAccountModalBtn');
+  if (closeBtn) closeBtn.classList.toggle('hidden', view !== 'main');
   if (view === 'goal') populateAccountGoal();
   if (view === 'equipment') populateAccountEquipment();
   if (view === 'history') renderAccountHistory();
+  if (view === 'admin') renderAdminDashboard();
 }
 
 function renderAccountMainSummary() {
@@ -1066,6 +1099,8 @@ function renderAccountMainSummary() {
   const goalSummary = document.getElementById('accountGoalSummary');
   const equipmentSummary = document.getElementById('accountEquipmentSummary');
   const historySummary = document.getElementById('accountHistorySummary');
+  const adminSection = document.getElementById('adminAccountSection');
+  if (adminSection) adminSection.classList.toggle('hidden', !isAdminUser());
   if (goalSummary) goalSummary.textContent = goalLabels[profile.goal] || 'Not set';
   if (equipmentSummary) {
     const equipment = profile.equipment || [];
@@ -1188,6 +1223,71 @@ function renderAccountHistory() {
   list.innerHTML = monthItems.length
     ? monthItems.map(item => `<div class="history-item"><strong>${item.parsedDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</strong><span>${item.workout || 'Workout'} · ${energyOptions[item.mode]?.title || item.mode || 'Done'}</span></div>`).join('')
     : '<p class="muted">No workouts completed this month yet.</p>';
+}
+
+async function renderAdminDashboard() {
+  const message = document.getElementById('adminDashboardMessage');
+  const list = document.getElementById('adminDashboardList');
+  if (!message || !list) return;
+
+  if (!isAdminUser()) {
+    message.textContent = 'Admin access only.';
+    list.innerHTML = '';
+    return;
+  }
+
+  if (!supabaseClient) {
+    message.textContent = 'Supabase is not configured.';
+    list.innerHTML = '';
+    return;
+  }
+
+  message.textContent = 'Loading users...';
+  list.innerHTML = '';
+
+  const [{ data: profiles, error: profileError }, { data: savedStates, error: stateError }] = await Promise.all([
+    supabaseClient
+      .from('workout_profiles')
+      .select('id,email,current_auth_user_id,deleted_at,updated_at')
+      .order('updated_at', { ascending: false }),
+    supabaseClient
+      .from('workout_states_v2')
+      .select('profile_id,state,updated_at')
+  ]);
+
+  if (profileError || stateError) {
+    message.textContent = 'Could not load admin dashboard. Check Supabase admin policies.';
+    return;
+  }
+
+  const statesByProfile = new Map((savedStates || []).map(item => [item.profile_id, item]));
+  const rows = (profiles || []).map(profile => {
+    const stateRow = statesByProfile.get(profile.id);
+    const savedState = stateRow?.state || null;
+    return {
+      email: profile.email || 'Unknown',
+      active: formatAdminActive(profile, savedState),
+      goal: formatAdminGoal(savedState),
+      completed: getCompletedWorkoutCount(savedState),
+      updatedAt: stateRow?.updated_at || profile.updated_at
+    };
+  });
+
+  message.textContent = `${rows.length} user${rows.length === 1 ? '' : 's'}`;
+  list.innerHTML = rows.length
+    ? rows.map(row => `
+      <div class="admin-user-row">
+        <div>
+          <strong>${escapeHTML(row.email)}</strong>
+          <span>${escapeHTML(row.goal)}</span>
+        </div>
+        <div class="admin-user-stats">
+          <span>Active: ${escapeHTML(row.active)}</span>
+          <span>${row.completed} workout${row.completed === 1 ? '' : 's'}</span>
+        </div>
+      </div>
+    `).join('')
+    : '<p class="muted">No users found yet.</p>';
 }
 
 async function initCloudSync() {
@@ -1348,6 +1448,7 @@ document.addEventListener('click', event => {
   if (event.target.id === 'saveAccountPasswordBtn') changePasswordFromAccount();
   if (event.target.id === 'historyPrevMonthBtn') { accountHistoryMonth = new Date(accountHistoryMonth.getFullYear(), accountHistoryMonth.getMonth() - 1, 1); renderAccountHistory(); }
   if (event.target.id === 'historyNextMonthBtn') { accountHistoryMonth = new Date(accountHistoryMonth.getFullYear(), accountHistoryMonth.getMonth() + 1, 1); renderAccountHistory(); }
+  if (event.target.id === 'refreshAdminDashboardBtn') renderAdminDashboard();
   if (event.target.id === 'showLoginBtn') setAuthMode('login');
   if (event.target.id === 'backToAuthWelcomeFromLogin') setAuthMode('welcome');
   if (event.target.id === 'signupBtn') signUp();

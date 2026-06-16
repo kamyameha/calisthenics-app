@@ -763,3 +763,43 @@ button, .import-label {
     align-items: center;
   }
 }
+
+/* Admin dashboard */
+.admin-dashboard-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.admin-user-row {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: white;
+}
+
+.admin-user-row strong,
+.admin-user-row span {
+  display: block;
+}
+
+.admin-user-row span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.admin-user-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-user-stats span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--main);
+  font-weight: 800;
+}

@@ -114,6 +114,11 @@
             <button class="account-list-btn" type="button" data-account-view="history">Monthly view <span id="accountHistorySummary"></span></button>
           </div>
 
+          <div id="adminAccountSection" class="account-section hidden">
+            <h3>Admin</h3>
+            <button class="account-list-btn" type="button" data-account-view="admin">Dashboard <span id="accountAdminSummary">Users</span></button>
+          </div>
+
           <button id="logoutBtn" class="ghost-btn account-full-btn" type="button">Log out</button>
         </div>
 
@@ -163,6 +168,14 @@
           <div class="history-weekdays"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
           <div id="historyCalendar" class="history-calendar"></div>
           <div id="historyList" class="history-list"></div>
+        </div>
+
+        <div id="accountAdminView" class="account-view hidden">
+          <button class="text-btn" type="button" data-account-view="main">← Back</button>
+          <p class="muted">Admin-only view for grascam@gmail.com.</p>
+          <button id="refreshAdminDashboardBtn" class="ghost-btn account-full-btn" type="button">Refresh dashboard</button>
+          <p id="adminDashboardMessage" class="sync-status">Loading users...</p>
+          <div id="adminDashboardList" class="admin-dashboard-list"></div>
         </div>
       </div>
     </section>

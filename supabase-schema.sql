@@ -139,3 +139,29 @@ for update
 to authenticated
 using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
+
+-- Admin dashboard read access for grascam@gmail.com.
+-- Safe to run again. This only broadens SELECT access for the admin email.
+drop policy if exists "Users can read their recovery profile" on public.workout_profiles;
+create policy "Users can read their recovery profile"
+on public.workout_profiles
+for select
+to authenticated
+using (
+  lower(email) = lower(auth.jwt() ->> 'email')
+  or lower(auth.jwt() ->> 'email') = 'grascam@gmail.com'
+);
+
+drop policy if exists "Users can read their recovered workout state" on public.workout_states_v2;
+create policy "Users can read their recovered workout state"
+on public.workout_states_v2
+for select
+to authenticated
+using (
+  lower(auth.jwt() ->> 'email') = 'grascam@gmail.com'
+  or exists (
+    select 1 from public.workout_profiles p
+    where p.id = profile_id
+      and lower(p.email) = lower(auth.jwt() ->> 'email')
+  )
+);
