@@ -30,14 +30,16 @@ function isPasswordRecoveryUrl() {
   // Use the original URL captured before Supabase can consume/clean auth params.
   // A password-reset redirect can look like:
   //   ?reset-password=1#access_token=...&type=recovery
-  // or, depending on provider/browser, only carry the custom reset-password flag.
+  //   ?reset-password=1&code=...
+  //   ?code=... (PKCE recovery links can temporarily look like this)
   const current = `${window.location.search.replace(/^\?/, '')}&${window.location.hash.replace(/^#/, '')}`;
   const initial = `${INITIAL_AUTH_SEARCH.replace(/^\?/, '')}&${INITIAL_AUTH_HASH.replace(/^#/, '')}`;
   const params = new URLSearchParams(`${initial}&${current}`);
   return (
     params.get('reset-password') === '1' ||
     params.get('type') === 'recovery' ||
-    params.get('event') === 'PASSWORD_RECOVERY'
+    params.get('event') === 'PASSWORD_RECOVERY' ||
+    params.has('code')
   );
 }
 
@@ -82,7 +84,10 @@ function setupStarAnimation() {
 }
 
 function updateWelcomeGate() {
-  setWelcomeVisible(!welcomeDismissed && !currentUser);
+  // Recovery links must bypass the animated welcome screen and go straight
+  // to the password reset form. Otherwise the user lands on Welcome instead
+  // of seeing the reset fields.
+  setWelcomeVisible(!welcomeDismissed && !currentUser && !passwordRecoveryMode);
 }
 
 
@@ -1521,10 +1526,16 @@ async function initCloudSync() {
   currentUser = data.session?.user || null;
   currentProfileId = null;
   passwordRecoveryMode = passwordRecoveryMode || isPasswordRecoveryUrl();
+
   // Supabase turns a password reset link into a temporary logged-in session.
   // If the page was opened from a recovery URL, keep the user on the reset form
-  // instead of continuing into the app like a normal login.
-  if (currentUser && !passwordRecoveryMode) await loadCloudState();
+  // instead of continuing into the app like a normal login/welcome flow.
+  if (passwordRecoveryMode) {
+    welcomeDismissed = true;
+    setAuthMode('reset');
+  } else if (currentUser) {
+    await loadCloudState();
+  }
   renderAll();
 
   supabaseClient.auth.onAuthStateChange((event, session) => {
@@ -1533,6 +1544,10 @@ async function initCloudSync() {
     if (event === 'PASSWORD_RECOVERY') passwordRecoveryMode = true;
     if (event === 'SIGNED_IN' && !passwordRecoveryMode) passwordRecoveryMode = false;
     if (event === 'SIGNED_OUT') passwordRecoveryMode = false;
+    if (passwordRecoveryMode) {
+      welcomeDismissed = true;
+      setAuthMode('reset');
+    }
 
     // Do not block the UI on cloud sync. If Supabase profile/state loading is slow,
     // users must still leave the auth screen instead of staying on “Logging in...”.
