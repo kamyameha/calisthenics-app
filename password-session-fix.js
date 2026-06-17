@@ -12,17 +12,13 @@
   });
   let pendingAccountPasswordChange = null;
 
-  function activeClient() {
-    return resetClient;
-  }
-
   function resetLinkMessage() {
     return 'This reset link was not recognised. Please request a new reset link and open it directly from your email.';
   }
 
   function showAuthMessage(message, type = 'info') {
-    if (typeof setAuthMessage === 'function') {
-      setAuthMessage(message, type);
+    if (typeof window.setAuthMessage === 'function') {
+      window.setAuthMessage(message, type);
       return;
     }
     const el = document.getElementById('authMessage');
@@ -33,8 +29,8 @@
   }
 
   function authParams() {
-    const initialSearch = typeof INITIAL_AUTH_SEARCH !== 'undefined' ? INITIAL_AUTH_SEARCH : '';
-    const initialHash = typeof INITIAL_AUTH_HASH !== 'undefined' ? INITIAL_AUTH_HASH : '';
+    const initialSearch = typeof window.INITIAL_AUTH_SEARCH !== 'undefined' ? window.INITIAL_AUTH_SEARCH : '';
+    const initialHash = typeof window.INITIAL_AUTH_HASH !== 'undefined' ? window.INITIAL_AUTH_HASH : '';
     const combined = [
       initialSearch.replace(/^\?/, ''),
       initialHash.replace(/^#/, ''),
@@ -60,42 +56,41 @@
   }
 
   async function ensurePasswordSession() {
-    const client = activeClient();
-    const existing = await getExistingSession(client);
-    if (existing) return { client, session: existing };
+    let session = await getExistingSession(resetClient);
+    if (session) return { client: resetClient, session };
 
     if (window.appSupabaseClient) {
-      const primarySession = await getExistingSession(window.appSupabaseClient);
-      if (primarySession) return { client: window.appSupabaseClient, session: primarySession };
+      session = await getExistingSession(window.appSupabaseClient);
+      if (session) return { client: window.appSupabaseClient, session };
     }
 
     const params = authParams();
-    if (params.get('error') || params.get('error_code')) return { client, session: null };
+    if (params.get('error') || params.get('error_code')) return { client: resetClient, session: null };
 
     const accessToken = params.get('access_token');
     const refreshToken = params.get('refresh_token');
     const code = params.get('code');
 
     if (accessToken && refreshToken) {
-      const { data, error } = await client.auth.setSession({
+      const { data, error } = await resetClient.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken
       });
-      if (!error && data?.session?.user) return { client, session: data.session };
+      if (!error && data?.session?.user) return { client: resetClient, session: data.session };
     }
 
     if (code) {
-      const { data, error } = await client.auth.exchangeCodeForSession(code);
-      if (!error && data?.session?.user) return { client, session: data.session };
+      const { data, error } = await resetClient.auth.exchangeCodeForSession(code);
+      if (!error && data?.session?.user) return { client: resetClient, session: data.session };
 
       if (window.appSupabaseClient) {
-        const primarySession = await getExistingSession(window.appSupabaseClient);
-        if (primarySession) return { client: window.appSupabaseClient, session: primarySession };
+        session = await getExistingSession(window.appSupabaseClient);
+        if (session) return { client: window.appSupabaseClient, session };
       }
     }
 
-    const session = await waitForSession(client);
-    return { client, session };
+    session = await waitForSession(resetClient);
+    return { client: resetClient, session };
   }
 
   function ensureAccountNonceInput() {
@@ -139,7 +134,7 @@
     }
   }
 
-  friendlyAuthError = function (message = '') {
+  function friendlyAuthErrorOverride(message = '') {
     const lower = message.toLowerCase();
     if (lower.includes('invalid login') || lower.includes('invalid credentials')) return 'Email or password is incorrect.';
     if (lower.includes('already registered') || lower.includes('already exists')) return 'An account already exists with this email. Try logging in instead.';
@@ -150,9 +145,9 @@
     if (lower.includes('email')) return 'Please enter a valid email address.';
     if (lower.includes('rate limit')) return 'Too many attempts. Wait a minute and try again.';
     return message || 'Something went wrong. Please try again.';
-  };
+  }
 
-  sendPasswordReset = async function () {
+  async function sendPasswordResetFixed() {
     const email = document.getElementById('loginEmailInput')?.value.trim();
     if (!email) return showAuthMessage('Enter your email first, then tap Forgot password.', 'error');
 
@@ -165,16 +160,16 @@
 
     showAuthMessage('Sending reset link...', 'info');
     const { error } = await resetClient.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl.toString() });
-    if (error) return showAuthMessage(friendlyAuthError(error.message), 'error');
+    if (error) return showAuthMessage(friendlyAuthErrorOverride(error.message), 'error');
     showAuthMessage('Password reset link sent. Check your email.', 'success');
-  };
+  }
 
-  updatePasswordFromRecovery = async function () {
-    if (typeof passwordRecoveryMode !== 'undefined') passwordRecoveryMode = true;
+  async function updatePasswordFromRecoveryFixed() {
+    if (typeof window.passwordRecoveryMode !== 'undefined') window.passwordRecoveryMode = true;
 
     const { client, session } = await ensurePasswordSession();
     if (!session?.user) return showAuthMessage(resetLinkMessage(), 'error');
-    if (typeof currentUser !== 'undefined') currentUser = session.user;
+    if (typeof window.currentUser !== 'undefined') window.currentUser = session.user;
 
     const password = document.getElementById('resetPasswordInput')?.value;
     const confirmPassword = document.getElementById('resetConfirmPasswordInput')?.value;
@@ -184,24 +179,23 @@
 
     showAuthMessage('Updating password...', 'info');
     const { error } = await client.auth.updateUser({ password });
-    if (error) return showAuthMessage(friendlyAuthError(error.message), 'error');
+    if (error) return showAuthMessage(friendlyAuthErrorOverride(error.message), 'error');
 
-    if (typeof passwordRecoveryMode !== 'undefined') passwordRecoveryMode = false;
-    if (typeof clearRecoveryBootFlag === 'function') clearRecoveryBootFlag();
+    if (typeof window.passwordRecoveryMode !== 'undefined') window.passwordRecoveryMode = false;
+    if (typeof window.clearRecoveryBootFlag === 'function') window.clearRecoveryBootFlag();
     try { localStorage.removeItem('somthingreat-password-reset-requested-at'); } catch (error) {}
-    if (typeof clearAuthUrlParams === 'function') clearAuthUrlParams();
-    if (typeof currentProfileId !== 'undefined') currentProfileId = null;
-    if (typeof currentUser !== 'undefined' && currentUser && typeof loadCloudState === 'function') await loadCloudState();
+    if (typeof window.clearAuthUrlParams === 'function') window.clearAuthUrlParams();
+    if (typeof window.currentProfileId !== 'undefined') window.currentProfileId = null;
+    if (typeof window.currentUser !== 'undefined' && window.currentUser && typeof window.loadCloudState === 'function') await window.loadCloudState();
     await syncPrimarySession(client);
-    if (typeof clearAuthFields === 'function') clearAuthFields();
+    if (typeof window.clearAuthFields === 'function') window.clearAuthFields();
     showAuthMessage('Password updated. You are logged in.', 'success');
-    if (typeof renderAll === 'function') renderAll();
-  };
+    if (typeof window.renderAll === 'function') window.renderAll();
+  }
 
-  changePasswordFromAccount = async function () {
-    if (typeof currentUser === 'undefined' || !currentUser) return;
+  async function changePasswordFromAccountFixed() {
+    if (typeof window.currentUser === 'undefined' || !window.currentUser) return;
 
-    const client = activeClient();
     const message = document.getElementById('accountPasswordMessage');
     const currentPasswordInput = document.getElementById('accountCurrentPasswordInput');
     const passwordInput = document.getElementById('accountNewPasswordInput');
@@ -223,16 +217,16 @@
         return;
       } else {
         if (message) message.textContent = 'Updating password...';
-        const { error } = await client.auth.updateUser({
+        const { error } = await resetClient.auth.updateUser({
           password: pendingAccountPasswordChange.password,
           nonce
         });
         if (error) {
-          if (message) message.textContent = friendlyAuthError(error.message);
+          if (message) message.textContent = friendlyAuthErrorOverride(error.message);
           return;
         }
 
-        await syncPrimarySession(client);
+        await syncPrimarySession(resetClient);
         pendingAccountPasswordChange = null;
         clearAccountNonceInput();
         currentPasswordInput.value = '';
@@ -256,29 +250,29 @@
       return;
     }
 
-    const email = currentUser.email;
+    const email = window.currentUser.email;
     if (!email) {
       if (message) message.textContent = 'Log in again before changing your password.';
       return;
     }
 
     if (message) message.textContent = 'Checking current password...';
-    const { error: signInError } = await client.auth.signInWithPassword({ email, password: currentPassword });
+    const { error: signInError } = await resetClient.auth.signInWithPassword({ email, password: currentPassword });
     if (signInError) {
       if (message) message.textContent = 'Current password is incorrect.';
       return;
     }
 
-    const { data: sessionData } = await client.auth.getSession();
+    const { data: sessionData } = await resetClient.auth.getSession();
     if (!sessionData?.session?.user) {
       if (message) message.textContent = 'Log in again before changing your password.';
       return;
     }
 
-    currentUser = sessionData.session.user;
-    const { error: reauthError } = await client.auth.reauthenticate();
+    window.currentUser = sessionData.session.user;
+    const { error: reauthError } = await resetClient.auth.reauthenticate();
     if (reauthError) {
-      if (message) message.textContent = friendlyAuthError(reauthError.message);
+      if (message) message.textContent = friendlyAuthErrorOverride(reauthError.message);
       return;
     }
 
@@ -286,35 +280,72 @@
     const codeInput = ensureAccountNonceInput();
     if (codeInput) codeInput.value = '';
     if (message) message.textContent = 'Current password verified. Check your email for the verification code, enter it here, then tap Update password again.';
-  };
+  }
 
-  if (typeof isPasswordRecoveryUrl === 'function' && isPasswordRecoveryUrl()) {
-    if (typeof passwordRecoveryMode !== 'undefined') passwordRecoveryMode = true;
-    if (typeof setAuthMode === 'function') setAuthMode('reset');
-    ensurePasswordSession().then(({ session }) => {
-      if (session?.user && typeof currentUser !== 'undefined') currentUser = session.user;
-      if (typeof renderAll === 'function') renderAll();
+  function bindButton(id, handler) {
+    const button = document.getElementById(id);
+    if (!button || button.dataset.passwordFixBound === '1') return;
+    const freshButton = button.cloneNode(true);
+    freshButton.dataset.passwordFixBound = '1';
+    button.replaceWith(freshButton);
+    freshButton.addEventListener('click', event => {
+      event.preventDefault();
+      handler();
     });
   }
 
-  if (typeof renderAll === 'function') {
-    renderAll = function () {
-      if (typeof renderAccount === 'function') renderAccount();
-      if (typeof renderOnboarding === 'function') renderOnboarding();
+  function bindPasswordHandlers() {
+    bindButton('forgotPasswordBtn', sendPasswordResetFixed);
+    bindButton('resetPasswordBtn', updatePasswordFromRecoveryFixed);
+    bindButton('saveAccountPasswordBtn', changePasswordFromAccountFixed);
+  }
+
+  function safeRender(fn) {
+    if (typeof fn !== 'function') return;
+    try {
+      fn();
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  window.friendlyAuthError = friendlyAuthErrorOverride;
+  window.sendPasswordReset = sendPasswordResetFixed;
+  window.updatePasswordFromRecovery = updatePasswordFromRecoveryFixed;
+  window.changePasswordFromAccount = changePasswordFromAccountFixed;
+
+  bindPasswordHandlers();
+  document.addEventListener('DOMContentLoaded', bindPasswordHandlers);
+  setTimeout(bindPasswordHandlers, 0);
+
+  if (typeof window.isPasswordRecoveryUrl === 'function' && window.isPasswordRecoveryUrl()) {
+    if (typeof window.passwordRecoveryMode !== 'undefined') window.passwordRecoveryMode = true;
+    if (typeof window.setAuthMode === 'function') window.setAuthMode('reset');
+    ensurePasswordSession().then(({ session }) => {
+      if (session?.user && typeof window.currentUser !== 'undefined') window.currentUser = session.user;
+      if (typeof window.renderAll === 'function') window.renderAll();
+    });
+  }
+
+  if (typeof window.renderAll === 'function') {
+    window.renderAll = function () {
+      safeRender(window.renderAccount);
+      safeRender(window.renderOnboarding);
       if (
-        typeof passwordRecoveryMode !== 'undefined' &&
-        !passwordRecoveryMode &&
-        typeof currentUser !== 'undefined' &&
-        currentUser &&
-        typeof hasCompletedProfile === 'function' &&
-        hasCompletedProfile()
+        typeof window.passwordRecoveryMode !== 'undefined' &&
+        !window.passwordRecoveryMode &&
+        typeof window.currentUser !== 'undefined' &&
+        window.currentUser &&
+        typeof window.hasCompletedProfile === 'function' &&
+        window.hasCompletedProfile()
       ) {
-        if (typeof renderToday === 'function') renderToday();
-        if (typeof renderGoals === 'function') renderGoals();
-        if (typeof renderProgress === 'function') renderProgress();
+        safeRender(window.renderToday);
+        safeRender(window.renderGoals);
+        safeRender(window.renderProgress);
       }
-      if (typeof enforceScreenSeparation === 'function') enforceScreenSeparation();
-      if (typeof updateWelcomeGate === 'function') updateWelcomeGate();
+      safeRender(window.enforceScreenSeparation);
+      safeRender(window.updateWelcomeGate);
+      bindPasswordHandlers();
     };
   }
 })();
