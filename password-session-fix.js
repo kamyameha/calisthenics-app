@@ -12,13 +12,23 @@
   });
   let pendingAccountPasswordChange = null;
 
+  function appUser() {
+    if (typeof currentUser !== 'undefined' && currentUser) return currentUser;
+    return window.currentUser || null;
+  }
+
+  function setAppUser(user) {
+    if (typeof currentUser !== 'undefined') currentUser = user;
+    window.currentUser = user;
+  }
+
   function resetLinkMessage() {
     return 'This reset link was not recognised. Please request a new reset link and open it directly from your email.';
   }
 
   function showAuthMessage(message, type = 'info') {
-    if (typeof window.setAuthMessage === 'function') {
-      window.setAuthMessage(message, type);
+    if (typeof setAuthMessage === 'function') {
+      setAuthMessage(message, type);
       return;
     }
     const el = document.getElementById('authMessage');
@@ -29,8 +39,8 @@
   }
 
   function authParams() {
-    const initialSearch = typeof window.INITIAL_AUTH_SEARCH !== 'undefined' ? window.INITIAL_AUTH_SEARCH : '';
-    const initialHash = typeof window.INITIAL_AUTH_HASH !== 'undefined' ? window.INITIAL_AUTH_HASH : '';
+    const initialSearch = typeof INITIAL_AUTH_SEARCH !== 'undefined' ? INITIAL_AUTH_SEARCH : '';
+    const initialHash = typeof INITIAL_AUTH_HASH !== 'undefined' ? INITIAL_AUTH_HASH : '';
     const combined = [
       initialSearch.replace(/^\?/, ''),
       initialHash.replace(/^#/, ''),
@@ -165,11 +175,11 @@
   }
 
   async function updatePasswordFromRecoveryFixed() {
-    if (typeof window.passwordRecoveryMode !== 'undefined') window.passwordRecoveryMode = true;
+    if (typeof passwordRecoveryMode !== 'undefined') passwordRecoveryMode = true;
 
     const { client, session } = await ensurePasswordSession();
     if (!session?.user) return showAuthMessage(resetLinkMessage(), 'error');
-    if (typeof window.currentUser !== 'undefined') window.currentUser = session.user;
+    setAppUser(session.user);
 
     const password = document.getElementById('resetPasswordInput')?.value;
     const confirmPassword = document.getElementById('resetConfirmPasswordInput')?.value;
@@ -181,20 +191,21 @@
     const { error } = await client.auth.updateUser({ password });
     if (error) return showAuthMessage(friendlyAuthErrorOverride(error.message), 'error');
 
-    if (typeof window.passwordRecoveryMode !== 'undefined') window.passwordRecoveryMode = false;
-    if (typeof window.clearRecoveryBootFlag === 'function') window.clearRecoveryBootFlag();
+    if (typeof passwordRecoveryMode !== 'undefined') passwordRecoveryMode = false;
+    if (typeof clearRecoveryBootFlag === 'function') clearRecoveryBootFlag();
     try { localStorage.removeItem('somthingreat-password-reset-requested-at'); } catch (error) {}
-    if (typeof window.clearAuthUrlParams === 'function') window.clearAuthUrlParams();
-    if (typeof window.currentProfileId !== 'undefined') window.currentProfileId = null;
-    if (typeof window.currentUser !== 'undefined' && window.currentUser && typeof window.loadCloudState === 'function') await window.loadCloudState();
+    if (typeof clearAuthUrlParams === 'function') clearAuthUrlParams();
+    if (typeof currentProfileId !== 'undefined') currentProfileId = null;
+    if (appUser() && typeof loadCloudState === 'function') await loadCloudState();
     await syncPrimarySession(client);
-    if (typeof window.clearAuthFields === 'function') window.clearAuthFields();
+    if (typeof clearAuthFields === 'function') clearAuthFields();
     showAuthMessage('Password updated. You are logged in.', 'success');
-    if (typeof window.renderAll === 'function') window.renderAll();
+    if (typeof renderAll === 'function') renderAll();
   }
 
   async function changePasswordFromAccountFixed() {
-    if (typeof window.currentUser === 'undefined' || !window.currentUser) return;
+    const user = appUser();
+    if (!user) return;
 
     const message = document.getElementById('accountPasswordMessage');
     const currentPasswordInput = document.getElementById('accountCurrentPasswordInput');
@@ -250,7 +261,7 @@
       return;
     }
 
-    const email = window.currentUser.email;
+    const email = user.email || document.getElementById('accountEmail')?.textContent.trim();
     if (!email) {
       if (message) message.textContent = 'Log in again before changing your password.';
       return;
@@ -269,7 +280,7 @@
       return;
     }
 
-    window.currentUser = sessionData.session.user;
+    setAppUser(sessionData.session.user);
     const { error: reauthError } = await resetClient.auth.reauthenticate();
     if (reauthError) {
       if (message) message.textContent = friendlyAuthErrorOverride(reauthError.message);
@@ -318,33 +329,32 @@
   document.addEventListener('DOMContentLoaded', bindPasswordHandlers);
   setTimeout(bindPasswordHandlers, 0);
 
-  if (typeof window.isPasswordRecoveryUrl === 'function' && window.isPasswordRecoveryUrl()) {
-    if (typeof window.passwordRecoveryMode !== 'undefined') window.passwordRecoveryMode = true;
-    if (typeof window.setAuthMode === 'function') window.setAuthMode('reset');
+  if (typeof isPasswordRecoveryUrl === 'function' && isPasswordRecoveryUrl()) {
+    if (typeof passwordRecoveryMode !== 'undefined') passwordRecoveryMode = true;
+    if (typeof setAuthMode === 'function') setAuthMode('reset');
     ensurePasswordSession().then(({ session }) => {
-      if (session?.user && typeof window.currentUser !== 'undefined') window.currentUser = session.user;
-      if (typeof window.renderAll === 'function') window.renderAll();
+      if (session?.user) setAppUser(session.user);
+      if (typeof renderAll === 'function') renderAll();
     });
   }
 
-  if (typeof window.renderAll === 'function') {
-    window.renderAll = function () {
-      safeRender(window.renderAccount);
-      safeRender(window.renderOnboarding);
+  if (typeof renderAll === 'function') {
+    renderAll = function () {
+      safeRender(typeof renderAccount === 'function' ? renderAccount : null);
+      safeRender(typeof renderOnboarding === 'function' ? renderOnboarding : null);
       if (
-        typeof window.passwordRecoveryMode !== 'undefined' &&
-        !window.passwordRecoveryMode &&
-        typeof window.currentUser !== 'undefined' &&
-        window.currentUser &&
-        typeof window.hasCompletedProfile === 'function' &&
-        window.hasCompletedProfile()
+        typeof passwordRecoveryMode !== 'undefined' &&
+        !passwordRecoveryMode &&
+        appUser() &&
+        typeof hasCompletedProfile === 'function' &&
+        hasCompletedProfile()
       ) {
-        safeRender(window.renderToday);
-        safeRender(window.renderGoals);
-        safeRender(window.renderProgress);
+        safeRender(typeof renderToday === 'function' ? renderToday : null);
+        safeRender(typeof renderGoals === 'function' ? renderGoals : null);
+        safeRender(typeof renderProgress === 'function' ? renderProgress : null);
       }
-      safeRender(window.enforceScreenSeparation);
-      safeRender(window.updateWelcomeGate);
+      safeRender(typeof enforceScreenSeparation === 'function' ? enforceScreenSeparation : null);
+      safeRender(typeof updateWelcomeGate === 'function' ? updateWelcomeGate : null);
       bindPasswordHandlers();
     };
   }
