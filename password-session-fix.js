@@ -3,6 +3,7 @@
 
   const resetClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
     auth: {
+      storageKey: 'somthingreat-password-session-fix',
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
@@ -11,7 +12,7 @@
   });
 
   function activeClient() {
-    return window.appSupabaseClient || resetClient;
+    return resetClient;
   }
 
   function resetLinkMessage() {
@@ -130,6 +131,15 @@
     if (typeof clearAuthUrlParams === 'function') clearAuthUrlParams();
     if (typeof currentProfileId !== 'undefined') currentProfileId = null;
     if (typeof currentUser !== 'undefined' && currentUser && typeof loadCloudState === 'function') await loadCloudState();
+    if (window.appSupabaseClient) {
+      const latest = await client.auth.getSession();
+      if (latest.data?.session?.access_token && latest.data?.session?.refresh_token) {
+        await window.appSupabaseClient.auth.setSession({
+          access_token: latest.data.session.access_token,
+          refresh_token: latest.data.session.refresh_token
+        });
+      }
+    }
     if (typeof clearAuthFields === 'function') clearAuthFields();
     showAuthMessage('Password updated. You are logged in.', 'success');
     if (typeof renderAll === 'function') renderAll();
@@ -196,5 +206,26 @@
       if (session?.user && typeof currentUser !== 'undefined') currentUser = session.user;
       if (typeof renderAll === 'function') renderAll();
     });
+  }
+
+  if (typeof renderAll === 'function') {
+    renderAll = function () {
+      if (typeof renderAccount === 'function') renderAccount();
+      if (typeof renderOnboarding === 'function') renderOnboarding();
+      if (
+        typeof passwordRecoveryMode !== 'undefined' &&
+        !passwordRecoveryMode &&
+        typeof currentUser !== 'undefined' &&
+        currentUser &&
+        typeof hasCompletedProfile === 'function' &&
+        hasCompletedProfile()
+      ) {
+        if (typeof renderToday === 'function') renderToday();
+        if (typeof renderGoals === 'function') renderGoals();
+        if (typeof renderProgress === 'function') renderProgress();
+      }
+      if (typeof enforceScreenSeparation === 'function') enforceScreenSeparation();
+      if (typeof updateWelcomeGate === 'function') updateWelcomeGate();
+    };
   }
 })();
