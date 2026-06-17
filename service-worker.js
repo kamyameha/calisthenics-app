@@ -1,9 +1,10 @@
-const CACHE_NAME = 'somthingreat-v8-9-reset-session-fix';
+const CACHE_NAME = 'somthingreat-v8-11-password-session-hotfix';
 const APP_SHELL = [
   './',
   './index.html',
   './style.css',
   './app.js',
+  './password-session-fix.js',
   './manifest.json',
   './supabase-config.js',
   './somthingreat.svg',
