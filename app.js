@@ -86,15 +86,29 @@ function getAuthUrlParams() {
   return new URLSearchParams(combined);
 }
 
+async function waitForRecoverySession(maxAttempts = 12, delayMs = 250) {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const { data } = await supabaseClient.auth.getSession();
+    if (data?.session?.user) {
+      currentUser = data.session.user;
+      return data.session;
+    }
+    await new Promise(resolve => setTimeout(resolve, delayMs));
+  }
+  return null;
+}
+
 async function ensureRecoverySession() {
   if (!supabaseClient || !passwordRecoveryMode) return null;
 
-  // Supabase PKCE reset links usually come back with ?code=... .
-  // detectSessionInUrl does not always finish before our welcome gate runs,
-  // so we explicitly exchange the code before rendering the normal app flow.
+  // Supabase reset links can arrive in two ways:
+  // 1) PKCE: ?code=...
+  // 2) Implicit: #access_token=...&refresh_token=...&type=recovery
+  // We must create the temporary recovery session before calling updateUser().
   const params = getAuthUrlParams();
   const accessToken = params.get('access_token');
   const refreshToken = params.get('refresh_token');
+  const code = params.get('code');
 
   if (accessToken && refreshToken) {
     try {
@@ -110,11 +124,10 @@ async function ensureRecoverySession() {
     }
   }
 
-  const hasCode = params.has('code');
-
-  if (hasCode) {
+  if (code) {
     try {
-      const { data, error } = await supabaseClient.auth.exchangeCodeForSession(window.location.href);
+      // Supabase v2 expects the raw auth code here, not the full URL.
+      const { data, error } = await supabaseClient.auth.exchangeCodeForSession(code);
       if (error) throw error;
       currentUser = data?.session?.user || currentUser;
       return data?.session || null;
@@ -123,9 +136,7 @@ async function ensureRecoverySession() {
     }
   }
 
-  const { data } = await supabaseClient.auth.getSession();
-  currentUser = data?.session?.user || currentUser;
-  return data?.session || null;
+  return await waitForRecoverySession();
 }
 
 let passwordRecoveryMode = isPasswordRecoveryUrl() || hasRecoveryBootFlag();

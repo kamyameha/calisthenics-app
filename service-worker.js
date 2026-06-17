@@ -1,4 +1,4 @@
-const CACHE_NAME = 'somthingreat-v8-8-reset-screen-clean';
+const CACHE_NAME = 'somthingreat-v8-9-reset-session-fix';
 const APP_SHELL = [
   './',
   './index.html',
