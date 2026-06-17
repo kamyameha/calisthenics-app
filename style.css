@@ -2181,3 +2181,33 @@ html, body { background: #f7f7f7 !important; }
 }
 
 html.recovery-boot #welcomeScreen { display: none !important; }
+
+
+/* Hard screen separation guard: auth/recovery screens must never overlap app screens. */
+html.recovery-boot #welcomeScreen,
+html.recovery-boot #onboarding,
+html.recovery-boot .screen,
+html.recovery-boot .bottom-nav,
+html.recovery-boot #accountBtn {
+  display: none !important;
+}
+
+html.recovery-boot .app,
+html.recovery-boot #accountPanel,
+html.recovery-boot #loggedOutAccount,
+html.recovery-boot #authResetForm {
+  display: block !important;
+}
+
+html.recovery-boot #loggedInAccount,
+html.recovery-boot #authWelcome,
+html.recovery-boot #authLoginForm {
+  display: none !important;
+}
+
+body.logged-out #onboarding,
+body.logged-out .screen,
+body.logged-out .bottom-nav,
+body.logged-out #accountBtn {
+  display: none !important;
+}

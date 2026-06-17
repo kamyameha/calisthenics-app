@@ -27,6 +27,25 @@ let currentUser = null;
 let currentProfileId = null;
 let syncTimer = null;
 let welcomeDismissed = false;
+
+function hasRecoveryBootFlag() {
+  try {
+    return Boolean(
+      window.__SOMTHINGREAT_RECOVERY_BOOT ||
+      document.documentElement.classList.contains('recovery-boot') ||
+      sessionStorage.getItem('somthingreat-recovery-boot') === '1'
+    );
+  } catch (error) {
+    return Boolean(window.__SOMTHINGREAT_RECOVERY_BOOT || document.documentElement.classList.contains('recovery-boot'));
+  }
+}
+
+function clearRecoveryBootFlag() {
+  try { sessionStorage.removeItem('somthingreat-recovery-boot'); } catch (error) {}
+  document.documentElement.classList.remove('recovery-boot');
+  window.__SOMTHINGREAT_RECOVERY_BOOT = false;
+}
+
 function hasPendingRecoveryMarker() {
   try {
     const ts = Number(localStorage.getItem('somthingreat-password-reset-requested-at') || 0);
@@ -46,6 +65,7 @@ function isPasswordRecoveryUrl() {
   const initial = `${INITIAL_AUTH_SEARCH.replace(/^\?/, '')}&${INITIAL_AUTH_HASH.replace(/^#/, '')}`;
   const params = new URLSearchParams(`${initial}&${current}`);
   return (
+    hasRecoveryBootFlag() ||
     params.get('reset-password') === '1' ||
     params.get('type') === 'recovery' ||
     params.get('event') === 'PASSWORD_RECOVERY' ||
@@ -108,7 +128,7 @@ async function ensureRecoverySession() {
   return data?.session || null;
 }
 
-let passwordRecoveryMode = isPasswordRecoveryUrl();
+let passwordRecoveryMode = isPasswordRecoveryUrl() || hasRecoveryBootFlag();
 let accountHistoryMonth = new Date();
 const ADMIN_EMAILS = ['grascam@gmail.com'];
 
@@ -689,7 +709,7 @@ function friendlyAuthError(message = '') {
   if (lower.includes('invalid login') || lower.includes('invalid credentials')) return 'Email or password is incorrect.';
   if (lower.includes('already registered') || lower.includes('already exists')) return 'An account already exists with this email. Try logging in instead.';
   if (lower.includes('password') && lower.includes('characters')) return 'Password is too short. Use at least 6 characters.';
-  if (lower.includes('current password')) return 'For security, request a fresh reset link and open it directly from your email.';
+  if (lower.includes('current password')) return 'Current password is required to update your password from Account settings.';
   if (lower.includes('email')) return 'Please enter a valid email address.';
   if (lower.includes('rate limit')) return 'Too many attempts. Wait a minute and try again.';
   return message || 'Something went wrong. Please try again.';
@@ -724,6 +744,8 @@ function setAuthMode(mode = 'welcome') {
   // Reset password is a standalone flow. It must never share the page with
   // onboarding or app screens, even though Supabase temporarily logs the user in.
   if (isReset) {
+    document.body.classList.add('logged-out');
+    document.documentElement.classList.add('recovery-boot');
     setWelcomeVisible(false);
     document.getElementById('accountPanel')?.classList.remove('hidden');
     document.getElementById('onboarding')?.classList.add('hidden');
@@ -1267,12 +1289,58 @@ function updateConditionalQuestions() {
 }
 
 
+function enforceScreenSeparation() {
+  const panel = document.getElementById('accountPanel');
+  const loggedOut = document.getElementById('loggedOutAccount');
+  const loggedIn = document.getElementById('loggedInAccount');
+  const onboarding = document.getElementById('onboarding');
+  const screens = document.querySelectorAll('.screen');
+  const bottomNav = document.querySelector('.bottom-nav');
+  const accountBtn = document.getElementById('accountBtn');
+
+  if (passwordRecoveryMode) {
+    document.body.classList.add('logged-out');
+    document.documentElement.classList.add('recovery-boot');
+    setWelcomeVisible(false);
+    panel?.classList.remove('hidden', 'account-modal', 'account-open');
+    loggedOut?.classList.remove('hidden');
+    loggedIn?.classList.add('hidden');
+    setAuthMode('reset');
+    onboarding?.classList.add('hidden');
+    screens.forEach(screen => screen.classList.add('auth-locked'));
+    bottomNav?.classList.add('hidden');
+    accountBtn?.classList.add('hidden');
+    return;
+  }
+
+  document.documentElement.classList.remove('recovery-boot');
+
+  if (!currentUser) {
+    panel?.classList.remove('hidden', 'account-modal', 'account-open');
+    loggedOut?.classList.remove('hidden');
+    loggedIn?.classList.add('hidden');
+    onboarding?.classList.add('hidden');
+    screens.forEach(screen => screen.classList.add('auth-locked'));
+    bottomNav?.classList.add('hidden');
+    accountBtn?.classList.add('hidden');
+    return;
+  }
+
+  const profileDone = hasCompletedProfile();
+  screens.forEach(screen => screen.classList.toggle('auth-locked', !profileDone));
+  bottomNav?.classList.toggle('hidden', !profileDone);
+  accountBtn?.classList.toggle('hidden', !profileDone && !currentUser);
+}
+
 function renderAll() {
-  renderToday();
-  renderGoals();
-  renderProgress();
   renderAccount();
   renderOnboarding();
+  if (!passwordRecoveryMode && currentUser) {
+    renderToday();
+    renderGoals();
+    renderProgress();
+  }
+  enforceScreenSeparation();
   updateWelcomeGate();
 }
 
@@ -1598,6 +1666,7 @@ async function initCloudSync() {
     setWelcomeVisible(false);
     setAuthMode('reset');
     await ensureRecoverySession();
+    setAuthMode('reset');
   } else {
     const { data } = await supabaseClient.auth.getSession();
     currentUser = data.session?.user || null;
@@ -1611,6 +1680,7 @@ async function initCloudSync() {
     currentUser = session?.user || null;
     currentProfileId = null;
     if (event === 'PASSWORD_RECOVERY') passwordRecoveryMode = true;
+    if (hasRecoveryBootFlag()) passwordRecoveryMode = true;
     if (event === 'SIGNED_IN' && !passwordRecoveryMode) passwordRecoveryMode = false;
     if (event === 'SIGNED_OUT') passwordRecoveryMode = false;
     if (passwordRecoveryMode) {
@@ -1628,6 +1698,8 @@ async function initCloudSync() {
 }
 
 async function signUp() {
+  passwordRecoveryMode = false;
+  clearRecoveryBootFlag();
   if (!supabaseClient) return setAuthMessage('Account connection is not configured yet.', 'error');
   const email = document.getElementById('signupEmailInput')?.value.trim();
   const password = document.getElementById('signupPasswordInput')?.value;
@@ -1646,6 +1718,8 @@ async function signUp() {
 }
 
 async function login() {
+  passwordRecoveryMode = false;
+  clearRecoveryBootFlag();
   if (!supabaseClient) return setAuthMessage('Account connection is not configured yet.', 'error');
   const email = document.getElementById('loginEmailInput')?.value.trim();
   const password = document.getElementById('loginPasswordInput')?.value;
@@ -1716,6 +1790,7 @@ async function updatePasswordFromRecovery() {
     return setAuthMessage(friendlyAuthError(error.message), 'error');
   }
   passwordRecoveryMode = false;
+  clearRecoveryBootFlag();
   try { localStorage.removeItem('somthingreat-password-reset-requested-at'); } catch (error) {}
   clearAuthUrlParams();
   currentProfileId = null;

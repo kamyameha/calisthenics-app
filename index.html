@@ -15,7 +15,16 @@
       var search = window.location.search || '';
       var hash = window.location.hash || '';
       var path = window.location.pathname || '';
-      if (search.indexOf('reset-password') !== -1 || search.indexOf('code=') !== -1 || hash.indexOf('type=recovery') !== -1 || hash.indexOf('access_token') !== -1 || path.indexOf('reset-password') !== -1) {
+      var combined = search + '&' + hash;
+      var isRecovery = search.indexOf('reset-password') !== -1 ||
+        search.indexOf('code=') !== -1 ||
+        hash.indexOf('type=recovery') !== -1 ||
+        hash.indexOf('access_token') !== -1 ||
+        hash.indexOf('refresh_token') !== -1 ||
+        path.indexOf('reset-password') !== -1;
+      if (isRecovery) {
+        window.__SOMTHINGREAT_RECOVERY_BOOT = true;
+        try { sessionStorage.setItem('somthingreat-recovery-boot', '1'); } catch (error) {}
         document.documentElement.classList.add('recovery-boot');
       }
     })();
