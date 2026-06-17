@@ -48,6 +48,36 @@ function clearAuthUrlParams() {
   window.history.replaceState({}, document.title, `${window.location.origin}${window.location.pathname}`);
 }
 
+function getAuthUrlParams() {
+  const combined = `${INITIAL_AUTH_SEARCH.replace(/^\?/, '')}&${INITIAL_AUTH_HASH.replace(/^#/, '')}&${window.location.search.replace(/^\?/, '')}&${window.location.hash.replace(/^#/, '')}`;
+  return new URLSearchParams(combined);
+}
+
+async function ensureRecoverySession() {
+  if (!supabaseClient || !passwordRecoveryMode) return null;
+
+  // Supabase PKCE reset links usually come back with ?code=... .
+  // detectSessionInUrl does not always finish before our welcome gate runs,
+  // so we explicitly exchange the code before rendering the normal app flow.
+  const params = getAuthUrlParams();
+  const hasCode = params.has('code');
+
+  if (hasCode) {
+    try {
+      const { data, error } = await supabaseClient.auth.exchangeCodeForSession(window.location.href);
+      if (error) throw error;
+      currentUser = data?.session?.user || currentUser;
+      return data?.session || null;
+    } catch (error) {
+      setAuthMessage(friendlyAuthError(error.message || 'Could not open this reset link. Please request a new one.'), 'error');
+    }
+  }
+
+  const { data } = await supabaseClient.auth.getSession();
+  currentUser = data?.session?.user || currentUser;
+  return data?.session || null;
+}
+
 let passwordRecoveryMode = isPasswordRecoveryUrl();
 let accountHistoryMonth = new Date();
 const ADMIN_EMAILS = ['grascam@gmail.com'];
@@ -629,6 +659,7 @@ function friendlyAuthError(message = '') {
   if (lower.includes('invalid login') || lower.includes('invalid credentials')) return 'Email or password is incorrect.';
   if (lower.includes('already registered') || lower.includes('already exists')) return 'An account already exists with this email. Try logging in instead.';
   if (lower.includes('password') && lower.includes('characters')) return 'Password is too short. Use at least 6 characters.';
+  if (lower.includes('current password')) return 'For security, request a fresh reset link and open it directly from your email.';
   if (lower.includes('email')) return 'Please enter a valid email address.';
   if (lower.includes('rate limit')) return 'Too many attempts. Wait a minute and try again.';
   return message || 'Something went wrong. Please try again.';
@@ -663,6 +694,8 @@ function setAuthMode(mode = 'welcome') {
   // Reset password is a standalone flow. It must never share the page with
   // onboarding or app screens, even though Supabase temporarily logs the user in.
   if (isReset) {
+    setWelcomeVisible(false);
+    document.getElementById('accountPanel')?.classList.remove('hidden');
     document.getElementById('onboarding')?.classList.add('hidden');
     document.querySelectorAll('.screen').forEach(screen => screen.classList.add('auth-locked'));
     document.querySelector('.bottom-nav')?.classList.add('hidden');
@@ -1241,9 +1274,9 @@ function renderAccount() {
     return;
   }
 
-  if (passwordRecoveryMode && currentUser) {
+  if (passwordRecoveryMode) {
     panel.classList.remove('hidden');
-    panel.classList.remove('account-modal');
+    panel.classList.remove('account-modal', 'account-open');
     loggedOut.classList.remove('hidden');
     loggedIn.classList.add('hidden');
     setAuthMode('reset');
@@ -1522,23 +1555,23 @@ async function initCloudSync() {
     return;
   }
 
-  const { data } = await supabaseClient.auth.getSession();
-  currentUser = data.session?.user || null;
-  currentProfileId = null;
   passwordRecoveryMode = passwordRecoveryMode || isPasswordRecoveryUrl();
 
-  // Supabase turns a password reset link into a temporary logged-in session.
-  // If the page was opened from a recovery URL, keep the user on the reset form
-  // instead of continuing into the app like a normal login/welcome flow.
   if (passwordRecoveryMode) {
     welcomeDismissed = true;
+    setWelcomeVisible(false);
     setAuthMode('reset');
-  } else if (currentUser) {
-    await loadCloudState();
+    await ensureRecoverySession();
+  } else {
+    const { data } = await supabaseClient.auth.getSession();
+    currentUser = data.session?.user || null;
+    currentProfileId = null;
+    if (currentUser) await loadCloudState();
   }
+
   renderAll();
 
-  supabaseClient.auth.onAuthStateChange((event, session) => {
+  supabaseClient.auth.onAuthStateChange(async (event, session) => {
     currentUser = session?.user || null;
     currentProfileId = null;
     if (event === 'PASSWORD_RECOVERY') passwordRecoveryMode = true;
@@ -1546,7 +1579,9 @@ async function initCloudSync() {
     if (event === 'SIGNED_OUT') passwordRecoveryMode = false;
     if (passwordRecoveryMode) {
       welcomeDismissed = true;
+      setWelcomeVisible(false);
       setAuthMode('reset');
+      if (!currentUser) await ensureRecoverySession();
     }
 
     // Do not block the UI on cloud sync. If Supabase profile/state loading is slow,
@@ -1620,7 +1655,12 @@ async function sendPasswordReset() {
 }
 
 async function updatePasswordFromRecovery() {
-  if (!supabaseClient || !currentUser) return setAuthMessage('Open the reset link from your email first.', 'error');
+  if (!supabaseClient) return setAuthMessage('Account connection is not configured yet.', 'error');
+
+  passwordRecoveryMode = true;
+  const session = await ensureRecoverySession();
+  if (!currentUser && !session) return setAuthMessage('Open the latest reset link from your email first.', 'error');
+
   const password = document.getElementById('resetPasswordInput')?.value;
   const confirmPassword = document.getElementById('resetConfirmPasswordInput')?.value;
   if (!password || !confirmPassword) return setAuthMessage('Enter and confirm your new password.', 'error');
@@ -1629,7 +1669,13 @@ async function updatePasswordFromRecovery() {
 
   setAuthMessage('Updating password...', 'info');
   const { error } = await supabaseClient.auth.updateUser({ password });
-  if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
+  if (error) {
+    const lower = (error.message || '').toLowerCase();
+    if (lower.includes('current password')) {
+      return setAuthMessage('This reset session was not recognised. Please request a new reset link and open it directly from your email.', 'error');
+    }
+    return setAuthMessage(friendlyAuthError(error.message), 'error');
+  }
   passwordRecoveryMode = false;
   clearAuthUrlParams();
   currentProfileId = null;

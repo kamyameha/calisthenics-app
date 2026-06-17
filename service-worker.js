@@ -1,4 +1,4 @@
-const CACHE_NAME = 'somthingreat-v8-5-admin-banner-fix';
+const CACHE_NAME = 'somthingreat-v8-6-password-reset-session-fix';
 const APP_SHELL = [
   './',
   './index.html',
