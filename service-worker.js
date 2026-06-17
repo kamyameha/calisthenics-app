@@ -1,9 +1,9 @@
-const CACHE_NAME = 'somthingreat-v8-14-core-auth-cleanup';
+const CACHE_NAME = 'somthingreat-v8-15-core-auth-cleanup';
 const APP_SHELL = [
   './',
   './index.html',
   './style.css',
-  './auth.js',
+  './auth.js?v=8-15',
   './app.js',
   './manifest.json',
   './supabase-config.js',
