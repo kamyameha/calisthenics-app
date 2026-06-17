@@ -1,4 +1,4 @@
-const CACHE_NAME = 'somthingreat-v8-12-password-session-hotfix';
+const CACHE_NAME = 'somthingreat-v8-13-password-flow-hotfix';
 const APP_SHELL = [
   './',
   './index.html',
@@ -52,7 +52,7 @@ self.addEventListener('fetch', event => {
   // Always try the network first for pages and core app files.
   // This prevents users from staying stuck on an old app.js/index.html.
   const isNavigation = request.mode === 'navigate';
-  const isCoreFile = /\/(index\.html|app\.js|style\.css|supabase-config\.js|manifest\.json)$/.test(url.pathname);
+  const isCoreFile = /\/(index\.html|app\.js|password-session-fix\.js|style\.css|supabase-config\.js|manifest\.json)$/.test(url.pathname);
 
   if (isNavigation || isCoreFile) {
     event.respondWith(networkFirst(request));
