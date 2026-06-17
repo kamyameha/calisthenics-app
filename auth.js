@@ -217,6 +217,70 @@
     if (message) message.textContent = 'Password reset link sent. Check your email.';
   }
 
+  function safeTrackLevel(trackKey) {
+    return state?.levels?.[trackKey]?.level || 0;
+  }
+
+  function renderGoalsSafe() {
+    const profile = typeof getProfile === 'function' ? getProfile() : null;
+    const goal = profile?.goal || 'pullup';
+    const goalTrackKey = goal === 'handstand' ? 'handstand' : goal === 'lsit' ? 'lsit' : goal === 'muscleup' ? 'muscleup' : 'pullup';
+    const tracks = typeof getTracks === 'function' ? getTracks() : {};
+    const track = tracks[goalTrackKey]?.length ? tracks[goalTrackKey] : tracks.pullup?.length ? tracks.pullup : baseTracks?.pullup;
+    if (!Array.isArray(track) || !track.length) return;
+
+    const level = Math.max(0, Math.min(safeTrackLevel(goalTrackKey), track.length - 1));
+    const current = track[level];
+    const next = track[Math.min(level + 1, track.length - 1)];
+    if (!current || !next) return;
+
+    const percent = Math.round(((level + 1) / track.length) * 100);
+    const goalName = goalLabels?.[goal] || 'First Pull-Up';
+    const heroTitle = document.getElementById('goalHeroTitle');
+    const stage = document.getElementById('pullupStage');
+    const progress = document.getElementById('pullupProgressBar');
+    const nextEl = document.getElementById('pullupNext');
+
+    if (heroTitle) heroTitle.textContent = goalName;
+    if (stage) stage.textContent = `Current stage: ${current.name}`;
+    if (progress) progress.style.width = `${percent}%`;
+    if (nextEl) {
+      nextEl.textContent = level >= track.length - 1
+        ? `Milestone reached: ${goalName} unlocked`
+        : `Next milestone: ${next.name}`;
+    }
+
+    const journey = document.getElementById('pullupJourney');
+    if (journey) {
+      journey.innerHTML = `
+        <div class="journey-summary current-stage"><div><p class="eyebrow">Current stage</p><strong>${current.name}</strong><span>${current.prescription}</span></div><em>Now</em></div>
+        <div class="journey-summary"><div><p class="eyebrow">Next milestone</p><strong>${level >= track.length - 1 ? 'Goal unlocked' : next.name}</strong><span>${level >= track.length - 1 ? 'Keep training and consolidate.' : next.prescription}</span></div><em>Next</em></div>
+        <div class="journey-summary"><div><p class="eyebrow">Completed</p><strong>${level === 0 ? 'Starting now' : `${level} milestone${level > 1 ? 's' : ''} completed`}</strong><span>${level === 0 ? 'Your first milestone is in progress.' : track.slice(0, level).map(s => s.name).join(' · ')}</span></div><em>${level}/${track.length}</em></div>
+      `;
+    }
+
+    const skills = [
+      { key: 'pullup', label: 'Pull-Up' },
+      { key: 'handstand', label: 'Handstand' },
+      { key: 'lsit', label: 'L-Sit' },
+      { key: 'muscleup', label: 'Muscle-Up' }
+    ].filter(skill => skill.key !== goalTrackKey).slice(0, 3);
+    const skillList = document.getElementById('skillList');
+    if (!skillList) return;
+    skillList.innerHTML = '';
+    skills.forEach(skill => {
+      const skillTrack = tracks[skill.key]?.length ? tracks[skill.key] : baseTracks?.[skill.key];
+      if (!Array.isArray(skillTrack) || !skillTrack.length) return;
+      const skillLevel = Math.max(0, Math.min(safeTrackLevel(skill.key), skillTrack.length - 1));
+      const currentSkill = skillTrack[skillLevel];
+      if (!currentSkill) return;
+      const row = document.createElement('div');
+      row.className = 'skill-row';
+      row.innerHTML = `<div><strong>${skill.label}</strong><p>${currentSkill.name} · ${currentSkill.prescription}</p></div><span>Level ${skillLevel + 1}/${skillTrack.length}</span>`;
+      skillList.appendChild(row);
+    });
+  }
+
   function wrapRender(name) {
     if (typeof window[name] !== 'function' || window[name].__authGuarded) return;
     const original = window[name];
@@ -224,7 +288,6 @@
       try {
         return original.apply(this, args);
       } catch (error) {
-        console.error(error);
         return undefined;
       }
     };
@@ -237,7 +300,10 @@
     window.sendPasswordReset = sendPasswordResetFixed;
     window.updatePasswordFromRecovery = updatePasswordFromRecoveryFixed;
     window.changePasswordFromAccount = changePasswordFromAccountFixed;
-    wrapRender('renderGoals');
+    if (typeof window.renderGoals === 'function') {
+      window.renderGoals = renderGoalsSafe;
+      window.renderGoals.__authGuarded = true;
+    }
     wrapRender('renderProgress');
   }
 
