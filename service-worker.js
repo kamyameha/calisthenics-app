@@ -1,4 +1,4 @@
-const CACHE_NAME = 'somthingreat-v8-11-password-session-hotfix';
+const CACHE_NAME = 'somthingreat-v8-12-password-session-hotfix';
 const APP_SHELL = [
   './',
   './index.html',
