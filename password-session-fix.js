@@ -187,7 +187,11 @@
     }
 
     currentUser = sessionData.session.user;
-    const { error } = await client.auth.updateUser({ password });
+    const { error } = await client.auth.updateUser({
+      password,
+      current_password: currentPassword,
+      currentPassword
+    });
     if (error) {
       if (message) message.textContent = friendlyAuthError(error.message);
       return;
