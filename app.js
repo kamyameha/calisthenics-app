@@ -586,6 +586,23 @@ function friendlyAuthError(message = '') {
   return message || 'Something went wrong. Please try again.';
 }
 
+function withTimeout(promise, ms = 12000, message = 'Request timed out. Check your connection and try again.') {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => window.setTimeout(() => reject(new Error(message)), ms))
+  ]);
+}
+
+async function loadCloudStateInBackground() {
+  if (!currentUser || passwordRecoveryMode) return;
+  try {
+    await withTimeout(loadCloudState(), 12000, 'Cloud sync is taking too long. Local progress is still available.');
+    renderAll();
+  } catch (error) {
+    setSyncStatus(error.message || 'Could not load progress. Local progress is still available.');
+  }
+}
+
 function setAuthMode(mode = 'welcome') {
   const welcome = document.getElementById('authWelcome');
   const login = document.getElementById('authLoginForm');
@@ -1457,14 +1474,17 @@ async function initCloudSync() {
   if (currentUser && !passwordRecoveryMode) await loadCloudState();
   renderAll();
 
-  supabaseClient.auth.onAuthStateChange(async (event, session) => {
+  supabaseClient.auth.onAuthStateChange((event, session) => {
     currentUser = session?.user || null;
     currentProfileId = null;
     if (event === 'PASSWORD_RECOVERY') passwordRecoveryMode = true;
     if (event === 'SIGNED_IN' && !passwordRecoveryMode) passwordRecoveryMode = false;
     if (event === 'SIGNED_OUT') passwordRecoveryMode = false;
-    if (currentUser && !passwordRecoveryMode) await loadCloudState();
+
+    // Do not block the UI on cloud sync. If Supabase profile/state loading is slow,
+    // users must still leave the auth screen instead of staying on “Logging in...”.
     renderAll();
+    if (currentUser && !passwordRecoveryMode) loadCloudStateInBackground();
   });
 }
 
@@ -1491,15 +1511,28 @@ async function login() {
   const email = document.getElementById('loginEmailInput')?.value.trim();
   const password = document.getElementById('loginPasswordInput')?.value;
   if (!email || !password) return setAuthMessage('Enter your email and password.', 'error');
+
   setAuthMessage('Logging in...', 'info');
-  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-  if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
-  passwordRecoveryMode = false;
-  currentUser = data?.session?.user || currentUser;
-  currentProfileId = null;
-  if (currentUser) await loadCloudState();
-  setAuthMessage('Logged in. Loading your progress...', 'success');
-  renderAll();
+
+  try {
+    const { data, error } = await withTimeout(
+      supabaseClient.auth.signInWithPassword({ email, password }),
+      12000,
+      'Login is taking too long. Check your connection and try again.'
+    );
+
+    if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
+
+    passwordRecoveryMode = false;
+    currentUser = data?.session?.user || currentUser;
+    currentProfileId = null;
+
+    setAuthMessage('Logged in. Loading your progress...', 'success');
+    renderAll();
+    loadCloudStateInBackground();
+  } catch (error) {
+    setAuthMessage(error.message || 'Login failed. Please try again.', 'error');
+  }
 }
 
 async function sendPasswordReset() {
