@@ -393,6 +393,46 @@ function sessionTotalLabel(workout) {
   return `+ ${extra} min add-ons`;
 }
 
+function normalizeExercise(exercise) {
+  if (!exercise || typeof exercise !== 'object') return null;
+  if (!exercise.name || !exercise.prescription) return null;
+  const normalized = { ...exercise };
+  normalized.trackKey = normalized.trackKey || `exercise-${normalized.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+  normalized.setCount = normalized.setCount || getSetCount(normalized.prescription);
+  return normalized;
+}
+
+function sanitizeWorkout(workout) {
+  if (!workout || typeof workout !== 'object') return null;
+  if (!Array.isArray(workout.exercises)) return null;
+
+  const exercises = workout.exercises.map(normalizeExercise).filter(Boolean);
+  if (!exercises.length) return null;
+
+  return {
+    ...workout,
+    ratings: workout.ratings || {},
+    sets: workout.sets || {},
+    exercises
+  };
+}
+
+function sanitizeState(nextState) {
+  if (!nextState || typeof nextState !== 'object') return defaultState();
+
+  nextState.current = sanitizeWorkout(nextState.current);
+  nextState.generated = sanitizeWorkout(nextState.generated);
+  nextState.includeWarmup = Boolean(nextState.includeWarmup);
+  nextState.includeStretch = Boolean(nextState.includeStretch);
+
+  if (!nextState.current && !nextState.generated && !nextState.selectedEnergy) {
+    nextState.includeWarmup = false;
+    nextState.includeStretch = false;
+  }
+
+  return nextState;
+}
+
 function defaultState() {
   const levels = {};
   Object.keys(baseTracks).forEach(key => levels[key] = { level: 0, points: 0 });
@@ -408,7 +448,7 @@ function loadState() {
     const parsed = JSON.parse(saved);
     const merged = { ...defaultState(), ...parsed };
     merged.levels = { ...defaultState().levels, ...(parsed.levels || {}) };
-    return merged;
+    return sanitizeState(merged);
   } catch {
     return defaultState();
   }
@@ -428,7 +468,9 @@ function publicState() {
     current: state.current,
     selectedEnergy: state.selectedEnergy,
     generated: state.generated,
-    profile: state.profile
+    profile: state.profile,
+    includeWarmup: state.includeWarmup,
+    includeStretch: state.includeStretch
   };
 }
 
@@ -545,6 +587,7 @@ async function loadCloudState() {
   if (cloudState) {
     state = { ...defaultState(), ...cloudState };
     state.levels = { ...defaultState().levels, ...(cloudState.levels || {}) };
+    state = sanitizeState(state);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     if (legacyState) await saveCloudState();
     renderAll();
@@ -861,7 +904,7 @@ function renderGeneratedWorkout() {
 
   const preview = document.getElementById('previewList');
   preview.innerHTML = '';
-  generated.exercises.forEach(exercise => {
+  (generated.exercises || []).filter(Boolean).forEach(exercise => {
     const row = document.createElement('div');
     row.className = 'preview-row';
     row.innerHTML = `<strong>${exercise.name}</strong><span>${exercise.prescription}</span>`;
@@ -871,6 +914,13 @@ function renderGeneratedWorkout() {
 
 function startWorkout() {
   if (!state.generated) generateWorkout();
+  state.generated = sanitizeWorkout(state.generated);
+  if (!state.generated) {
+    state.selectedEnergy = null;
+    saveState();
+    renderToday();
+    return;
+  }
   state.current = { ...state.generated, ratings: {}, sets: {} };
   state.current.exercises.forEach(exercise => {
     state.current.sets[exercise.trackKey] = Array.from({ length: exercise.setCount || 1 }, () => false);
@@ -894,6 +944,8 @@ function renderExercises() {
   titleCard.innerHTML = `<p class="muted-light">Today's workout</p><h2>${state.current.workoutName}</h2><p>${modeLabel(state.current.mode)} · ${sessionTotalLabel(state.current)}</p>`;
   list.appendChild(titleCard);
 
+  state.current = sanitizeWorkout(state.current);
+  if (!state.current) { renderToday(); return; }
   state.current.exercises.forEach((exercise) => {
     const card = document.createElement('div');
     card.className = 'exercise-card';
@@ -1040,6 +1092,7 @@ function renderProgress() {
     const item = state.levels[key];
     const exerciseTrack = getTracks()[key] || baseTracks[key];
     const exercise = exerciseTrack[Math.min(item.level, exerciseTrack.length - 1)];
+    if (!exercise) return;
     const row = document.createElement('div');
     row.className = 'level-row';
     row.innerHTML = `<div><strong>${labels[key]}</strong><p>${exercise.name} · ${exercise.prescription}</p></div><span>L${item.level + 1}</span>`;

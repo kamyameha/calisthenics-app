@@ -1,4 +1,4 @@
-const CACHE_NAME = 'somthingreat-v7-2-login-cleanup';
+const CACHE_NAME = 'somthingreat-v7-3-state-cleanup';
 const APP_SHELL = [
   './',
   './index.html',
