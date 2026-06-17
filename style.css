@@ -321,27 +321,6 @@ button, .import-label {
 }
 
 .account-panel {
-  margin-top: -8px;
-}
-
-.text-input {
-  width: 100%;
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 14px 16px;
-  margin: 8px 0;
-  color: var(--main);
-  background: white;
-  font: inherit;
-  font-weight: 700;
-}
-
-.text-input::placeholder { color: rgba(1, 45, 237, 0.42); }
-
-.account-actions { margin-top: 10px; }
-.sync-status { font-weight: 900; }
-
-.account-panel {
   margin-top: 16px;
 }
 

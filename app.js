@@ -23,6 +23,10 @@ const supabaseClient = SUPABASE_READY
   : null;
 window.appSupabaseClient = supabaseClient;
 
+const passwordAuthClient = SUPABASE_READY
+  ? window.SomthingreatAuth?.createPasswordClient(window.supabase, window.SUPABASE_URL, window.SUPABASE_ANON_KEY)
+  : null;
+
 let currentUser = null;
 let currentProfileId = null;
 let syncTimer = null;
@@ -82,37 +86,50 @@ function clearAuthUrlParams() {
 }
 
 function getAuthUrlParams() {
+  if (window.SomthingreatAuth?.authUrlParams) {
+    return window.SomthingreatAuth.authUrlParams(INITIAL_AUTH_SEARCH, INITIAL_AUTH_HASH);
+  }
   const combined = `${INITIAL_AUTH_SEARCH.replace(/^\?/, '')}&${INITIAL_AUTH_HASH.replace(/^#/, '')}&${window.location.search.replace(/^\?/, '')}&${window.location.hash.replace(/^#/, '')}`;
   return new URLSearchParams(combined);
 }
 
-async function waitForRecoverySession(maxAttempts = 12, delayMs = 250) {
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const { data } = await supabaseClient.auth.getSession();
-    if (data?.session?.user) {
-      currentUser = data.session.user;
-      return data.session;
-    }
-    await new Promise(resolve => setTimeout(resolve, delayMs));
-  }
-  return null;
+async function getExistingAuthSession(client) {
+  if (window.SomthingreatAuth?.getExistingSession) return await window.SomthingreatAuth.getExistingSession(client);
+  if (!client?.auth?.getSession) return null;
+  const { data } = await client.auth.getSession();
+  return data?.session?.user ? data.session : null;
+}
+
+async function waitForRecoverySession(client = passwordAuthClient || supabaseClient) {
+  const session = window.SomthingreatAuth?.waitForSession
+    ? await window.SomthingreatAuth.waitForSession(client)
+    : await getExistingAuthSession(client);
+  if (session?.user) currentUser = session.user;
+  return session;
 }
 
 async function ensureRecoverySession() {
   if (!supabaseClient || !passwordRecoveryMode) return null;
 
-  // Supabase reset links can arrive in two ways:
-  // 1) PKCE: ?code=...
-  // 2) Implicit: #access_token=...&refresh_token=...&type=recovery
-  // We must create the temporary recovery session before calling updateUser().
+  const clients = [passwordAuthClient, supabaseClient].filter(Boolean);
+  for (const client of clients) {
+    const existing = await getExistingAuthSession(client);
+    if (existing?.user) {
+      currentUser = existing.user;
+      return existing;
+    }
+  }
+
   const params = getAuthUrlParams();
+  if (params.get('error') || params.get('error_code')) return null;
+
   const accessToken = params.get('access_token');
   const refreshToken = params.get('refresh_token');
   const code = params.get('code');
 
-  if (accessToken && refreshToken) {
+  if (accessToken && refreshToken && passwordAuthClient) {
     try {
-      const { data, error } = await supabaseClient.auth.setSession({
+      const { data, error } = await passwordAuthClient.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken
       });
@@ -120,23 +137,26 @@ async function ensureRecoverySession() {
       currentUser = data?.session?.user || currentUser;
       return data?.session || null;
     } catch (error) {
-      setAuthMessage(friendlyAuthError(error.message || 'Could not open this reset link. Please request a new one.'), 'error');
+      currentUser = null;
+      setAuthMessage(resetSessionErrorMessage(error.message), 'error');
     }
   }
 
   if (code) {
-    try {
-      // Supabase v2 expects the raw auth code here, not the full URL.
-      const { data, error } = await supabaseClient.auth.exchangeCodeForSession(code);
-      if (error) throw error;
-      currentUser = data?.session?.user || currentUser;
-      return data?.session || null;
-    } catch (error) {
-      setAuthMessage(friendlyAuthError(error.message || 'Could not open this reset link. Please request a new one.'), 'error');
+    for (const client of clients) {
+      try {
+        const { data, error } = await client.auth.exchangeCodeForSession(code);
+        if (error) throw error;
+        currentUser = data?.session?.user || currentUser;
+        return data?.session || null;
+      } catch (error) {
+        currentUser = null;
+      }
     }
+    setAuthMessage(resetSessionErrorMessage('Invalid recovery code'), 'error');
   }
 
-  return await waitForRecoverySession();
+  return await waitForRecoverySession(passwordAuthClient || supabaseClient);
 }
 
 let passwordRecoveryMode = isPasswordRecoveryUrl() || hasRecoveryBootFlag();
@@ -716,14 +736,29 @@ function setAuthMessage(message, type = 'info') {
 }
 
 function friendlyAuthError(message = '') {
+  if (window.SomthingreatAuth?.friendlyAuthError) return window.SomthingreatAuth.friendlyAuthError(message);
   const lower = message.toLowerCase();
+  if (lower.includes('rate limit') || lower.includes('security purposes') || lower.includes('too many')) return 'Too many attempts. Wait a minute and try again.';
   if (lower.includes('invalid login') || lower.includes('invalid credentials')) return 'Email or password is incorrect.';
   if (lower.includes('already registered') || lower.includes('already exists')) return 'An account already exists with this email. Try logging in instead.';
   if (lower.includes('password') && lower.includes('characters')) return 'Password is too short. Use at least 6 characters.';
-  if (lower.includes('current password')) return 'Current password is required to update your password from Account settings.';
+  if (lower.includes('auth session missing') || lower.includes('session missing')) return 'This reset link was not recognised. Please request a new reset link and open it directly from your email.';
   if (lower.includes('email')) return 'Please enter a valid email address.';
-  if (lower.includes('rate limit')) return 'Too many attempts. Wait a minute and try again.';
   return message || 'Something went wrong. Please try again.';
+}
+
+function resetSessionErrorMessage(message = '') {
+  const lower = message.toLowerCase();
+  if (
+    lower.includes('code verifier') ||
+    lower.includes('expired') ||
+    lower.includes('invalid') ||
+    lower.includes('session') ||
+    lower.includes('auth')
+  ) {
+    return 'This reset link was not recognised. Please request a new reset link and open it directly from your email.';
+  }
+  return friendlyAuthError(message || 'Could not open this reset link. Please request a new one.');
 }
 
 function withTimeout(promise, ms = 12000, message = 'Request timed out. Check your connection and try again.') {
@@ -731,6 +766,49 @@ function withTimeout(promise, ms = 12000, message = 'Request timed out. Check yo
     promise,
     new Promise((_, reject) => window.setTimeout(() => reject(new Error(message)), ms))
   ]);
+}
+
+function resetRedirectUrl() {
+  if (window.SomthingreatAuth?.resetRedirectUrl) return window.SomthingreatAuth.resetRedirectUrl();
+  const redirectUrl = new URL(window.location.origin + window.location.pathname);
+  redirectUrl.searchParams.set('reset-password', '1');
+  return redirectUrl.toString();
+}
+
+async function sendPasswordResetToEmail(email) {
+  if (!email) return { error: new Error('Please enter a valid email address.') };
+  const client = passwordAuthClient || supabaseClient;
+  try {
+    localStorage.setItem('somthingreat-password-reset-requested-at', String(Date.now()));
+  } catch (error) {}
+  return await client.auth.resetPasswordForEmail(email, { redirectTo: resetRedirectUrl() });
+}
+
+async function finishResetToLogin(client = supabaseClient) {
+  passwordRecoveryMode = false;
+  clearRecoveryBootFlag();
+  try { localStorage.removeItem('somthingreat-password-reset-requested-at'); } catch (error) {}
+  clearAuthUrlParams();
+  currentUser = null;
+  currentProfileId = null;
+
+  try { await client?.auth?.signOut(); } catch (error) {}
+  if (passwordAuthClient && passwordAuthClient !== client) {
+    try { await passwordAuthClient.auth.signOut(); } catch (error) {}
+  }
+  if (supabaseClient && supabaseClient !== client) {
+    try { await supabaseClient.auth.signOut(); } catch (error) {}
+  }
+
+  clearAuthFields();
+  setAuthMode('login');
+  document.getElementById('accountPanel')?.classList.remove('hidden');
+  document.getElementById('loggedOutAccount')?.classList.remove('hidden');
+  document.getElementById('loggedInAccount')?.classList.add('hidden');
+  document.getElementById('accountBtn')?.classList.remove('hidden');
+  document.querySelector('.bottom-nav')?.classList.add('hidden');
+  document.querySelectorAll('.screen').forEach(screen => screen.classList.add('auth-locked'));
+  setAuthMessage('Password reset. Log in with your new password.', 'success');
 }
 
 async function loadCloudStateInBackground() {
@@ -1126,21 +1204,29 @@ function renderGoals() {
   const goal = profile?.goal || 'pullup';
   const goalTrackKey = goal === 'handstand' ? 'handstand' : goal === 'lsit' ? 'lsit' : goal === 'muscleup' ? 'muscleup' : 'pullup';
   const tracks = getTracks();
-  const track = tracks[goalTrackKey] || tracks.pullup;
-  const level = getTrackLevel(goalTrackKey);
+  const track = tracks[goalTrackKey]?.length ? tracks[goalTrackKey] : tracks.pullup?.length ? tracks.pullup : baseTracks.pullup;
+  if (!Array.isArray(track) || !track.length) return;
+  const level = Math.max(0, Math.min(getTrackLevel(goalTrackKey), track.length - 1));
   const current = track[Math.min(level, track.length - 1)];
   const next = track[Math.min(level + 1, track.length - 1)];
+  if (!current || !next) return;
   const percent = Math.round(((level + 1) / track.length) * 100);
 
   const heroTitle = document.getElementById('goalHeroTitle');
   if (heroTitle) heroTitle.textContent = goalLabels[goal] || 'First Pull-Up';
-  document.getElementById('pullupStage').textContent = `Current stage: ${current.name}`;
-  document.getElementById('pullupProgressBar').style.width = `${percent}%`;
-  document.getElementById('pullupNext').textContent = level >= track.length - 1
-    ? `Milestone reached: ${goalLabels[goal] || 'Goal'} unlocked`
-    : `Next milestone: ${next.name}`;
+  const stage = document.getElementById('pullupStage');
+  const progress = document.getElementById('pullupProgressBar');
+  const nextEl = document.getElementById('pullupNext');
+  if (stage) stage.textContent = `Current stage: ${current.name}`;
+  if (progress) progress.style.width = `${percent}%`;
+  if (nextEl) {
+    nextEl.textContent = level >= track.length - 1
+      ? `Milestone reached: ${goalLabels[goal] || 'Goal'} unlocked`
+      : `Next milestone: ${next.name}`;
+  }
 
   const journey = document.getElementById('pullupJourney');
+  if (!journey) return;
   journey.innerHTML = `
     <div class="journey-summary current-stage"><div><p class="eyebrow">Current stage</p><strong>${current.name}</strong><span>${current.prescription}</span></div><em>Now</em></div>
     <div class="journey-summary"><div><p class="eyebrow">Next milestone</p><strong>${level >= track.length - 1 ? 'Goal unlocked' : next.name}</strong><span>${level >= track.length - 1 ? 'Keep training and consolidate.' : next.prescription}</span></div><em>Next</em></div>
@@ -1154,11 +1240,14 @@ function renderGoals() {
     { key: 'muscleup', label: 'Muscle-Up' }
   ].filter(skill => skill.key !== goalTrackKey).slice(0, 3);
   const skillList = document.getElementById('skillList');
+  if (!skillList) return;
   skillList.innerHTML = '';
   skills.forEach(skill => {
-    const skillTrack = tracks[skill.key] || baseTracks[skill.key];
+    const skillTrack = tracks[skill.key]?.length ? tracks[skill.key] : baseTracks[skill.key];
+    if (!Array.isArray(skillTrack) || !skillTrack.length) return;
     const skillLevel = getTrackLevel(skill.key);
     const currentSkill = skillTrack[Math.min(skillLevel, skillTrack.length - 1)];
+    if (!currentSkill) return;
     const row = document.createElement('div');
     row.className = 'skill-row';
     row.innerHTML = `<div><strong>${skill.label}</strong><p>${currentSkill.name} · ${currentSkill.prescription}</p></div><span>Level ${skillLevel + 1}/${skillTrack.length}</span>`;
@@ -1191,7 +1280,9 @@ function renderProgress() {
 
   Object.keys(labels).forEach(key => {
     const item = state.levels[key];
+    if (!item) return;
     const exerciseTrack = getTracks()[key] || baseTracks[key];
+    if (!Array.isArray(exerciseTrack) || !exerciseTrack.length) return;
     const exercise = exerciseTrack[Math.min(item.level, exerciseTrack.length - 1)];
     if (!exercise) return;
     const row = document.createElement('div');
@@ -1346,7 +1437,7 @@ function enforceScreenSeparation() {
 function renderAll() {
   renderAccount();
   renderOnboarding();
-  if (!passwordRecoveryMode && currentUser) {
+  if (!passwordRecoveryMode && currentUser && hasCompletedProfile()) {
     renderToday();
     renderGoals();
     renderProgress();
@@ -1522,36 +1613,19 @@ async function saveAccountEquipment() {
 async function changePasswordFromAccount() {
   if (!supabaseClient || !currentUser) return;
   const message = document.getElementById('accountPasswordMessage');
-  const currentPassword = document.getElementById('accountCurrentPasswordInput')?.value;
-  const password = document.getElementById('accountNewPasswordInput')?.value;
-  const confirmPassword = document.getElementById('accountConfirmPasswordInput')?.value;
+  const email = currentUser.email || document.getElementById('accountEmail')?.textContent.trim();
   if (message) message.textContent = '';
-  if (!currentPassword || !password || !confirmPassword) {
-    if (message) message.textContent = 'Enter your current password, then your new password twice.';
+  if (!email) {
+    if (message) message.textContent = 'Log in again before changing your password.';
     return;
   }
-  if (password.length < 6) {
-    if (message) message.textContent = 'Password must be at least 6 characters.';
-    return;
-  }
-  if (password !== confirmPassword) {
-    if (message) message.textContent = 'Passwords do not match.';
-    return;
-  }
-  if (message) message.textContent = 'Updating password...';
-  const { error } = await supabaseClient.auth.updateUser({
-    password,
-    currentPassword,
-    current_password: currentPassword
-  });
+  if (message) message.textContent = 'Sending reset link...';
+  const { error } = await sendPasswordResetToEmail(email);
   if (error) {
     if (message) message.textContent = friendlyAuthError(error.message);
     return;
   }
-  document.getElementById('accountCurrentPasswordInput').value = '';
-  document.getElementById('accountNewPasswordInput').value = '';
-  document.getElementById('accountConfirmPasswordInput').value = '';
-  if (message) message.textContent = 'Password updated.';
+  if (message) message.textContent = 'Password reset link sent. Check your email.';
 }
 
 function renderAccountHistory() {
@@ -1764,16 +1838,8 @@ async function sendPasswordReset() {
   const email = document.getElementById('loginEmailInput')?.value.trim();
   if (!email) return setAuthMessage('Enter your email first, then tap Forgot password.', 'error');
 
-  const redirectUrl = new URL(window.location.origin + window.location.pathname);
-  redirectUrl.searchParams.set('reset-password', '1');
-  const redirectTo = redirectUrl.toString();
-
-  try {
-    localStorage.setItem('somthingreat-password-reset-requested-at', String(Date.now()));
-  } catch (error) {}
-
   setAuthMessage('Sending reset link...', 'info');
-  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
+  const { error } = await sendPasswordResetToEmail(email);
   if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
   setAuthMessage('Password reset link sent. Check your email.', 'success');
 }
@@ -1783,7 +1849,8 @@ async function updatePasswordFromRecovery() {
 
   passwordRecoveryMode = true;
   const session = await ensureRecoverySession();
-  if (!currentUser && !session) return setAuthMessage('Open the latest reset link from your email first.', 'error');
+  if (!session?.user) return setAuthMessage('This reset link was not recognised. Please request a new reset link and open it directly from your email.', 'error');
+  currentUser = session.user;
 
   const password = document.getElementById('resetPasswordInput')?.value;
   const confirmPassword = document.getElementById('resetConfirmPasswordInput')?.value;
@@ -1792,23 +1859,17 @@ async function updatePasswordFromRecovery() {
   if (password !== confirmPassword) return setAuthMessage('Passwords do not match.', 'error');
 
   setAuthMessage('Updating password...', 'info');
-  const { error } = await supabaseClient.auth.updateUser({ password });
+  const passwordSession = passwordAuthClient ? await getExistingAuthSession(passwordAuthClient) : null;
+  const client = passwordSession ? passwordAuthClient : supabaseClient;
+  const { error } = await client.auth.updateUser({ password });
   if (error) {
     const lower = (error.message || '').toLowerCase();
-    if (lower.includes('current password')) {
+    if (lower.includes('current password') || lower.includes('auth session missing') || lower.includes('session missing')) {
       return setAuthMessage('This reset session was not recognised. Please request a new reset link and open it directly from your email.', 'error');
     }
     return setAuthMessage(friendlyAuthError(error.message), 'error');
   }
-  passwordRecoveryMode = false;
-  clearRecoveryBootFlag();
-  try { localStorage.removeItem('somthingreat-password-reset-requested-at'); } catch (error) {}
-  clearAuthUrlParams();
-  currentProfileId = null;
-  if (currentUser) await loadCloudState();
-  clearAuthFields();
-  setAuthMessage('Password updated. You are logged in.', 'success');
-  renderAll();
+  await finishResetToLogin(client);
 }
 
 async function logout() {
