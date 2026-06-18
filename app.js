@@ -723,14 +723,6 @@ function setSyncStatus(message) {
 function setAuthMessage(message, type = 'info') {
   const el = document.getElementById('authMessage');
   if (!el) return;
-  const activeAuthForm = document.querySelector('#loggedOutAccount > div:not(.hidden)');
-  const submit = activeAuthForm?.querySelector('.account-submit');
-  const switchLink = activeAuthForm?.querySelector('.auth-switch');
-  if (activeAuthForm && submit && el.parentElement !== activeAuthForm) {
-    activeAuthForm.insertBefore(el, switchLink || submit.nextSibling);
-  } else if (activeAuthForm && submit && el.previousElementSibling !== submit) {
-    activeAuthForm.insertBefore(el, switchLink || submit.nextSibling);
-  }
   el.textContent = message || '';
   el.dataset.type = type;
 }
@@ -1214,23 +1206,16 @@ function renderGoals() {
 
   const heroTitle = document.getElementById('goalHeroTitle');
   if (heroTitle) heroTitle.textContent = goalLabels[goal] || 'First Pull-Up';
-  const stage = document.getElementById('pullupStage');
   const progress = document.getElementById('pullupProgressBar');
-  const nextEl = document.getElementById('pullupNext');
-  if (stage) stage.textContent = `Current stage: ${current.name}`;
   if (progress) progress.style.width = `${percent}%`;
-  if (nextEl) {
-    nextEl.textContent = level >= track.length - 1
-      ? `Milestone reached: ${goalLabels[goal] || 'Goal'} unlocked`
-      : `Next milestone: ${next.name}`;
-  }
 
   const journey = document.getElementById('pullupJourney');
   if (!journey) return;
+  const completedNames = track.slice(0, level).map(step => step.name).join(' · ');
   journey.innerHTML = `
-    <div class="journey-summary current-stage"><div><p class="eyebrow">Current stage</p><strong>${current.name}</strong><span>${current.prescription}</span></div><em>Now</em></div>
-    <div class="journey-summary"><div><p class="eyebrow">Next milestone</p><strong>${level >= track.length - 1 ? 'Goal unlocked' : next.name}</strong><span>${level >= track.length - 1 ? 'Keep training and consolidate.' : next.prescription}</span></div><em>Next</em></div>
-    <div class="journey-summary"><div><p class="eyebrow">Completed</p><strong>${level === 0 ? 'Starting now' : `${level} milestone${level > 1 ? 's' : ''} completed`}</strong><span>${level === 0 ? 'Your first milestone is in progress.' : track.slice(0, level).map(s => s.name).join(' · ')}</span></div><em>${level}/${track.length}</em></div>
+    <div class="journey-summary current-stage"><div><p class="eyebrow">Current focus</p><strong>${current.name}</strong><span>Build consistency here: ${current.prescription}</span></div><em>Now</em></div>
+    <div class="journey-summary"><div><p class="eyebrow">Unlocks next</p><strong>${level >= track.length - 1 ? 'Goal unlocked' : next.name}</strong><span>${level >= track.length - 1 ? 'Keep training and consolidate the skill.' : `Next target: ${next.prescription}`}</span></div><em>Next</em></div>
+    <div class="journey-summary"><div><p class="eyebrow">Progress so far</p><strong>${percent}% of the path</strong><span>${level === 0 ? 'Your first milestone is in progress.' : completedNames}</span></div><em>${level + 1}/${track.length}</em></div>
   `;
 
   const skills = [

@@ -29,7 +29,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=design-pass-2" />
+  <link rel="stylesheet" href="style.css?v=design-pass-3" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -93,15 +93,17 @@
         </div>
 
         <div id="authResetForm" class="hidden">
-          <h2>Reset password</h2>
-          <p class="muted">Choose a new password for your account.</p>
-          <div class="password-field">
-            <input id="resetPasswordInput" class="text-input" type="password" placeholder="New password" autocomplete="new-password" />
-            <button class="password-toggle" type="button" data-toggle-password="resetPasswordInput" aria-label="Show password">Show</button>
-          </div>
-          <div class="password-field">
-            <input id="resetConfirmPasswordInput" class="text-input" type="password" placeholder="Confirm new password" autocomplete="new-password" />
-            <button class="password-toggle" type="button" data-toggle-password="resetConfirmPasswordInput" aria-label="Show password">Show</button>
+          <div class="auth-content">
+            <h2>Reset password</h2>
+            <p class="muted">Choose a new password for your account.</p>
+            <div class="password-field">
+              <input id="resetPasswordInput" class="text-input" type="password" placeholder="New password" autocomplete="new-password" />
+              <button class="password-toggle" type="button" data-toggle-password="resetPasswordInput" aria-label="Show password">Show</button>
+            </div>
+            <div class="password-field">
+              <input id="resetConfirmPasswordInput" class="text-input" type="password" placeholder="Confirm new password" autocomplete="new-password" />
+              <button class="password-toggle" type="button" data-toggle-password="resetConfirmPasswordInput" aria-label="Show password">Show</button>
+            </div>
           </div>
           <button id="resetPasswordBtn" class="primary-btn account-submit" type="button">Update password</button>
         </div>
@@ -304,9 +306,7 @@
       <section class="hero-card goal-hero">
         <p class="muted-light">Main goal</p>
         <h2 id="goalHeroTitle">First Pull-Up</h2>
-        <p id="pullupStage">Current stage: Negative Pull-Ups</p>
         <div class="progress-bar"><span id="pullupProgressBar"></span></div>
-        <p id="pullupNext" class="goal-next">Next milestone: Scapular Pull-Ups</p>
       </section>
 
       <section class="card">
@@ -341,6 +341,6 @@
   </nav>
 
   <script src="auth.js?v=8-15"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=goal-authmsg-1"></script>
 </body>
 </html>
