@@ -313,11 +313,13 @@ button {
 }
 
 .welcome-copy {
-  position: absolute;
-  left: 0;
-  right: 0;
+  position: fixed;
+  left: 50%;
   bottom: calc(var(--auth-cta-bottom) + var(--auth-cta-height) + var(--auth-content-gap) + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: var(--auth-control-width);
   margin: 0;
+  z-index: 1;
 }
 
 .welcome-copy h1 {
