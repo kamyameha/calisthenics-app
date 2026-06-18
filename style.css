@@ -8,6 +8,12 @@
   --muted-text: rgba(1, 45, 237, 0.72);
   --radius: 20px;
   --screen-x: 18px;
+  --auth-cta-bottom: 136px;
+  --auth-cta-height: 52px;
+  --auth-content-gap: 43px;
+  --auth-footer-gap: 58px;
+  --auth-footer-line: 20px;
+  --auth-control-width: min(calc(100% - (var(--screen-x) * 2)), 524px);
 }
 
 * {
@@ -283,7 +289,7 @@ button {
   overflow: hidden;
   display: flex;
   justify-content: center;
-  padding: 24px var(--screen-x) calc(20px + env(safe-area-inset-bottom));
+  padding: 24px var(--screen-x) calc(var(--auth-cta-bottom) + env(safe-area-inset-bottom));
   background: var(--bg);
   color: var(--main);
 }
@@ -291,7 +297,7 @@ button {
 .welcome-inner {
   width: 100%;
   max-width: 560px;
-  min-height: calc(100dvh - 24px - 20px - env(safe-area-inset-bottom));
+  min-height: calc(100dvh - 24px - var(--auth-cta-bottom) - env(safe-area-inset-bottom));
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -310,7 +316,7 @@ button {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: calc(20px + 52px + 38px + env(safe-area-inset-bottom));
+  bottom: calc(var(--auth-cta-bottom) + var(--auth-cta-height) + var(--auth-content-gap) + env(safe-area-inset-bottom));
   margin: 0;
 }
 
@@ -330,10 +336,10 @@ button {
 
 .welcome-next {
   position: fixed;
-  left: var(--screen-x);
-  right: var(--screen-x);
-  bottom: calc(20px + env(safe-area-inset-bottom));
-  width: auto;
+  left: 50%;
+  bottom: calc(var(--auth-cta-bottom) + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: var(--auth-control-width);
   padding: 0 18px;
   margin: 0;
   z-index: 20;
@@ -349,7 +355,7 @@ body.logged-out #accountBtn {
 
 .logged-out .app {
   min-height: 100dvh;
-  padding: 24px var(--screen-x) calc(60px + env(safe-area-inset-bottom));
+  padding: 24px var(--screen-x) calc(var(--auth-cta-bottom) + env(safe-area-inset-bottom));
   background: var(--bg);
 }
 
@@ -371,10 +377,9 @@ body.logged-out #accountBtn {
 
 .logged-out #authWelcome,
 .logged-out #authLoginForm {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  padding-top: 168px;
+  display: block;
+  min-height: calc(100dvh - 84px - env(safe-area-inset-bottom));
+  padding-top: 0;
   position: relative;
 }
 
@@ -416,6 +421,17 @@ body.logged-out #accountBtn {
   padding-right: 88px;
 }
 
+.logged-out .auth-content {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--auth-cta-bottom) + var(--auth-cta-height) + var(--auth-content-gap) + env(safe-area-inset-bottom));
+}
+
+.logged-out .auth-content > :last-child {
+  margin-bottom: 0;
+}
+
 #loggedOutAccount .auth-message {
   position: static;
   min-height: 0;
@@ -429,21 +445,34 @@ body.logged-out #accountBtn {
   display: none;
 }
 
-#loggedOutAccount .account-submit,
 .logged-out #authWelcome .account-submit,
 .logged-out #authLoginForm .account-submit {
-  position: static;
-  width: 100%;
-  margin: 38px 0 0;
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--auth-cta-bottom) + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: var(--auth-control-width);
+  margin: 0;
   z-index: 1;
+}
+
+.logged-out #authWelcome > .auth-message,
+.logged-out #authLoginForm > .auth-message {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--auth-cta-bottom) + var(--auth-cta-height) + 8px + env(safe-area-inset-bottom));
 }
 
 .auth-switch,
 .logged-out #authWelcome .auth-switch,
 .logged-out #authLoginForm .auth-switch {
-  position: static;
-  width: 100%;
-  margin: 60px auto 0;
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--auth-cta-bottom) - var(--auth-footer-gap) - var(--auth-footer-line) + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: var(--auth-control-width);
+  margin: 0;
   padding: 0;
   text-align: center;
   font-size: 16px;

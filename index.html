@@ -60,16 +60,18 @@
     <section id="accountPanel" class="card account-panel">
       <div id="loggedOutAccount">
         <div id="authWelcome">
-          <h2>Welcome!</h2>
-          <p class="muted">Create an account so your progress can be saved.</p>
-          <input id="signupEmailInput" class="text-input" type="email" placeholder="Email" autocomplete="email" />
-          <div class="password-field">
-            <input id="signupPasswordInput" class="text-input" type="password" placeholder="Password" autocomplete="new-password" />
-            <button class="password-toggle" type="button" data-toggle-password="signupPasswordInput" aria-label="Show password">Show</button>
-          </div>
-          <div class="password-field">
-            <input id="signupConfirmPasswordInput" class="text-input" type="password" placeholder="Confirm password" autocomplete="new-password" />
-            <button class="password-toggle" type="button" data-toggle-password="signupConfirmPasswordInput" aria-label="Show password">Show</button>
+          <div class="auth-content">
+            <h2>Welcome!</h2>
+            <p class="muted">Create an account so your progress can be saved.</p>
+            <input id="signupEmailInput" class="text-input" type="email" placeholder="Email" autocomplete="email" />
+            <div class="password-field">
+              <input id="signupPasswordInput" class="text-input" type="password" placeholder="Password" autocomplete="new-password" />
+              <button class="password-toggle" type="button" data-toggle-password="signupPasswordInput" aria-label="Show password">Show</button>
+            </div>
+            <div class="password-field">
+              <input id="signupConfirmPasswordInput" class="text-input" type="password" placeholder="Confirm password" autocomplete="new-password" />
+              <button class="password-toggle" type="button" data-toggle-password="signupConfirmPasswordInput" aria-label="Show password">Show</button>
+            </div>
           </div>
           <button id="signupBtn" class="primary-btn account-submit" type="button">Create account</button>
           <p class="auth-switch">Already have an account ? <button id="showLoginBtn" class="inline-link" type="button">Log in</button></p>
@@ -77,12 +79,14 @@
 
         <div id="authLoginForm" class="hidden">
           <button id="backToAuthWelcomeFromLogin" class="text-btn" type="button">← Back</button>
-          <h2>Welcome back!</h2>
-          <p class="muted">Your progress will load after login.</p>
-          <input id="loginEmailInput" class="text-input" type="email" placeholder="Email" autocomplete="email" />
-          <div class="password-field">
-            <input id="loginPasswordInput" class="text-input" type="password" placeholder="Password" autocomplete="current-password" />
-            <button class="password-toggle" type="button" data-toggle-password="loginPasswordInput" aria-label="Show password">Show</button>
+          <div class="auth-content">
+            <h2>Welcome back!</h2>
+            <p class="muted">Your progress will load after login.</p>
+            <input id="loginEmailInput" class="text-input" type="email" placeholder="Email" autocomplete="email" />
+            <div class="password-field">
+              <input id="loginPasswordInput" class="text-input" type="password" placeholder="Password" autocomplete="current-password" />
+              <button class="password-toggle" type="button" data-toggle-password="loginPasswordInput" aria-label="Show password">Show</button>
+            </div>
           </div>
           <button id="loginBtn" class="primary-btn account-submit" type="button">Log in</button>
           <p class="auth-switch">Forgot your password? <button id="forgotPasswordBtn" class="inline-link" type="button">Click here</button></p>
