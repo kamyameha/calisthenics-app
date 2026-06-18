@@ -1605,6 +1605,7 @@ function showAccountView(view) {
   if (closeBtn) closeBtn.classList.toggle('hidden', view !== 'main');
   const panel = document.getElementById('accountPanel');
   const content = document.getElementById('loggedInAccount');
+  if (panel) panel.classList.toggle('account-password-mode', view === 'password');
   if (panel) panel.scrollTop = 0;
   if (content) content.scrollTop = 0;
   if (view === 'goal') populateAccountGoal();

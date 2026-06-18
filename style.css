@@ -463,6 +463,8 @@ body.logged-out #accountBtn {
 }
 
 #loggedOutAccount .text-input {
+  color: var(--main);
+  caret-color: var(--main);
   padding: 0 16px;
   font-size: var(--text-md);
   line-height: 52px;
@@ -533,11 +535,13 @@ body.logged-out #accountBtn {
   font-size: 16px;
   line-height: 1.2;
   font-weight: 500;
+  color: var(--main);
 }
 
 .logged-out #authWelcome .auth-switch *,
 .logged-out #authLoginForm .auth-switch * {
   text-align: center;
+  color: var(--main);
 }
 
 #authLoginForm .text-btn {
@@ -644,6 +648,7 @@ html.recovery-boot #authLoginForm {
   color: #ffffff;
 }
 
+#energyCard .today-empty-state h2,
 .today-empty-state h2 {
   color: #ffffff;
   font-size: var(--title-lg);
@@ -651,6 +656,7 @@ html.recovery-boot #authLoginForm {
   padding-right: 48px;
 }
 
+#energyCard .today-empty-state p,
 .today-empty-state p {
   color: #ffffff;
   font-size: var(--text-md);
@@ -1158,6 +1164,31 @@ html.recovery-boot #authLoginForm {
   border-radius: var(--radius);
   background: var(--card);
   box-shadow: 0 22px 60px rgba(1, 45, 237, 0.22);
+}
+
+.account-panel.account-password-mode {
+  padding-top: calc(24px + env(safe-area-inset-top));
+}
+
+.account-panel.account-password-mode .account-modal-content {
+  max-height: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.account-panel.account-password-mode .account-modal-header {
+  margin-bottom: 42px;
+}
+
+.account-panel.account-password-mode #accountModalTitle,
+.account-panel.account-password-mode #accountPasswordView .muted {
+  color: var(--main);
+}
+
+.account-panel.account-password-mode #accountPasswordView .muted {
+  margin-bottom: 38px;
 }
 
 .account-modal-header {
