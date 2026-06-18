@@ -727,6 +727,13 @@ function setAuthMessage(message, type = 'info') {
   el.dataset.type = type;
 }
 
+function blurActiveAuthField() {
+  const active = document.activeElement;
+  if (active && active.closest?.('#loggedOutAccount') && typeof active.blur === 'function') {
+    active.blur();
+  }
+}
+
 function friendlyAuthError(message = '') {
   if (window.SomthingreatAuth?.friendlyAuthError) return window.SomthingreatAuth.friendlyAuthError(message);
   const lower = message.toLowerCase();
@@ -814,6 +821,7 @@ async function loadCloudStateInBackground() {
 }
 
 function setAuthMode(mode = 'welcome') {
+  blurActiveAuthField();
   const welcome = document.getElementById('authWelcome');
   const login = document.getElementById('authLoginForm');
   const reset = document.getElementById('authResetForm');
@@ -1011,6 +1019,9 @@ function renderToday() {
   document.getElementById('selectedEnergyCard').classList.add('hidden');
   document.getElementById('generatedWorkoutCard').classList.add('hidden');
   document.getElementById('exercisePreview').classList.add('hidden');
+
+  const emptyState = document.getElementById('todayEmptyState');
+  if (emptyState) emptyState.classList.toggle('hidden', state.history.length > 0);
 }
 
 function selectEnergy(feel) {
@@ -1247,6 +1258,7 @@ function renderProgress() {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
   document.getElementById('monthlyCount').textContent = monthly;
+  renderConsistency(monthly, now);
 
   const levels = document.getElementById('levelsList');
   levels.innerHTML = '';
@@ -1275,6 +1287,49 @@ function renderProgress() {
     row.innerHTML = `<div><strong>${labels[key]}</strong><p>${exercise.name} · ${exercise.prescription}</p></div><span>L${item.level + 1}</span>`;
     levels.appendChild(row);
   });
+}
+
+function monthWeekKey(date) {
+  const start = new Date(date.getFullYear(), date.getMonth(), 1);
+  const offset = (start.getDay() + 6) % 7;
+  return Math.floor((date.getDate() + offset - 1) / 7);
+}
+
+function elapsedWeeksInMonth(date = new Date()) {
+  const weeks = new Set();
+  for (let day = 1; day <= date.getDate(); day += 1) {
+    weeks.add(monthWeekKey(new Date(date.getFullYear(), date.getMonth(), day)));
+  }
+  return weeks.size || 1;
+}
+
+function renderConsistency(monthlyCount, now = new Date()) {
+  const title = document.getElementById('consistencyTitle');
+  const message = document.getElementById('consistencyMessage');
+  if (!title || !message) return;
+
+  const activeWeeks = new Set(
+    state.history
+      .map(item => new Date(item.date))
+      .filter(date => date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear())
+      .map(date => monthWeekKey(date))
+  ).size;
+  const elapsedWeeks = elapsedWeeksInMonth(now);
+
+  if (!monthlyCount) {
+    title.textContent = 'Your rhythm starts here.';
+    message.textContent = 'Complete your first workout to start building consistency.';
+    return;
+  }
+
+  if (activeWeeks >= elapsedWeeks) {
+    title.textContent = 'You showed up every week this month.';
+    message.textContent = `${monthlyCount} workout${monthlyCount === 1 ? '' : 's'} across ${activeWeeks} active week${activeWeeks === 1 ? '' : 's'}.`;
+    return;
+  }
+
+  title.textContent = `You showed up ${activeWeeks} week${activeWeeks === 1 ? '' : 's'} this month.`;
+  message.textContent = `${monthlyCount} workout${monthlyCount === 1 ? '' : 's'} completed so far.`;
 }
 
 function exportProgress() {
@@ -1953,6 +2008,9 @@ document.addEventListener('click', event => {
   if (event.target.id === 'refreshAdminDashboardBtn') renderAdminDashboard();
   if (event.target.id === 'showLoginBtn') setAuthMode('login');
   if (event.target.id === 'backToAuthWelcomeFromLogin') setAuthMode('welcome');
+  if (['signupBtn', 'loginBtn', 'forgotPasswordBtn', 'resetPasswordBtn'].includes(event.target.id)) {
+    blurActiveAuthField();
+  }
   if (event.target.id === 'signupBtn') signUp();
   if (event.target.id === 'loginBtn') login();
   if (event.target.id === 'forgotPasswordBtn') sendPasswordReset();

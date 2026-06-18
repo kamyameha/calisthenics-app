@@ -29,7 +29,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=design-pass-3" />
+  <link rel="stylesheet" href="style.css?v=consistency-authfix-2" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -256,6 +256,10 @@
 
     <section id="today" class="screen active">
       <section id="energyCard" class="card step-card">
+        <div id="todayEmptyState" class="today-empty-state hidden">
+          <h2>You’re set.</h2>
+          <p>Start with how you feel today, and Somthingreat will shape the workout from there.</p>
+        </div>
         <h2>Energy check</h2>
         <p class="muted">How's your energy today? We'll adjust today's workout intensity.</p>
         <div class="energy-grid" role="group" aria-label="Choose your energy level">
@@ -321,6 +325,12 @@
     </section>
 
     <section id="progress" class="screen">
+      <section id="consistencyCard" class="hero-card consistency-card">
+        <p class="muted-light">Consistency</p>
+        <h2 id="consistencyTitle">Your rhythm starts here.</h2>
+        <p id="consistencyMessage">Complete your first workout to start building consistency.</p>
+      </section>
+
       <section class="card stat-card">
         <p class="eyebrow">This month</p>
         <p class="big-number"><span id="monthlyCount">0</span></p>
@@ -341,6 +351,6 @@
   </nav>
 
   <script src="auth.js?v=8-15"></script>
-  <script src="app.js?v=goal-authmsg-1"></script>
+  <script src="app.js?v=consistency-authfix-2"></script>
 </body>
 </html>

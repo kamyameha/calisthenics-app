@@ -57,6 +57,11 @@ body {
   line-height: 1.35;
 }
 
+body.logged-out {
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
 h1,
 h2,
 h3,
@@ -627,6 +632,23 @@ html.recovery-boot #authLoginForm {
   box-shadow: none;
 }
 
+.today-empty-state {
+  margin-bottom: 34px;
+}
+
+.today-empty-state h2 {
+  color: var(--main);
+  font-size: var(--title-lg);
+  margin: 0 0 12px;
+}
+
+.today-empty-state p {
+  color: var(--main);
+  font-size: var(--text-md);
+  line-height: 1.28;
+  margin: 0;
+}
+
 .energy-grid {
   display: grid;
   grid-template-columns: repeat(2, 172px);
@@ -655,7 +677,7 @@ html.recovery-boot #authLoginForm {
 
 .energy-option span {
   color: currentColor;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 900;
   letter-spacing: 0.01em;
   line-height: 1;
@@ -1037,6 +1059,16 @@ html.recovery-boot #authLoginForm {
 .stat-card {
   text-align: center;
   color: var(--main);
+}
+
+.consistency-card {
+  display: grid;
+  gap: 10px;
+}
+
+.consistency-card h2,
+.consistency-card p {
+  margin-bottom: 0;
 }
 
 .stat-card .eyebrow,
