@@ -319,7 +319,7 @@ button {
 
 .sync-status {
   font-weight: 900;
-  color: var(--success);
+  color: var(--main);
 }
 
 /* Welcome screen */
@@ -333,7 +333,7 @@ button {
   justify-content: center;
   padding: 24px var(--screen-x) calc(var(--auth-cta-bottom) + env(safe-area-inset-bottom));
   background: var(--bg);
-  color: var(--text);
+  color: var(--main);
 }
 
 .welcome-inner {
@@ -365,7 +365,7 @@ button {
 }
 
 .welcome-copy h1 {
-  color: var(--heading);
+  color: var(--main);
   font-size: var(--title-lg);
   line-height: 1.08;
   margin: 0 0 12px;
@@ -373,7 +373,7 @@ button {
 }
 
 .welcome-copy p {
-  color: var(--muted-text);
+  color: var(--main);
   font-size: var(--text-md);
   line-height: 1.28;
   margin: 0;
@@ -435,12 +435,13 @@ body.logged-out #accountBtn {
 }
 
 #loggedOutAccount h2 {
-  color: var(--heading);
+  color: var(--main);
   font-size: var(--title-lg);
   margin: 0 0 12px;
 }
 
 #loggedOutAccount .muted {
+  color: var(--main);
   margin: 0 0 38px;
 }
 
@@ -641,10 +642,10 @@ html.recovery-boot #authLoginForm {
   padding: 0;
   display: grid;
   place-items: center;
-  border-color: var(--border);
+  border-color: var(--main);
   border-radius: var(--radius);
-  background: var(--card);
-  color: var(--heading);
+  background: var(--main);
+  color: #ffffff;
   box-shadow: none;
 }
 
@@ -660,27 +661,27 @@ html.recovery-boot #authLoginForm {
 }
 
 .energy-option[data-feel="great"] {
-  border-color: rgba(19, 138, 75, 0.22);
-  background: var(--success-soft);
-  color: var(--success);
+  border-color: var(--main);
+  background: var(--main);
+  color: #ffffff;
 }
 
 .energy-option[data-feel="normal"] {
-  border-color: rgba(1, 45, 237, 0.22);
-  background: var(--soft);
-  color: var(--main);
+  border-color: var(--main);
+  background: var(--main);
+  color: #ffffff;
 }
 
 .energy-option[data-feel="tired"] {
-  border-color: rgba(178, 106, 0, 0.28);
-  background: var(--warning-soft);
-  color: var(--warning);
+  border-color: var(--main);
+  background: var(--main);
+  color: #ffffff;
 }
 
 .energy-option[data-feel="exhausted"] {
-  border-color: rgba(82, 96, 109, 0.22);
-  background: var(--rest-soft);
-  color: var(--rest);
+  border-color: var(--main);
+  background: var(--main);
+  color: #ffffff;
 }
 
 .energy-option:active,
@@ -724,35 +725,35 @@ html.recovery-boot #authLoginForm {
   min-height: 24px;
   padding: 4px 16px;
   border-radius: 999px;
-  background: var(--soft);
-  color: var(--main);
-  border: 1px solid var(--border);
+  background: var(--main);
+  color: #ffffff;
+  border: 1px solid var(--main);
   font-size: 12px;
   font-weight: 900;
 }
 
 .selected-energy-stack[data-energy="great"] .energy-pill {
-  background: var(--success-soft);
-  color: var(--success);
-  border-color: rgba(19, 138, 75, 0.22);
+  background: var(--main);
+  color: #ffffff;
+  border-color: var(--main);
 }
 
 .selected-energy-stack[data-energy="tired"] .energy-pill {
-  background: var(--warning-soft);
-  color: var(--warning);
-  border-color: rgba(178, 106, 0, 0.28);
+  background: var(--main);
+  color: #ffffff;
+  border-color: var(--main);
 }
 
 .selected-energy-stack[data-energy="exhausted"] .energy-pill {
-  background: var(--rest-soft);
-  color: var(--rest);
-  border-color: rgba(82, 96, 109, 0.22);
+  background: var(--main);
+  color: #ffffff;
+  border-color: var(--main);
 }
 
 .selected-energy-stack[data-energy="normal"] .energy-pill {
-  background: var(--soft);
-  color: var(--main);
-  border-color: var(--border);
+  background: var(--main);
+  color: #ffffff;
+  border-color: var(--main);
 }
 
 .selected-energy-mascot {
@@ -794,14 +795,13 @@ html.recovery-boot #authLoginForm {
 
 .add-on-panel {
   margin-top: 14px;
-  padding: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.18);
+  padding: 10px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.32);
+  background: transparent;
 }
 
 .add-on-title {
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   font-size: 0.85rem;
   font-weight: 700;
   opacity: 0.85;
@@ -811,7 +811,7 @@ html.recovery-boot #authLoginForm {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 0;
+  padding: 9px 0;
   font-weight: 700;
 }
 
@@ -822,7 +822,7 @@ html.recovery-boot #authLoginForm {
 }
 
 .add-on-summary {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   font-size: 0.9rem;
   opacity: 0.78;
 }
@@ -1040,12 +1040,19 @@ html.recovery-boot #authLoginForm {
 
 .stat-card {
   text-align: center;
+  color: var(--main);
+}
+
+.stat-card .eyebrow,
+.stat-card .muted {
+  color: var(--main);
 }
 
 .big-number {
   margin-bottom: 0;
   font-size: 28px;
   font-weight: 900;
+  color: var(--main);
 }
 
 .stat-card .big-number {
@@ -1104,6 +1111,10 @@ html.recovery-boot #authLoginForm {
 
 #closeAccountModalBtn {
   min-width: 44px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  padding: 0;
   font-size: 22px;
   line-height: 1;
 }
@@ -1143,6 +1154,12 @@ html.recovery-boot #authLoginForm {
 .account-full-btn {
   width: 100%;
   margin-top: 10px;
+}
+
+#logoutBtn {
+  background: var(--main);
+  color: #ffffff;
+  border-color: var(--main);
 }
 
 .account-view > .text-btn {
@@ -1197,8 +1214,8 @@ html.recovery-boot #authLoginForm {
 }
 
 .history-day.has-workout {
-  border-color: var(--success);
-  background: var(--success);
+  border-color: var(--main);
+  background: var(--main);
   color: #ffffff;
 }
 
