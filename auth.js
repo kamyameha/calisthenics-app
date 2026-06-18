@@ -1,17 +1,4 @@
 (function () {
-  function createPasswordClient(supabase, url, anonKey) {
-    if (!supabase || !url || !anonKey) return null;
-    return supabase.createClient(url, anonKey, {
-      auth: {
-        storageKey: 'somthingreat-password-session',
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        flowType: 'implicit'
-      }
-    });
-  }
-
   function resetRedirectUrl() {
     const redirectUrl = new URL(window.location.origin + window.location.pathname);
     redirectUrl.searchParams.set('reset-password', '1');
@@ -62,7 +49,6 @@
 
   window.SomthingreatAuth = {
     authUrlParams,
-    createPasswordClient,
     friendlyAuthError,
     getExistingSession,
     resetLinkMessage,

@@ -3,6 +3,7 @@ const INITIAL_AUTH_HASH = window.location.hash || '';
 const STORAGE_KEY = 'camille-calisthenics-v4';
 const LEGACY_STORAGE_KEY = 'camille-calisthenics-v2';
 const OLDER_LEGACY_STORAGE_KEY = 'camille-calisthenics-v1';
+const STATE_SCHEMA_VERSION = 1;
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -23,14 +24,21 @@ const supabaseClient = SUPABASE_READY
   : null;
 window.appSupabaseClient = supabaseClient;
 
-const passwordAuthClient = SUPABASE_READY
-  ? window.SomthingreatAuth?.createPasswordClient(window.supabase, window.SUPABASE_URL, window.SUPABASE_ANON_KEY)
-  : null;
-
 let currentUser = null;
 let currentProfileId = null;
 let syncTimer = null;
 let welcomeDismissed = false;
+let waitingServiceWorker = null;
+let updateBannerReady = false;
+let applyingUpdate = false;
+
+function clearLegacyPasswordSession() {
+  try {
+    localStorage.removeItem('somthingreat-password-session');
+    localStorage.removeItem('somthingreat-password-session-code-verifier');
+  } catch (error) {}
+}
+clearLegacyPasswordSession();
 
 function hasRecoveryBootFlag() {
   try {
@@ -100,7 +108,7 @@ async function getExistingAuthSession(client) {
   return data?.session?.user ? data.session : null;
 }
 
-async function waitForRecoverySession(client = passwordAuthClient || supabaseClient) {
+async function waitForRecoverySession(client = supabaseClient) {
   const session = window.SomthingreatAuth?.waitForSession
     ? await window.SomthingreatAuth.waitForSession(client)
     : await getExistingAuthSession(client);
@@ -111,13 +119,10 @@ async function waitForRecoverySession(client = passwordAuthClient || supabaseCli
 async function ensureRecoverySession() {
   if (!supabaseClient || !passwordRecoveryMode) return null;
 
-  const clients = [passwordAuthClient, supabaseClient].filter(Boolean);
-  for (const client of clients) {
-    const existing = await getExistingAuthSession(client);
-    if (existing?.user) {
-      currentUser = existing.user;
-      return existing;
-    }
+  const existing = await getExistingAuthSession(supabaseClient);
+  if (existing?.user) {
+    currentUser = existing.user;
+    return existing;
   }
 
   const params = getAuthUrlParams();
@@ -127,9 +132,9 @@ async function ensureRecoverySession() {
   const refreshToken = params.get('refresh_token');
   const code = params.get('code');
 
-  if (accessToken && refreshToken && passwordAuthClient) {
+  if (accessToken && refreshToken) {
     try {
-      const { data, error } = await passwordAuthClient.auth.setSession({
+      const { data, error } = await supabaseClient.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken
       });
@@ -143,20 +148,18 @@ async function ensureRecoverySession() {
   }
 
   if (code) {
-    for (const client of clients) {
-      try {
-        const { data, error } = await client.auth.exchangeCodeForSession(code);
-        if (error) throw error;
-        currentUser = data?.session?.user || currentUser;
-        return data?.session || null;
-      } catch (error) {
-        currentUser = null;
-      }
+    try {
+      const { data, error } = await supabaseClient.auth.exchangeCodeForSession(code);
+      if (error) throw error;
+      currentUser = data?.session?.user || currentUser;
+      return data?.session || null;
+    } catch (error) {
+      currentUser = null;
     }
     setAuthMessage(resetSessionErrorMessage('Invalid recovery code'), 'error');
   }
 
-  return await waitForRecoverySession(passwordAuthClient || supabaseClient);
+  return await waitForRecoverySession(supabaseClient);
 }
 
 let passwordRecoveryMode = isPasswordRecoveryUrl() || hasRecoveryBootFlag();
@@ -227,6 +230,14 @@ const equipmentLabels = {
   jumpRope: 'Jump rope'
 };
 
+const validProfileValues = {
+  goals: new Set(Object.keys(goalLabels)),
+  equipment: new Set(Object.keys(equipmentLabels)),
+  pushups: new Set(['zero', 'oneFive', 'sixTen', 'tenPlus']),
+  squats: new Set(['zeroFive', 'sixTen', 'tenPlus']),
+  yesNo: new Set(['yes', 'no'])
+};
+
 function getProfile() {
   return state?.profile || null;
 }
@@ -240,7 +251,7 @@ function getRotation() {
 }
 
 function hasCompletedProfile() {
-  return Boolean(state.profile?.goal && state.profile?.equipment && state.profile?.pushups && state.profile?.squats);
+  return Boolean(state.profile?.goal && Array.isArray(state.profile?.equipment) && state.profile.equipment.length && state.profile?.pushups && state.profile?.squats);
 }
 
 function getSelectedAddOns() {
@@ -266,14 +277,92 @@ function applyRating(trackKey, rating) {
   workoutModule.applyRating(state.levels, trackKey, rating, getProfile());
 }
 
+function sanitizeProfile(profile) {
+  if (!profile || typeof profile !== 'object') return null;
+  const goal = validProfileValues.goals.has(profile.goal) ? profile.goal : null;
+  const equipment = Array.isArray(profile.equipment)
+    ? profile.equipment.filter(item => validProfileValues.equipment.has(item))
+    : [];
+  const cleanEquipment = equipment.includes('none') && equipment.length > 1
+    ? equipment.filter(item => item !== 'none')
+    : equipment;
+  const pushups = validProfileValues.pushups.has(profile.pushups) ? profile.pushups : null;
+  const squats = validProfileValues.squats.has(profile.squats) ? profile.squats : null;
+  const deadHang = validProfileValues.yesNo.has(profile.deadHang) ? profile.deadHang : null;
+  const negativePullup = validProfileValues.yesNo.has(profile.negativePullup) ? profile.negativePullup : null;
+  const dip = validProfileValues.yesNo.has(profile.dip) ? profile.dip : null;
+
+  if (!goal || !pushups || !squats || !cleanEquipment.length) return null;
+
+  return {
+    ...profile,
+    goal,
+    equipment: cleanEquipment,
+    pushups,
+    squats,
+    deadHang: cleanEquipment.includes('pullupBar') ? deadHang : null,
+    negativePullup: cleanEquipment.includes('pullupBar') ? negativePullup : null,
+    dip: cleanEquipment.includes('dipBars') ? dip : null
+  };
+}
+
+function sanitizeLevels(levels = {}, profile = null) {
+  const defaults = workoutModule.createDefaultLevels();
+  const tracks = workoutModule.getTracks(profile);
+  Object.keys(defaults).forEach(key => {
+    const source = levels[key] || {};
+    const trackLength = Math.max(1, (tracks[key] || baseTracks[key] || []).length);
+    const level = Number.isFinite(Number(source.level)) ? Number(source.level) : defaults[key].level;
+    const points = Number.isFinite(Number(source.points)) ? Number(source.points) : defaults[key].points;
+    defaults[key] = {
+      level: Math.max(0, Math.min(Math.round(level), trackLength - 1)),
+      points: Math.max(-1, Math.min(Math.round(points), 2))
+    };
+  });
+  return defaults;
+}
+
+function sanitizeHistory(history) {
+  if (!Array.isArray(history)) return [];
+  return history
+    .filter(item => item && typeof item === 'object' && !Number.isNaN(new Date(item.date).getTime()))
+    .map(item => ({
+      date: new Date(item.date).toISOString(),
+      workout: typeof item.workout === 'string' ? item.workout : 'Workout',
+      mode: typeof item.mode === 'string' ? item.mode : 'normal',
+      exercises: Array.isArray(item.exercises)
+        ? item.exercises
+            .filter(exercise => exercise && typeof exercise === 'object' && exercise.name)
+            .map(exercise => ({
+              name: String(exercise.name),
+              prescription: typeof exercise.prescription === 'string' ? exercise.prescription : '',
+              trackKey: typeof exercise.trackKey === 'string' ? exercise.trackKey : '',
+              isAddOn: Boolean(exercise.isAddOn)
+            }))
+        : []
+    }));
+}
+
+function migrateState(rawState) {
+  if (!rawState || typeof rawState !== 'object') return defaultState();
+  return { ...rawState, schemaVersion: STATE_SCHEMA_VERSION };
+}
+
 function sanitizeState(nextState) {
   if (!nextState || typeof nextState !== 'object') return defaultState();
+  nextState = migrateState(nextState);
 
+  nextState.profile = sanitizeProfile(nextState.profile);
+  nextState.levels = sanitizeLevels(nextState.levels, nextState.profile);
+  nextState.history = sanitizeHistory(nextState.history);
+  nextState.rotationIndex = Number.isFinite(Number(nextState.rotationIndex)) ? Math.max(0, Math.round(Number(nextState.rotationIndex))) : 0;
   nextState.current = sanitizeWorkout(nextState.current);
   nextState.generated = sanitizeWorkout(nextState.generated);
+  nextState.selectedEnergy = energyOptions[nextState.selectedEnergy] ? nextState.selectedEnergy : null;
   nextState.includeWarmup = Boolean(nextState.includeWarmup);
   nextState.includeStretch = Boolean(nextState.includeStretch);
   nextState.todayEmptyStateDismissed = Boolean(nextState.todayEmptyStateDismissed);
+  nextState.schemaVersion = STATE_SCHEMA_VERSION;
 
   if (!nextState.current && !nextState.generated && !nextState.selectedEnergy) {
     nextState.includeWarmup = false;
@@ -286,7 +375,7 @@ function sanitizeState(nextState) {
 function defaultState() {
   const levels = {};
   Object.assign(levels, workoutModule.createDefaultLevels());
-  return { rotationIndex: 0, levels, history: [], current: null, selectedEnergy: null, generated: null, profile: null, includeWarmup: false, includeStretch: false, todayEmptyStateDismissed: false };
+  return { schemaVersion: STATE_SCHEMA_VERSION, rotationIndex: 0, levels, history: [], current: null, selectedEnergy: null, generated: null, profile: null, includeWarmup: false, includeStretch: false, todayEmptyStateDismissed: false };
 }
 
 let state = loadState();
@@ -297,7 +386,6 @@ function loadState() {
   try {
     const parsed = JSON.parse(saved);
     const merged = { ...defaultState(), ...parsed };
-    merged.levels = { ...defaultState().levels, ...(parsed.levels || {}) };
     return sanitizeState(merged);
   } catch {
     return defaultState();
@@ -306,12 +394,14 @@ function loadState() {
 
 
 function saveState() {
+  state = sanitizeState(state);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   queueCloudSave();
 }
 
 function publicState() {
   return {
+    schemaVersion: STATE_SCHEMA_VERSION,
     rotationIndex: state.rotationIndex,
     levels: state.levels,
     history: state.history,
@@ -436,9 +526,7 @@ async function loadCloudState() {
   const cloudState = data?.state || legacyState;
 
   if (cloudState) {
-    state = { ...defaultState(), ...cloudState };
-    state.levels = { ...defaultState().levels, ...(cloudState.levels || {}) };
-    state = sanitizeState(state);
+    state = sanitizeState({ ...defaultState(), ...cloudState });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     if (legacyState) await saveCloudState();
     renderAll();
@@ -511,11 +599,10 @@ function resetRedirectUrl() {
 
 async function sendPasswordResetToEmail(email) {
   if (!email) return { error: new Error('Please enter a valid email address.') };
-  const client = passwordAuthClient || supabaseClient;
   try {
     localStorage.setItem('somthingreat-password-reset-requested-at', String(Date.now()));
   } catch (error) {}
-  return await client.auth.resetPasswordForEmail(email, { redirectTo: resetRedirectUrl() });
+  return await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: resetRedirectUrl() });
 }
 
 async function finishResetToLogin(client = supabaseClient) {
@@ -527,12 +614,10 @@ async function finishResetToLogin(client = supabaseClient) {
   currentProfileId = null;
 
   try { await client?.auth?.signOut(); } catch (error) {}
-  if (passwordAuthClient && passwordAuthClient !== client) {
-    try { await passwordAuthClient.auth.signOut(); } catch (error) {}
-  }
   if (supabaseClient && supabaseClient !== client) {
     try { await supabaseClient.auth.signOut(); } catch (error) {}
   }
+  clearLegacyPasswordSession();
 
   clearAuthFields();
   setAuthMode('login');
@@ -823,6 +908,7 @@ function completeWorkout() {
   renderToday();
   renderGoals();
   renderProgress();
+  updateUpdateBanner();
 }
 
 function getTrackLevel(trackKey) {
@@ -968,33 +1054,6 @@ function renderConsistency(monthlyCount, now = new Date()) {
   message.textContent = `${monthlyCount} workout${monthlyCount === 1 ? '' : 's'} completed so far.`;
 }
 
-function exportProgress() {
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `calisthenics-backup-${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function importProgress(file) {
-  const reader = new FileReader();
-  reader.onload = () => {
-    try {
-      state = { ...defaultState(), ...JSON.parse(reader.result) };
-      saveState();
-      renderToday();
-      renderProgress();
-      alert('Progress imported.');
-    } catch {
-      alert('Could not import this file.');
-    }
-  };
-  reader.readAsText(file);
-}
-
-
 function renderOnboarding() {
   const onboarding = document.getElementById('onboarding');
   if (!onboarding) return;
@@ -1066,6 +1125,39 @@ function updateConditionalQuestions() {
   document.getElementById('dipAssessment')?.classList.toggle('hidden', !equipment.includes('dipBars'));
 }
 
+function isSafeToShowUpdateBanner() {
+  const accountPanel = document.getElementById('accountPanel');
+  const onboarding = document.getElementById('onboarding');
+  return Boolean(
+    updateBannerReady &&
+    !passwordRecoveryMode &&
+    !state.current &&
+    !state.selectedEnergy &&
+    !state.generated &&
+    !document.body.classList.contains('logged-out') &&
+    !accountPanel?.classList.contains('account-open') &&
+    onboarding?.classList.contains('hidden')
+  );
+}
+
+function updateUpdateBanner() {
+  const banner = document.getElementById('updateBanner');
+  if (!banner) return;
+  banner.classList.toggle('hidden', !isSafeToShowUpdateBanner());
+}
+
+function markUpdateReady(worker) {
+  waitingServiceWorker = worker || waitingServiceWorker;
+  updateBannerReady = Boolean(waitingServiceWorker);
+  updateUpdateBanner();
+}
+
+function applyWaitingUpdate() {
+  if (!waitingServiceWorker || applyingUpdate) return;
+  applyingUpdate = true;
+  waitingServiceWorker.postMessage({ type: 'SKIP_WAITING' });
+}
+
 
 function enforceScreenSeparation() {
   const panel = document.getElementById('accountPanel');
@@ -1120,6 +1212,7 @@ function renderAll() {
   }
   enforceScreenSeparation();
   updateWelcomeGate();
+  updateUpdateBanner();
 }
 
 function renderAccount() {
@@ -1201,6 +1294,7 @@ function closeAccountModal() {
   panel.classList.remove('account-open');
   panel.classList.add('hidden');
   showAccountView('main');
+  updateUpdateBanner();
 }
 
 function showAccountView(view) {
@@ -1536,8 +1630,7 @@ async function updatePasswordFromRecovery() {
   if (password !== confirmPassword) return setAuthMessage('Passwords do not match.', 'error');
 
   setAuthMessage('Updating password...', 'info');
-  const passwordSession = passwordAuthClient ? await getExistingAuthSession(passwordAuthClient) : null;
-  const client = passwordSession ? passwordAuthClient : supabaseClient;
+  const client = supabaseClient;
   const { error } = await client.auth.updateUser({ password });
   if (error) {
     const lower = (error.message || '').toLowerCase();
@@ -1583,6 +1676,8 @@ document.addEventListener('click', event => {
     renderOnboarding();
     return;
   }
+
+  if (event.target.id === 'applyUpdateBtn') applyWaitingUpdate();
 
   const feelButton = event.target.closest('.feel-btn');
   if (feelButton) selectEnergy(feelButton.dataset.feel);
@@ -1656,15 +1751,6 @@ document.addEventListener('click', event => {
   if (event.target.id === 'logoutBtn') logout();
   if (event.target.matches('[data-toggle-password]')) togglePasswordVisibility(event.target);
   if (event.target.id === 'saveProfileBtn') saveProfileFromOnboarding();
-  if (event.target.id === 'exportBtn' || event.target.id === 'backupBtn') exportProgress();
-
-  if (event.target.id === 'resetBtn' && confirm('Reset all progress?')) {
-    state = defaultState();
-    saveState();
-    renderToday();
-    renderGoals();
-    renderProgress();
-  }
 
   if (event.target.matches('.nav-btn')) {
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -1695,33 +1781,17 @@ document.addEventListener('change', event => {
   }
 });
 
-const importInput = document.getElementById('importInput');
-if (importInput) {
-  importInput.addEventListener('change', event => {
-    if (event.target.files[0]) importProgress(event.target.files[0]);
-  });
-}
-
-function activateWaitingServiceWorker(registration) {
-  if (registration && registration.waiting) {
-    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-  }
-}
-
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
 
-  let refreshing = false;
-
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (refreshing) return;
-    refreshing = true;
+    if (!applyingUpdate) return;
     window.location.reload();
   });
 
   navigator.serviceWorker.register('./service-worker.js').then(registration => {
     if (registration.waiting) {
-      activateWaitingServiceWorker(registration);
+      markUpdateReady(registration.waiting);
     }
 
     registration.addEventListener('updatefound', () => {
@@ -1730,12 +1800,13 @@ function registerServiceWorker() {
 
       newWorker.addEventListener('statechange', () => {
         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-          activateWaitingServiceWorker(registration);
+          markUpdateReady(newWorker);
         }
       });
     });
 
-    // Ask the browser to check for a new service worker whenever the app opens.
+    // Check quietly on app open. The new worker activates naturally next time
+    // the user taps Refresh, so we never auto-reload during forms or workouts.
     registration.update();
   }).catch(error => {
     console.warn('Service worker registration failed:', error);

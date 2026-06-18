@@ -1,11 +1,13 @@
-const CACHE_NAME = 'somthingreat-v8-16-workouts-module';
+// Release rule: when deploying, keep this cache name aligned with the
+// CSS/JS query versions in index.html.
+const CACHE_NAME = 'somthingreat-v8-18-update-banner';
 const APP_SHELL = [
   './',
   './index.html',
-  './style.css',
-  './auth.js?v=8-15',
-  './workouts.js',
-  './app.js',
+  './style.css?v=v8-18-update-banner',
+  './auth.js?v=v8-18-update-banner',
+  './workouts.js?v=v8-18-update-banner',
+  './app.js?v=v8-18-update-banner',
   './manifest.json',
   './supabase-config.js',
   './somthingreat.svg',
@@ -26,7 +28,6 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
   );
 });
 
@@ -38,7 +39,6 @@ self.addEventListener('activate', event => {
           .filter(key => key !== CACHE_NAME)
           .map(key => caches.delete(key))
       ))
-      .then(() => self.clients.claim())
   );
 });
 

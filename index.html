@@ -29,7 +29,8 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=auth-colors-password-4" />
+  <!-- Release rule: keep CSS/JS query versions aligned with service-worker.js CACHE_NAME. -->
+  <link rel="stylesheet" href="style.css?v=v8-18-update-banner" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -351,8 +352,13 @@
     <button class="nav-btn" data-screen="progress">Progress</button>
   </nav>
 
-  <script src="auth.js?v=8-15"></script>
-  <script src="workouts.js?v=workouts-module-1"></script>
-  <script src="app.js?v=workouts-module-1"></script>
+  <div id="updateBanner" class="update-banner hidden" role="status" aria-live="polite">
+    <span>Update ready</span>
+    <button id="applyUpdateBtn" type="button">Refresh</button>
+  </div>
+
+  <script src="auth.js?v=v8-18-update-banner"></script>
+  <script src="workouts.js?v=v8-18-update-banner"></script>
+  <script src="app.js?v=v8-18-update-banner"></script>
 </body>
 </html>
