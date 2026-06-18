@@ -422,16 +422,19 @@ body.logged-out #accountBtn {
 }
 
 .logged-out #loggedOutAccount {
-  min-height: 0;
+  position: relative;
+  min-height: calc(100dvh - 84px - env(safe-area-inset-bottom));
+  min-height: calc(100svh - 84px - env(safe-area-inset-bottom));
 }
 
 .logged-out #authWelcome,
 .logged-out #authLoginForm,
 .logged-out #authResetForm {
   display: block;
-  min-height: calc(100dvh - 84px - env(safe-area-inset-bottom));
+  position: absolute;
+  inset: 0;
+  min-height: 100%;
   padding-top: 0;
-  position: relative;
 }
 
 .logged-out #authWelcome.hidden,
@@ -487,11 +490,11 @@ body.logged-out #accountBtn {
 }
 
 #loggedOutAccount .auth-message {
-  position: fixed;
-  left: 50%;
+  position: absolute;
+  left: 0;
+  right: 0;
   bottom: calc(var(--auth-cta-bottom) + var(--auth-cta-height) + 14px + env(safe-area-inset-bottom));
-  transform: translateX(-50%);
-  width: var(--auth-control-width);
+  width: 100%;
   min-height: 0;
   margin: 0;
   padding: 0 4px;
@@ -507,11 +510,11 @@ body.logged-out #accountBtn {
 .logged-out #authWelcome .account-submit,
 .logged-out #authLoginForm .account-submit,
 .logged-out #authResetForm .account-submit {
-  position: fixed;
-  left: 50%;
+  position: absolute;
+  left: 0;
+  right: 0;
   bottom: calc(var(--auth-cta-bottom) + env(safe-area-inset-bottom));
-  transform: translateX(-50%);
-  width: var(--auth-control-width);
+  width: 100%;
   margin: 0;
   z-index: 1;
 }
@@ -519,11 +522,11 @@ body.logged-out #accountBtn {
 .auth-switch,
 .logged-out #authWelcome .auth-switch,
 .logged-out #authLoginForm .auth-switch {
-  position: fixed;
-  left: 50%;
+  position: absolute;
+  left: 0;
+  right: 0;
   bottom: calc(var(--auth-cta-bottom) - var(--auth-footer-gap) - var(--auth-footer-line) + env(safe-area-inset-bottom));
-  transform: translateX(-50%);
-  width: var(--auth-control-width);
+  width: 100%;
   margin: 0;
   padding: 0;
   text-align: center;
@@ -633,20 +636,45 @@ html.recovery-boot #authLoginForm {
 }
 
 .today-empty-state {
+  position: relative;
+  padding: var(--space-5);
   margin-bottom: 34px;
+  border-radius: var(--radius);
+  background: var(--main);
+  color: #ffffff;
 }
 
 .today-empty-state h2 {
-  color: var(--main);
+  color: #ffffff;
   font-size: var(--title-lg);
   margin: 0 0 12px;
+  padding-right: 48px;
 }
 
 .today-empty-state p {
-  color: var(--main);
+  color: #ffffff;
   font-size: var(--text-md);
   line-height: 1.28;
   margin: 0;
+  padding-right: 16px;
+}
+
+.today-empty-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  min-width: 44px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-color: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  background: transparent;
+  color: #ffffff;
+  font-size: 22px;
+  line-height: 1;
 }
 
 .energy-grid {
@@ -1057,8 +1085,15 @@ html.recovery-boot #authLoginForm {
 }
 
 .stat-card {
+  display: grid;
+  gap: 8px;
+  padding: var(--space-5);
   text-align: center;
   color: var(--main);
+}
+
+.stat-card p {
+  margin: 0;
 }
 
 .consistency-card {

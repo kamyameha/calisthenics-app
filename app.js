@@ -540,6 +540,7 @@ function sanitizeState(nextState) {
   nextState.generated = sanitizeWorkout(nextState.generated);
   nextState.includeWarmup = Boolean(nextState.includeWarmup);
   nextState.includeStretch = Boolean(nextState.includeStretch);
+  nextState.todayEmptyStateDismissed = Boolean(nextState.todayEmptyStateDismissed);
 
   if (!nextState.current && !nextState.generated && !nextState.selectedEnergy) {
     nextState.includeWarmup = false;
@@ -552,7 +553,7 @@ function sanitizeState(nextState) {
 function defaultState() {
   const levels = {};
   Object.keys(baseTracks).forEach(key => levels[key] = { level: 0, points: 0 });
-  return { rotationIndex: 0, levels, history: [], current: null, selectedEnergy: null, generated: null, profile: null, includeWarmup: false, includeStretch: false };
+  return { rotationIndex: 0, levels, history: [], current: null, selectedEnergy: null, generated: null, profile: null, includeWarmup: false, includeStretch: false, todayEmptyStateDismissed: false };
 }
 
 let state = loadState();
@@ -586,7 +587,8 @@ function publicState() {
     generated: state.generated,
     profile: state.profile,
     includeWarmup: state.includeWarmup,
-    includeStretch: state.includeStretch
+    includeStretch: state.includeStretch,
+    todayEmptyStateDismissed: state.todayEmptyStateDismissed
   };
 }
 
@@ -1021,7 +1023,16 @@ function renderToday() {
   document.getElementById('exercisePreview').classList.add('hidden');
 
   const emptyState = document.getElementById('todayEmptyState');
-  if (emptyState) emptyState.classList.toggle('hidden', state.history.length > 0);
+  if (emptyState) {
+    const shouldShowEmptyState = state.history.length === 0 && !state.todayEmptyStateDismissed;
+    emptyState.classList.toggle('hidden', !shouldShowEmptyState);
+  }
+}
+
+function dismissTodayEmptyState() {
+  state.todayEmptyStateDismissed = true;
+  saveState();
+  renderToday();
 }
 
 function selectEnergy(feel) {
@@ -1223,10 +1234,19 @@ function renderGoals() {
   const journey = document.getElementById('pullupJourney');
   if (!journey) return;
   const completedNames = track.slice(0, level).map(step => step.name).join(' · ');
+  const hasCompletedWorkout = state.history.length > 0;
+  const progressLabel = hasCompletedWorkout ? 'Progress so far' : 'Starting point';
+  const progressTitle = hasCompletedWorkout
+    ? `Stage ${level + 1} of ${track.length}`
+    : `Starting at stage ${level + 1}`;
+  const progressDescription = hasCompletedWorkout
+    ? (level === 0 ? 'Your first milestone is in progress.' : completedNames)
+    : 'Based on your setup. Complete workouts to move through the path.';
+  const progressPill = hasCompletedWorkout ? `${level + 1}/${track.length}` : 'Start';
   journey.innerHTML = `
     <div class="journey-summary current-stage"><div><p class="eyebrow">Current focus</p><strong>${current.name}</strong><span>Build consistency here: ${current.prescription}</span></div><em>Now</em></div>
     <div class="journey-summary"><div><p class="eyebrow">Unlocks next</p><strong>${level >= track.length - 1 ? 'Goal unlocked' : next.name}</strong><span>${level >= track.length - 1 ? 'Keep training and consolidate the skill.' : `Next target: ${next.prescription}`}</span></div><em>Next</em></div>
-    <div class="journey-summary"><div><p class="eyebrow">Progress so far</p><strong>${percent}% of the path</strong><span>${level === 0 ? 'Your first milestone is in progress.' : completedNames}</span></div><em>${level + 1}/${track.length}</em></div>
+    <div class="journey-summary"><div><p class="eyebrow">${progressLabel}</p><strong>${progressTitle}</strong><span>${progressDescription}</span></div><em>${progressPill}</em></div>
   `;
 
   const skills = [
@@ -1949,6 +1969,7 @@ document.addEventListener('click', event => {
 
   const feelButton = event.target.closest('.feel-btn');
   if (feelButton) selectEnergy(feelButton.dataset.feel);
+  if (event.target.id === 'dismissTodayEmptyState') dismissTodayEmptyState();
 
   if (event.target.id === 'changeEnergyBtn') {
     state.selectedEnergy = null;
