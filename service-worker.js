@@ -1,13 +1,13 @@
 // Release rule: when deploying, keep this cache name aligned with the
 // CSS/JS query versions in index.html.
-const CACHE_NAME = 'somthingreat-v8-18-update-banner';
+const CACHE_NAME = 'somthingreat-v8-19-recovery-fallback';
 const APP_SHELL = [
   './',
   './index.html',
-  './style.css?v=v8-18-update-banner',
-  './auth.js?v=v8-18-update-banner',
-  './workouts.js?v=v8-18-update-banner',
-  './app.js?v=v8-18-update-banner',
+  './style.css?v=v8-19-recovery-fallback',
+  './auth.js?v=v8-19-recovery-fallback',
+  './workouts.js?v=v8-19-recovery-fallback',
+  './app.js?v=v8-19-recovery-fallback',
   './manifest.json',
   './supabase-config.js',
   './somthingreat.svg',

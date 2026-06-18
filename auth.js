@@ -1,4 +1,17 @@
 (function () {
+  function createRecoveryClient(supabase, url, anonKey) {
+    if (!supabase || !url || !anonKey) return null;
+    return supabase.createClient(url, anonKey, {
+      auth: {
+        storageKey: 'somthingreat-recovery-session',
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: 'implicit'
+      }
+    });
+  }
+
   function resetRedirectUrl() {
     const redirectUrl = new URL(window.location.origin + window.location.pathname);
     redirectUrl.searchParams.set('reset-password', '1');
@@ -49,6 +62,7 @@
 
   window.SomthingreatAuth = {
     authUrlParams,
+    createRecoveryClient,
     friendlyAuthError,
     getExistingSession,
     resetLinkMessage,

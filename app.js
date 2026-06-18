@@ -24,6 +24,10 @@ const supabaseClient = SUPABASE_READY
   : null;
 window.appSupabaseClient = supabaseClient;
 
+const recoveryAuthClient = SUPABASE_READY
+  ? window.SomthingreatAuth?.createRecoveryClient(window.supabase, window.SUPABASE_URL, window.SUPABASE_ANON_KEY)
+  : null;
+
 let currentUser = null;
 let currentProfileId = null;
 let syncTimer = null;
@@ -31,6 +35,7 @@ let welcomeDismissed = false;
 let waitingServiceWorker = null;
 let updateBannerReady = false;
 let applyingUpdate = false;
+let activeRecoveryClient = null;
 
 function clearLegacyPasswordSession() {
   try {
@@ -39,6 +44,12 @@ function clearLegacyPasswordSession() {
   } catch (error) {}
 }
 clearLegacyPasswordSession();
+
+function clearRecoveryAuthSession() {
+  try {
+    localStorage.removeItem('somthingreat-recovery-session');
+  } catch (error) {}
+}
 
 function hasRecoveryBootFlag() {
   try {
@@ -108,7 +119,7 @@ async function getExistingAuthSession(client) {
   return data?.session?.user ? data.session : null;
 }
 
-async function waitForRecoverySession(client = supabaseClient) {
+async function waitForRecoverySession(client = recoveryAuthClient || supabaseClient) {
   const session = window.SomthingreatAuth?.waitForSession
     ? await window.SomthingreatAuth.waitForSession(client)
     : await getExistingAuthSession(client);
@@ -119,10 +130,13 @@ async function waitForRecoverySession(client = supabaseClient) {
 async function ensureRecoverySession() {
   if (!supabaseClient || !passwordRecoveryMode) return null;
 
-  const existing = await getExistingAuthSession(supabaseClient);
-  if (existing?.user) {
-    currentUser = existing.user;
-    return existing;
+  for (const client of [recoveryAuthClient, supabaseClient].filter(Boolean)) {
+    const existing = await getExistingAuthSession(client);
+    if (existing?.user) {
+      activeRecoveryClient = client;
+      currentUser = existing.user;
+      return existing;
+    }
   }
 
   const params = getAuthUrlParams();
@@ -133,12 +147,14 @@ async function ensureRecoverySession() {
   const code = params.get('code');
 
   if (accessToken && refreshToken) {
+    const tokenClient = recoveryAuthClient || supabaseClient;
     try {
-      const { data, error } = await supabaseClient.auth.setSession({
+      const { data, error } = await tokenClient.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken
       });
       if (error) throw error;
+      activeRecoveryClient = tokenClient;
       currentUser = data?.session?.user || currentUser;
       return data?.session || null;
     } catch (error) {
@@ -151,6 +167,7 @@ async function ensureRecoverySession() {
     try {
       const { data, error } = await supabaseClient.auth.exchangeCodeForSession(code);
       if (error) throw error;
+      activeRecoveryClient = supabaseClient;
       currentUser = data?.session?.user || currentUser;
       return data?.session || null;
     } catch (error) {
@@ -159,7 +176,9 @@ async function ensureRecoverySession() {
     setAuthMessage(resetSessionErrorMessage('Invalid recovery code'), 'error');
   }
 
-  return await waitForRecoverySession(supabaseClient);
+  const waited = await waitForRecoverySession(recoveryAuthClient || supabaseClient);
+  if (waited?.user) activeRecoveryClient = recoveryAuthClient || supabaseClient;
+  return waited;
 }
 
 let passwordRecoveryMode = isPasswordRecoveryUrl() || hasRecoveryBootFlag();
@@ -602,7 +621,8 @@ async function sendPasswordResetToEmail(email) {
   try {
     localStorage.setItem('somthingreat-password-reset-requested-at', String(Date.now()));
   } catch (error) {}
-  return await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: resetRedirectUrl() });
+  const client = recoveryAuthClient || supabaseClient;
+  return await client.auth.resetPasswordForEmail(email, { redirectTo: resetRedirectUrl() });
 }
 
 async function finishResetToLogin(client = supabaseClient) {
@@ -614,10 +634,15 @@ async function finishResetToLogin(client = supabaseClient) {
   currentProfileId = null;
 
   try { await client?.auth?.signOut(); } catch (error) {}
+  if (recoveryAuthClient && recoveryAuthClient !== client) {
+    try { await recoveryAuthClient.auth.signOut(); } catch (error) {}
+  }
   if (supabaseClient && supabaseClient !== client) {
     try { await supabaseClient.auth.signOut(); } catch (error) {}
   }
   clearLegacyPasswordSession();
+  clearRecoveryAuthSession();
+  activeRecoveryClient = null;
 
   clearAuthFields();
   setAuthMode('login');
@@ -1630,7 +1655,7 @@ async function updatePasswordFromRecovery() {
   if (password !== confirmPassword) return setAuthMessage('Passwords do not match.', 'error');
 
   setAuthMessage('Updating password...', 'info');
-  const client = supabaseClient;
+  const client = activeRecoveryClient || supabaseClient;
   const { error } = await client.auth.updateUser({ password });
   if (error) {
     const lower = (error.message || '').toLowerCase();
