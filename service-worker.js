@@ -1,9 +1,10 @@
-const CACHE_NAME = 'somthingreat-v8-15-core-auth-cleanup';
+const CACHE_NAME = 'somthingreat-v8-16-workouts-module';
 const APP_SHELL = [
   './',
   './index.html',
   './style.css',
   './auth.js?v=8-15',
+  './workouts.js',
   './app.js',
   './manifest.json',
   './supabase-config.js',
@@ -59,7 +60,7 @@ self.addEventListener('fetch', event => {
   // Always try the network first for pages and core app files.
   // This prevents users from staying stuck on an old app.js/index.html.
   const isNavigation = request.mode === 'navigate';
-  const isCoreFile = /\/(index\.html|app\.js|auth\.js|style\.css|supabase-config\.js|manifest\.json)$/.test(url.pathname);
+  const isCoreFile = /\/(index\.html|app\.js|auth\.js|workouts\.js|style\.css|supabase-config\.js|manifest\.json)$/.test(url.pathname);
 
   if (isNavigation || isCoreFile) {
     event.respondWith(networkFirst(request));
