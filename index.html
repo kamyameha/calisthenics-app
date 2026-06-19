@@ -30,7 +30,7 @@
     })();
   </script>
   <!-- Release rule: keep CSS/JS query versions aligned with service-worker.js CACHE_NAME. -->
-  <link rel="stylesheet" href="style.css?v=v8-25-public-qa-batch" />
+  <link rel="stylesheet" href="style.css?v=v8-26-share-blockers" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -265,6 +265,11 @@
           <h2>You’re set.</h2>
           <p>Start with how you feel today, and Somthingreat will shape the workout from there.</p>
         </div>
+        <div id="workoutStatusCard" class="today-empty-state workout-complete-state hidden" role="status" aria-live="polite">
+          <button id="dismissWorkoutStatusBtn" class="today-empty-close" type="button" aria-label="Close">×</button>
+          <h2>Well done for today.</h2>
+          <p>You showed up, and that counts. Your progress is saved.</p>
+        </div>
         <h2>Energy check</h2>
         <p class="muted">How's your energy today? We'll adjust today's workout intensity.</p>
         <div class="energy-grid" role="group" aria-label="Choose your energy level">
@@ -309,11 +314,6 @@
 
       <section id="exerciseList"></section>
       <button id="completeBtn" class="primary-btn hidden">Complete Workout</button>
-      <div id="workoutStatusCard" class="hero-card workout-status-card hidden" role="status" aria-live="polite">
-        <h2>Done for today.</h2>
-        <p>You showed up. Progress saved.</p>
-        <button id="dismissWorkoutStatusBtn" class="hero-action" type="button">Done</button>
-      </div>
     </section>
 
     <section id="goals" class="screen">
@@ -376,12 +376,12 @@
     </div>
   </div>
 
-  <script src="auth.js?v=v8-25-public-qa-batch"></script>
-  <script src="workouts.js?v=v8-25-public-qa-batch"></script>
-  <script src="state.js?v=v8-25-public-qa-batch"></script>
-  <script src="account.js?v=v8-25-public-qa-batch"></script>
-  <script src="admin.js?v=v8-25-public-qa-batch"></script>
-  <script src="render.js?v=v8-25-public-qa-batch"></script>
-  <script src="app.js?v=v8-25-public-qa-batch"></script>
+  <script src="auth.js?v=v8-26-share-blockers"></script>
+  <script src="workouts.js?v=v8-26-share-blockers"></script>
+  <script src="state.js?v=v8-26-share-blockers"></script>
+  <script src="account.js?v=v8-26-share-blockers"></script>
+  <script src="admin.js?v=v8-26-share-blockers"></script>
+  <script src="render.js?v=v8-26-share-blockers"></script>
+  <script src="app.js?v=v8-26-share-blockers"></script>
 </body>
 </html>

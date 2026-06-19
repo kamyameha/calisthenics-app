@@ -1,17 +1,18 @@
 // Release rule: when deploying, keep this cache name aligned with the
 // CSS/JS query versions in index.html.
-const CACHE_NAME = 'somthingreat-v8-25-public-qa-batch';
+const CACHE_NAME = 'somthingreat-v8-26-share-blockers';
 const APP_SHELL = [
   './',
   './index.html',
-  './style.css?v=v8-25-public-qa-batch',
-  './auth.js?v=v8-25-public-qa-batch',
-  './workouts.js?v=v8-25-public-qa-batch',
-  './state.js?v=v8-25-public-qa-batch',
-  './account.js?v=v8-25-public-qa-batch',
-  './admin.js?v=v8-25-public-qa-batch',
-  './render.js?v=v8-25-public-qa-batch',
-  './app.js?v=v8-25-public-qa-batch',
+  './style.css?v=v8-26-share-blockers',
+  './auth.js?v=v8-26-share-blockers',
+  './workouts.js?v=v8-26-share-blockers',
+  './state.js?v=v8-26-share-blockers',
+  './account.js?v=v8-26-share-blockers',
+  './admin.js?v=v8-26-share-blockers',
+  './render.js?v=v8-26-share-blockers',
+  './app.js?v=v8-26-share-blockers',
+  './version.json',
   './manifest.json',
   './supabase-config.js',
   './somthingreat.svg',
@@ -64,7 +65,7 @@ self.addEventListener('fetch', event => {
   // Always try the network first for pages and core app files.
   // This prevents users from staying stuck on an old app.js/index.html.
   const isNavigation = request.mode === 'navigate';
-  const isCoreFile = /\/(index\.html|app\.js|auth\.js|workouts\.js|state\.js|account\.js|admin\.js|render\.js|style\.css|supabase-config\.js|manifest\.json)$/.test(url.pathname);
+  const isCoreFile = /\/(index\.html|app\.js|auth\.js|workouts\.js|state\.js|account\.js|admin\.js|render\.js|style\.css|supabase-config\.js|manifest\.json|version\.json)$/.test(url.pathname);
 
   if (isNavigation || isCoreFile) {
     event.respondWith(networkFirst(request));

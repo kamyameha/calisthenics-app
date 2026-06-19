@@ -1,5 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
+const APP_VERSION = 'v8-26-share-blockers';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -31,6 +32,8 @@ let welcomeDismissed = false;
 let waitingServiceWorker = null;
 let updateBannerReady = false;
 let applyingUpdate = false;
+let versionUpdateReady = false;
+let versionCheckInProgress = false;
 let activeRecoveryClient = null;
 let authSessionCheckInProgress = false;
 let pendingConfirmAction = null;
@@ -1152,14 +1155,41 @@ function updateUpdateBanner() {
 
 function markUpdateReady(worker) {
   waitingServiceWorker = worker || waitingServiceWorker;
-  updateBannerReady = Boolean(waitingServiceWorker);
+  updateBannerReady = Boolean(waitingServiceWorker) || versionUpdateReady;
+  updateUpdateBanner();
+}
+
+function markVersionUpdateReady() {
+  versionUpdateReady = true;
+  updateBannerReady = true;
   updateUpdateBanner();
 }
 
 function applyWaitingUpdate() {
-  if (!waitingServiceWorker || applyingUpdate) return;
+  if (applyingUpdate) return;
   applyingUpdate = true;
-  waitingServiceWorker.postMessage({ type: 'SKIP_WAITING' });
+  if (waitingServiceWorker) {
+    waitingServiceWorker.postMessage({ type: 'SKIP_WAITING' });
+    return;
+  }
+  window.location.reload();
+}
+
+async function checkLiveVersion() {
+  if (versionCheckInProgress || document.hidden) return;
+  versionCheckInProgress = true;
+  try {
+    const response = await fetch(`./version.json?ts=${Date.now()}`, { cache: 'no-store' });
+    if (!response.ok) return;
+    const data = await response.json();
+    if (data?.version && data.version !== APP_VERSION) {
+      markVersionUpdateReady();
+    }
+  } catch (error) {
+    // Version polling is only a helper; service-worker update checks still run.
+  } finally {
+    versionCheckInProgress = false;
+  }
 }
 
 
@@ -1831,18 +1861,24 @@ function registerServiceWorker() {
     // Check quietly on app open, resume, focus, and periodically while open.
     // The new worker activates only after the user taps Refresh.
     checkForUpdate();
+    checkLiveVersion();
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) {
         checkForUpdate();
+        checkLiveVersion();
         checkCurrentAuthSession();
       }
     });
     window.addEventListener('focus', () => {
       checkForUpdate();
+      checkLiveVersion();
       checkCurrentAuthSession();
     });
     window.setInterval(() => {
-      if (!document.hidden) checkForUpdate();
+      if (!document.hidden) {
+        checkForUpdate();
+        checkLiveVersion();
+      }
     }, 60 * 1000);
   }).catch(error => {
     console.warn('Service worker registration failed:', error);

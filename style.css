@@ -338,15 +338,6 @@ button:disabled {
   color: var(--main);
 }
 
-.workout-status-card {
-  margin-top: var(--space-5);
-}
-
-.workout-status-card h2,
-.workout-status-card p {
-  color: #ffffff;
-}
-
 .confirm-panel {
   position: fixed;
   inset: 0;
@@ -707,6 +698,10 @@ html.recovery-boot #authLoginForm {
   border-radius: var(--radius);
   background: var(--main);
   color: #ffffff;
+}
+
+.workout-complete-state {
+  margin-bottom: 28px;
 }
 
 #energyCard .today-empty-state h2,
