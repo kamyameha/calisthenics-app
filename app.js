@@ -965,6 +965,7 @@ function completeWorkout() {
   renderToday();
   renderGoals();
   renderProgress();
+  renderAccount();
   updateUpdateBanner();
 }
 
@@ -1032,10 +1033,7 @@ function renderGoals() {
 
 function renderProgress() {
   const now = new Date();
-  const monthly = state.history.filter(item => {
-    const d = new Date(item.date);
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  }).length;
+  const monthly = workoutCountForMonth(now);
   document.getElementById('monthlyCount').textContent = monthly;
   renderConsistency(monthly, now);
 
@@ -1074,6 +1072,18 @@ function monthWeekKey(date) {
   return Math.floor((date.getDate() + offset - 1) / 7);
 }
 
+function workoutItemsForMonth(date = new Date()) {
+  const month = date.getMonth();
+  const year = date.getFullYear();
+  return state.history
+    .map(item => ({ ...item, parsedDate: new Date(item.date) }))
+    .filter(item => item.parsedDate.getMonth() === month && item.parsedDate.getFullYear() === year);
+}
+
+function workoutCountForMonth(date = new Date()) {
+  return workoutItemsForMonth(date).length;
+}
+
 function elapsedWeeksInMonth(date = new Date()) {
   const weeks = new Set();
   for (let day = 1; day <= date.getDate(); day += 1) {
@@ -1097,18 +1107,18 @@ function renderConsistency(monthlyCount, now = new Date()) {
 
   if (!monthlyCount) {
     title.textContent = 'Your rhythm starts here.';
-    message.textContent = 'Complete your first workout to start building consistency.';
+    message.textContent = 'Start light. Keep it easy to repeat.';
     return;
   }
 
   if (activeWeeks >= elapsedWeeks) {
     title.textContent = 'You showed up every week this month.';
-    message.textContent = `${monthlyCount} workout${monthlyCount === 1 ? '' : 's'} across ${activeWeeks} active week${activeWeeks === 1 ? '' : 's'}.`;
+    message.textContent = 'That steady rhythm is the real win.';
     return;
   }
 
   title.textContent = `You showed up ${activeWeeks} week${activeWeeks === 1 ? '' : 's'} this month.`;
-  message.textContent = `${monthlyCount} workout${monthlyCount === 1 ? '' : 's'} completed so far.`;
+  message.textContent = 'Keep the rhythm simple and repeatable.';
 }
 
 function renderOnboarding() {
@@ -1394,7 +1404,7 @@ function renderAccountMainSummary() {
     equipmentSummary.textContent = equipment.length ? equipment.map(item => equipmentLabels[item] || item).join(', ') : 'Not set';
   }
   if (historySummary) {
-    const count = state.history.length;
+    const count = workoutCountForMonth(new Date());
     historySummary.textContent = `${count} workout${count === 1 ? '' : 's'}`;
   }
 }
@@ -1467,10 +1477,7 @@ function renderAccountHistory() {
   const label = accountHistoryMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
   title.textContent = label;
 
-  const monthItems = state.history
-    .map(item => ({ ...item, parsedDate: new Date(item.date) }))
-    .filter(item => item.parsedDate.getMonth() === month && item.parsedDate.getFullYear() === year)
-    .sort((a, b) => a.parsedDate - b.parsedDate);
+  const monthItems = workoutItemsForMonth(accountHistoryMonth).sort((a, b) => a.parsedDate - b.parsedDate);
 
   const byDay = new Map();
   monthItems.forEach(item => {
@@ -1492,7 +1499,7 @@ function renderAccountHistory() {
     const cell = document.createElement('div');
     const workouts = byDay.get(day) || [];
     cell.className = `history-day${workouts.length ? ' has-workout' : ''}`;
-    cell.innerHTML = `<span>${day}</span>${workouts.length ? '<strong>✓</strong>' : ''}`;
+    cell.innerHTML = `<span>${day}</span>`;
     calendar.appendChild(cell);
   }
 

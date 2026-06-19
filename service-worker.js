@@ -1,13 +1,13 @@
 // Release rule: when deploying, keep this cache name aligned with the
 // CSS/JS query versions in index.html.
-const CACHE_NAME = 'somthingreat-v8-23-welcome-equipment-autofill';
+const CACHE_NAME = 'somthingreat-v8-24-progress-history-polish';
 const APP_SHELL = [
   './',
   './index.html',
-  './style.css?v=v8-23-welcome-equipment-autofill',
-  './auth.js?v=v8-23-welcome-equipment-autofill',
-  './workouts.js?v=v8-23-welcome-equipment-autofill',
-  './app.js?v=v8-23-welcome-equipment-autofill',
+  './style.css?v=v8-24-progress-history-polish',
+  './auth.js?v=v8-24-progress-history-polish',
+  './workouts.js?v=v8-24-progress-history-polish',
+  './app.js?v=v8-24-progress-history-polish',
   './manifest.json',
   './supabase-config.js',
   './somthingreat.svg',

@@ -1315,29 +1315,35 @@ html.recovery-boot #authLoginForm {
   color: #ffffff;
 }
 
-.history-day.has-workout strong {
-  font-size: 15px;
-  line-height: 1;
-}
-
 .history-empty {
   opacity: 0;
 }
 
 .history-list {
-  margin-top: 14px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
 }
 
 .history-item {
   display: grid;
   gap: 2px;
-  padding: 12px 0;
+  padding: 0 0 12px;
+  border-top: 0;
+}
+
+.history-item + .history-item {
+  padding-top: 12px;
   border-top: 1px solid var(--border);
 }
 
 .history-item span {
   color: var(--muted-text);
   font-weight: 700;
+}
+
+.history-list .muted {
+  margin: 0;
 }
 
 /* Admin dashboard */
