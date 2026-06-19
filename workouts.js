@@ -152,6 +152,244 @@
     }
   };
 
+  const exerciseHelp = {
+    'Incline push-up': {
+      purpose: 'A push-up variation that builds pressing strength with less bodyweight.',
+      cues: ['Keep your body in one straight line.', 'Lower your chest toward the surface.', 'Keep elbows controlled, not flared wide.'],
+      safety: 'Use a stable surface that will not slide.'
+    },
+    'Lower incline push-up': {
+      purpose: 'A harder incline push-up as you move closer to the floor.',
+      cues: ['Brace your core before each rep.', 'Move slowly down and press smoothly up.', 'Stop before your lower back drops.'],
+      safety: 'Use a stable surface and reduce reps if form breaks.'
+    },
+    'Knee push-up': {
+      purpose: 'A floor push-up variation that builds strength before full push-ups.',
+      cues: ['Keep shoulders, hips, and knees aligned.', 'Lower your chest, not your head.', 'Press the floor away.'],
+      safety: 'Add padding under your knees if needed.'
+    },
+    'Full push-up': {
+      purpose: 'A full-body pressing movement for chest, shoulders, triceps, and core.',
+      cues: ['Keep your body straight.', 'Lower under control.', 'Press up without letting hips sag.'],
+      safety: 'Stop the set when your line breaks.'
+    },
+    'Dead hang + negative pull-up': {
+      purpose: 'Builds grip, shoulder control, and the lowering strength needed for pull-ups.',
+      cues: ['Start from a calm hang.', 'Lower from the top as slowly as you can.', 'Keep shoulders active, not shrugged into your ears.'],
+      safety: 'Step down if grip or shoulder control feels unsafe.'
+    },
+    'Scapular pull-up': {
+      purpose: 'Teaches shoulder-blade control for stronger, cleaner pull-ups.',
+      cues: ['Hang with straight arms.', 'Pull shoulders down away from ears.', 'Keep the movement small and controlled.'],
+      safety: 'Do not bend the elbows or swing.'
+    },
+    'Assisted pull-up': {
+      purpose: 'Practices the pull-up pattern with help from a band, chair, or foot support.',
+      cues: ['Use just enough help to move smoothly.', 'Pull chest toward the bar.', 'Lower with control.'],
+      safety: 'Make sure the support is stable before starting.'
+    },
+    'Band-assisted pull-up': {
+      purpose: 'Practices pull-ups with band support so you can build full-range strength.',
+      cues: ['Set the band securely.', 'Control the bottom position.', 'Avoid bouncing out of the band.'],
+      safety: 'Check the band for wear and keep your face away from the band path.'
+    },
+    'First pull-up attempt': {
+      purpose: 'A skill check to practice pulling with full intent.',
+      cues: ['Start from a still hang.', 'Pull hard while keeping your body quiet.', 'Rest between attempts.'],
+      safety: 'Stop before form turns into swinging or shoulder discomfort.'
+    },
+    'Negative dip': {
+      purpose: 'Builds dip strength by controlling the lowering phase.',
+      cues: ['Start tall with shoulders down.', 'Lower slowly.', 'Keep elbows tracking behind you.'],
+      safety: 'Avoid sinking deep if shoulders feel pinched.'
+    },
+    'Dip': {
+      purpose: 'Builds strong pushing strength for chest, shoulders, and triceps.',
+      cues: ['Keep shoulders down.', 'Lower under control.', 'Press back to a tall support.'],
+      safety: 'Use stable bars and avoid painful shoulder depth.'
+    },
+    'Chair dip prep': {
+      purpose: 'Prepares dip strength with a simple home setup.',
+      cues: ['Use a sturdy chair.', 'Keep hips close to the chair.', 'Bend elbows slowly and press back up.'],
+      safety: 'Do not use a chair that can slide or tip.'
+    },
+    'Chair dip': {
+      purpose: 'Builds triceps and pushing strength without dip bars.',
+      cues: ['Keep hands planted on the chair edge.', 'Lower with control.', 'Use your legs to adjust difficulty.'],
+      safety: 'Stop if your shoulders feel pinched.'
+    },
+    'Close-grip push-up': {
+      purpose: 'Builds triceps and dip-support strength on the floor.',
+      cues: ['Place hands closer than a normal push-up.', 'Keep elbows close to your body.', 'Move as one straight line.'],
+      safety: 'Widen hands slightly if wrists feel uncomfortable.'
+    },
+    'Bodyweight squat': {
+      purpose: 'Builds leg strength and basic lower-body control.',
+      cues: ['Stand tall, feet comfortable.', 'Sit hips down and back.', 'Keep knees tracking over toes.'],
+      safety: 'Use a smaller range if knees or hips feel irritated.'
+    },
+    'Reverse lunge': {
+      purpose: 'Builds single-leg strength and balance.',
+      cues: ['Step back softly.', 'Keep front foot planted.', 'Push through the front leg to stand.'],
+      safety: 'Hold a wall or chair if balance is shaky.'
+    },
+    'Split squat': {
+      purpose: 'Builds single-leg strength with a fixed stance.',
+      cues: ['Keep feet planted in a long stance.', 'Lower straight down.', 'Drive through the front foot.'],
+      safety: 'Use support for balance and keep range comfortable.'
+    },
+    'Kettlebell deadlift': {
+      purpose: 'Builds hip-hinge strength for glutes, hamstrings, and back control.',
+      cues: ['Push hips back.', 'Keep the weight close.', 'Stand tall by squeezing glutes.'],
+      safety: 'Keep your back neutral and use a light weight first.'
+    },
+    'Goblet squat': {
+      purpose: 'Builds squat strength while holding a weight in front.',
+      cues: ['Hold the weight close to your chest.', 'Stay tall through the torso.', 'Press knees gently out.'],
+      safety: 'Use a weight you can control without rounding forward.'
+    },
+    'Plank': {
+      purpose: 'Builds core tension for stronger body lines.',
+      cues: ['Elbows under shoulders.', 'Squeeze glutes lightly.', 'Breathe without letting hips drop.'],
+      safety: 'Stop if your lower back starts to take over.'
+    },
+    'Hollow hold': {
+      purpose: 'Builds core strength for calisthenics body control.',
+      cues: ['Press lower back toward the floor.', 'Keep ribs down.', 'Make it easier by bending knees.'],
+      safety: 'If your lower back lifts, choose an easier shape.'
+    },
+    'Hanging knee raise': {
+      purpose: 'Builds hanging core strength and grip.',
+      cues: ['Start from a quiet hang.', 'Lift knees without swinging.', 'Lower slowly.'],
+      safety: 'Stop if grip or shoulders feel unsafe.'
+    },
+    'Reverse crunch': {
+      purpose: 'Builds lower-ab control without needing a bar.',
+      cues: ['Curl hips slightly off the floor.', 'Move slowly.', 'Keep neck relaxed.'],
+      safety: 'Avoid using momentum.'
+    },
+    'Crow weight shift': {
+      purpose: 'Introduces balance and wrist loading for crow pose.',
+      cues: ['Hands spread wide.', 'Lean forward slowly.', 'Keep toes light.'],
+      safety: 'Place a cushion in front of you if you are nervous.'
+    },
+    'Crow one-foot lift': {
+      purpose: 'Builds confidence for balancing in crow pose.',
+      cues: ['Lean forward first.', 'Lift one foot only when stable.', 'Keep breathing.'],
+      safety: 'Stay low and use a soft surface.'
+    },
+    'Crow hold': {
+      purpose: 'Practices the full crow balance.',
+      cues: ['Grip the floor with fingers.', 'Look slightly forward.', 'Keep knees high on arms.'],
+      safety: 'Stop if wrists feel sharp pain.'
+    },
+    'Tuck sit': {
+      purpose: 'Builds compression and support strength for the L-sit.',
+      cues: ['Press hands down.', 'Lift knees toward chest.', 'Keep shoulders away from ears.'],
+      safety: 'Use blocks or sturdy handles if wrists dislike the floor.'
+    },
+    'Extended tuck': {
+      purpose: 'A harder L-sit step with legs farther from the body.',
+      cues: ['Press down strongly.', 'Extend only as far as you can hold.', 'Keep chest proud.'],
+      safety: 'Return to tuck if hips drop.'
+    },
+    'One-leg L-sit': {
+      purpose: 'Bridges the gap between tuck sit and full L-sit.',
+      cues: ['Keep one knee tucked.', 'Straighten the other leg with control.', 'Press the floor away.'],
+      safety: 'Keep holds short and clean.'
+    },
+    'L-sit': {
+      purpose: 'A full support hold for core, hip flexors, and shoulders.',
+      cues: ['Press hands down.', 'Keep legs straight.', 'Lift chest and breathe.'],
+      safety: 'Stop before wrists or hip flexors cramp.'
+    },
+    'Wall plank hold': {
+      purpose: 'Builds shoulder strength for handstand progressions.',
+      cues: ['Hands under shoulders.', 'Feet on wall.', 'Push the floor away.'],
+      safety: 'Stay far enough from the wall to control the position.'
+    },
+    'Pike hold': {
+      purpose: 'Builds overhead shoulder strength with feet on the floor.',
+      cues: ['Hips high.', 'Arms straight.', 'Push head gently between arms.'],
+      safety: 'Keep weight comfortable on wrists.'
+    },
+    'Wall walk': {
+      purpose: 'Builds strength and confidence going upside down.',
+      cues: ['Move one hand or foot at a time.', 'Keep core tight.', 'Only go as high as you can control.'],
+      safety: 'Leave enough space to come down safely.'
+    },
+    'Chest-to-wall handstand': {
+      purpose: 'Practices a straighter handstand line with wall support.',
+      cues: ['Face the wall.', 'Push tall through shoulders.', 'Squeeze legs together.'],
+      safety: 'Come down before fatigue makes you arch or panic.'
+    },
+    'Handstand kick-up practice': {
+      purpose: 'Builds timing and confidence for entering a handstand.',
+      cues: ['Kick gently.', 'Use the wall as a target.', 'Rest between attempts.'],
+      safety: 'Practice where you have space around you.'
+    },
+    'Explosive row / pull practice': {
+      purpose: 'Builds pulling power for harder pull skills.',
+      cues: ['Pull fast with control.', 'Keep shoulders active.', 'Lower smoothly.'],
+      safety: 'Use a stable setup and avoid jerky reps.'
+    },
+    'Negative pull-up': {
+      purpose: 'Builds the lowering strength needed for stronger pull-ups.',
+      cues: ['Start at the top with control.', 'Lower as slowly as you can.', 'Keep shoulders active.'],
+      safety: 'Step down safely before grip fails.'
+    },
+    'High pull-up practice': {
+      purpose: 'Builds the higher pull needed before muscle-up work.',
+      cues: ['Pull chest higher than usual.', 'Keep body quiet.', 'Rest fully between reps.'],
+      safety: 'Only practice if regular pull-ups feel solid.'
+    },
+    'Transition drill': {
+      purpose: 'Practices the turnover part of a muscle-up.',
+      cues: ['Move slowly through the transition.', 'Keep elbows close.', 'Use assistance as needed.'],
+      safety: 'Avoid forcing shoulder positions.'
+    },
+    'Muscle-up attempt': {
+      purpose: 'A skill attempt for combining pull and transition.',
+      cues: ['Start fresh.', 'Pull high.', 'Stop after clean attempts.'],
+      safety: 'Do not grind tired reps.'
+    },
+    'Jump rope': {
+      purpose: 'Builds light conditioning and foot rhythm.',
+      cues: ['Stay tall.', 'Use small jumps.', 'Turn the rope from wrists.'],
+      safety: 'Start easy if calves or ankles feel tight.'
+    },
+    'Prone Y raise': {
+      purpose: 'Builds upper-back and shoulder control without a pull-up bar.',
+      cues: ['Lie face down with arms in a Y shape.', 'Lift arms gently, thumbs up.', 'Keep neck relaxed.'],
+      safety: 'Move slowly and stop if shoulders pinch.'
+    },
+    'Superman hold': {
+      purpose: 'Builds back-body strength for posture and pulling prep.',
+      cues: ['Lie face down.', 'Lift chest and legs gently.', 'Keep the neck long.'],
+      safety: 'Keep the lift small if lower back feels strained.'
+    },
+    'Reverse snow angel': {
+      purpose: 'Builds shoulder mobility and upper-back control.',
+      cues: ['Lie face down.', 'Sweep arms slowly by your sides.', 'Keep shoulders away from ears.'],
+      safety: 'Use a pain-free range only.'
+    },
+    'Table row': {
+      purpose: 'Builds pulling strength when you do not have a bar.',
+      cues: ['Use a very stable table.', 'Keep body straight.', 'Pull chest toward the edge.'],
+      safety: 'Only use furniture that cannot tip or slide.'
+    },
+    '2-min full-body warm-up': {
+      purpose: 'Raises temperature and prepares joints before training.',
+      cues: ['Move lightly.', 'Breathe steadily.', 'Treat it as preparation, not a test.'],
+      safety: 'Keep it easy and pain-free.'
+    },
+    '2-min full-body stretch': {
+      purpose: 'Helps you cool down and leave the session calmly.',
+      cues: ['Ease into each position.', 'Breathe slowly.', 'Do not force range.'],
+      safety: 'Stretch should feel gentle, not sharp.'
+    }
+  };
+
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
   }
@@ -390,6 +628,10 @@
     return 'Workout';
   }
 
+  function getExerciseHelp(name = '') {
+    return exerciseHelp[name] || null;
+  }
+
   function applyRating(levels, trackKey, rating, profile = null) {
     const trackState = levels?.[trackKey];
     const delta = { easy: 2, good: 1, hard: 0, failed: -1 }[rating];
@@ -421,6 +663,7 @@
     applyWorkoutAddOns,
     sessionTotalLabel,
     sanitizeWorkout,
+    getExerciseHelp,
     modeLabel,
     applyRating
   };

@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-26-share-blockers';
+const APP_VERSION = 'v8-28-progression-admin-polish';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -264,6 +264,7 @@ if (!workoutModule) throw new Error('Somthingreat workout module missing.');
 const baseTracks = workoutModule.baseTracks;
 const energyOptions = workoutModule.energyOptions;
 const sanitizeWorkout = workoutModule.sanitizeWorkout;
+const getExerciseHelp = workoutModule.getExerciseHelp;
 const modeLabel = workoutModule.modeLabel;
 const sessionTotalLabel = workoutModule.sessionTotalLabel;
 
@@ -820,6 +821,8 @@ function renderExercises() {
       return `<div class="set-row"><span>${label}</span><input type="checkbox" data-track="${exercise.trackKey}" data-set-index="${index}" ${completedSets[index] ? 'checked' : ''}></div>`;
     }).join('');
     const levelLabel = exercise.isAddOn ? 'Add-on' : (exercise.originalLevel && exercise.originalLevel !== exercise.level ? `L${exercise.level} · easier` : `L${exercise.level}`);
+    const help = getExerciseHelp(exercise.name);
+    const helpButton = help ? `<button class="exercise-help-btn" type="button" data-exercise-name="${escapeHTML(exercise.name)}" aria-label="How to do ${escapeHTML(exercise.name)}">How</button>` : '';
     const ratingBlock = exercise.isAddOn ? '' : `
       <p class="rating-label">How was it?</p>
       <div class="rating-row" data-track="${exercise.trackKey}">
@@ -830,6 +833,7 @@ function renderExercises() {
       </div>`;
     card.innerHTML = `
       <h3>${exercise.name}<span>${levelLabel}</span></h3>
+      ${helpButton}
       <p class="prescription">${exercise.prescription}</p>
       ${setRows}
       ${ratingBlock}
@@ -865,6 +869,36 @@ function closeConfirmPanel() {
   lastFocusedElement = null;
 }
 
+function showExerciseHelp(exerciseName) {
+  const help = getExerciseHelp(exerciseName);
+  const panel = document.getElementById('exerciseHelpPanel');
+  if (!help || !panel) return;
+
+  lastFocusedElement = document.activeElement;
+  document.getElementById('exerciseHelpTitle').textContent = exerciseName;
+  document.getElementById('exerciseHelpPurpose').textContent = help.purpose || '';
+  const cues = document.getElementById('exerciseHelpCues');
+  if (cues) {
+    cues.innerHTML = '';
+    (help.cues || []).forEach(cue => {
+      const item = document.createElement('li');
+      item.textContent = cue;
+      cues.appendChild(item);
+    });
+  }
+  document.getElementById('exerciseHelpSafety').textContent = help.safety ? `Safety: ${help.safety}` : '';
+  panel.classList.remove('hidden');
+  renderModule.focusFirstInteractive(panel);
+}
+
+function closeExerciseHelp() {
+  document.getElementById('exerciseHelpPanel')?.classList.add('hidden');
+  if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+    lastFocusedElement.focus();
+  }
+  lastFocusedElement = null;
+}
+
 function completeWorkout(skipMissingRatingConfirm = false) {
   if (!state.current) return;
   const rateableExercises = state.current.exercises.filter(exercise => !exercise.isAddOn);
@@ -873,7 +907,7 @@ function completeWorkout(skipMissingRatingConfirm = false) {
     showConfirmPanel({
       title: 'Complete workout?',
       message: 'Some exercises are not rated yet. You can go back and rate them, or complete anyway.',
-      actionLabel: 'Complete anyway',
+      actionLabel: 'Complete',
       onConfirm: () => completeWorkout(true)
     });
     return;
@@ -916,10 +950,73 @@ function getTrackLevel(trackKey) {
   return state.levels[trackKey]?.level || 0;
 }
 
+function getGoalTrackKey(goal) {
+  return goal === 'handstand' ? 'handstand' : goal === 'lsit' ? 'lsit' : goal === 'muscleup' ? 'muscleup' : 'pullup';
+}
+
+function getReadinessCopy(goal, level, trackLength) {
+  const nearGoal = level >= Math.max(0, trackLength - 2);
+  const midPath = level >= Math.max(1, Math.floor(trackLength * 0.5));
+  const copy = {
+    pullup: {
+      base: 'You are building grip, shoulder control, and pulling strength before testing a clean pull-up.',
+      mid: 'You are past the foundation. Keep the reps controlled; the app will keep building the pieces before a real pull-up test.',
+      near: 'You are close enough to start treating the next attempts as readiness checks, not pass/fail exams.',
+      checks: ['Controlled negatives', 'Active shoulders', 'Quiet body without swinging']
+    },
+    muscleup: {
+      base: 'You are building the pull height and transition control needed before muscle-up attempts.',
+      mid: 'Your path is now about power plus technique. Clean high pulls matter more than rushing attempts.',
+      near: 'Treat muscle-up attempts as skill checks. If they fail, the app should keep building high pulls and transition work.',
+      checks: ['High pull strength', 'Smooth transition', 'Stable dip support']
+    },
+    handstand: {
+      base: 'You are building shoulder strength, body line, and confidence upside down.',
+      mid: 'You are now practicing stronger positions. Control matters more than longer holds.',
+      near: 'Your handstand work is ready for regular skill checks against the wall and short free attempts.',
+      checks: ['Shoulder push', 'Rib control', 'Calm wall exit']
+    },
+    lsit: {
+      base: 'You are building support strength, compression, and core tension for a clean L-sit.',
+      mid: 'The base is forming. Keep holds short and honest rather than chasing messy time.',
+      near: 'You are ready to test cleaner, longer L-sit attempts while keeping backup progressions.',
+      checks: ['Strong arm support', 'Hips lifted', 'Legs controlled']
+    },
+    general: {
+      base: 'You are building a balanced base across push, pull, legs, core, and skill work.',
+      mid: 'Your consistency is becoming the goal. The app will keep rotating patterns so no single area carries everything.',
+      near: 'You have a strong base. Keep training varied and use harder levels as periodic checks.',
+      checks: ['Repeatable workouts', 'Balanced movement', 'Recoverable effort']
+    }
+  }[goal] || {};
+
+  return {
+    message: nearGoal ? copy.near : midPath ? copy.mid : copy.base,
+    checks: copy.checks || ['Clean control', 'Repeatable reps', 'No sharp pain']
+  };
+}
+
+function renderReadiness(goal, level, trackLength) {
+  const title = document.getElementById('readinessTitle');
+  const message = document.getElementById('readinessMessage');
+  const list = document.getElementById('readinessChecklist');
+  if (!title || !message || !list) return;
+
+  const percent = Math.round(((level + 1) / trackLength) * 100);
+  const nearGoal = level >= Math.max(0, trackLength - 2);
+  const { message: readinessMessage, checks } = getReadinessCopy(goal, level, trackLength);
+  title.textContent = nearGoal ? 'Ready for skill checks soon.' : 'Building the missing pieces.';
+  message.textContent = `${readinessMessage} Readiness is about clean control, not just reaching the last level.`;
+  list.innerHTML = checks.map((check, index) => {
+    const done = percent >= ((index + 1) / checks.length) * 70;
+    return `<div class="readiness-item${done ? ' ready' : ''}"><span>${done ? 'Ready' : 'Build'}</span><strong>${check}</strong></div>`;
+  }).join('');
+}
+
 function renderGoals() {
   const profile = getProfile();
   const goal = profile?.goal || 'pullup';
-  const goalTrackKey = goal === 'handstand' ? 'handstand' : goal === 'lsit' ? 'lsit' : goal === 'muscleup' ? 'muscleup' : 'pullup';
+  const goalTrackKey = getGoalTrackKey(goal);
   const tracks = getTracks();
   const track = tracks[goalTrackKey]?.length ? tracks[goalTrackKey] : tracks.pullup?.length ? tracks.pullup : baseTracks.pullup;
   if (!Array.isArray(track) || !track.length) return;
@@ -951,6 +1048,7 @@ function renderGoals() {
     <div class="journey-summary"><div><p class="eyebrow">Unlocks next</p><strong>${level >= track.length - 1 ? 'Goal unlocked' : next.name}</strong><span>${level >= track.length - 1 ? 'Keep training and consolidate the skill.' : `Next target: ${next.prescription}`}</span></div><em>Next</em></div>
     <div class="journey-summary"><div><p class="eyebrow">${progressLabel}</p><strong>${progressTitle}</strong><span>${progressDescription}</span></div><em>${progressPill}</em></div>
   `;
+  renderReadiness(goal, level, track.length);
 
   const skills = [
     { key: 'pullup', label: 'Pull-Up' },
@@ -1046,18 +1144,24 @@ function renderConsistency(monthlyCount, now = new Date()) {
 
   if (!monthlyCount) {
     title.textContent = 'Your rhythm starts here.';
-    message.textContent = 'Start light. Keep it easy to repeat.';
+    message.textContent = state.history.length ? 'A quiet month is not a reset. Come back with one easy session.' : 'Start light. The first win is simply showing up.';
     return;
   }
 
   if (activeWeeks >= elapsedWeeks) {
     title.textContent = 'You showed up every week this month.';
-    message.textContent = 'That steady rhythm is the real win.';
+    message.textContent = 'That is the identity we are building: someone who comes back.';
     return;
   }
 
-  title.textContent = `You showed up ${activeWeeks} week${activeWeeks === 1 ? '' : 's'} this month.`;
-  message.textContent = 'Keep the rhythm simple and repeatable.';
+  if (monthlyCount === 1) {
+    title.textContent = 'You came back this month.';
+    message.textContent = 'One workout is still proof: the door is open again.';
+    return;
+  }
+
+  title.textContent = `You showed up in ${activeWeeks} week${activeWeeks === 1 ? '' : 's'} this month.`;
+  message.textContent = 'Keep it repeatable. Consistency is built by returning, not by being perfect.';
 }
 
 function renderOnboarding() {
@@ -1493,7 +1597,7 @@ async function renderAdminDashboard() {
   }
 
   const statesByProfile = new Map((savedStates || []).map(item => [item.profile_id, item]));
-  const rows = (profiles || []).map(profile => {
+  const rows = (profiles || []).filter(profile => !profile.deleted_at).map(profile => {
     const stateRow = statesByProfile.get(profile.id);
     const savedState = stateRow?.state || null;
     return {
@@ -1505,21 +1609,18 @@ async function renderAdminDashboard() {
     };
   });
 
-  message.textContent = `${rows.length} user${rows.length === 1 ? '' : 's'}`;
+  message.textContent = `${rows.length} active profile${rows.length === 1 ? '' : 's'}`;
   list.innerHTML = rows.length
     ? rows.map(row => `
-      <div class="admin-user-row">
-        <div>
-          <strong>${escapeHTML(row.email)}</strong>
-          <span>${escapeHTML(row.goal)}</span>
-        </div>
+      <div class="admin-user-row compact-admin-row">
+        <strong>${escapeHTML(row.active)}</strong>
         <div class="admin-user-stats">
-          <span>Active: ${escapeHTML(row.active)}</span>
           <span>${row.completed} workout${row.completed === 1 ? '' : 's'}</span>
+          <span>${escapeHTML(row.goal)}</span>
         </div>
       </div>
     `).join('')
-    : '<p class="muted">No users found yet.</p>';
+    : '<p class="muted">No active profiles found yet.</p>';
 }
 
 async function initCloudSync() {
@@ -1694,6 +1795,13 @@ document.addEventListener('keydown', event => {
     return;
   }
 
+  const exerciseHelpPanel = document.getElementById('exerciseHelpPanel');
+  if (exerciseHelpPanel && !exerciseHelpPanel.classList.contains('hidden')) {
+    if (event.key === 'Escape') closeExerciseHelp();
+    renderModule.trapTabKey(event, exerciseHelpPanel);
+    return;
+  }
+
   const accountPanel = document.getElementById('accountPanel');
   if (accountPanel?.classList.contains('account-open')) {
     if (event.key === 'Escape') closeAccountModal();
@@ -1720,6 +1828,9 @@ document.addEventListener('click', event => {
     closeConfirmPanel();
     if (typeof action === 'function') action();
   }
+  if (event.target.id === 'closeExerciseHelpBtn' || event.target.id === 'exerciseHelpPanel') closeExerciseHelp();
+  const exerciseHelpButton = event.target.closest('.exercise-help-btn');
+  if (exerciseHelpButton) showExerciseHelp(exerciseHelpButton.dataset.exerciseName);
 
   const feelButton = event.target.closest('.feel-btn');
   if (feelButton) selectEnergy(feelButton.dataset.feel);

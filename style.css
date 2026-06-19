@@ -252,6 +252,7 @@ button:disabled {
   line-height: 1.2;
   font-weight: 900;
   text-align: left;
+  text-decoration: none;
 }
 
 .inline-link {
@@ -377,6 +378,8 @@ button:disabled {
   min-height: 48px;
   height: 48px;
   margin: 0;
+  padding: 8px 10px;
+  line-height: 1.1;
 }
 
 /* Welcome screen */
@@ -987,6 +990,19 @@ html.recovery-boot #authLoginForm {
   display: flex;
   justify-content: space-between;
   gap: var(--space-3);
+  margin-bottom: 10px;
+}
+
+.exercise-help-btn {
+  min-height: 36px;
+  margin: 0 0 12px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--main);
+  border-color: var(--border);
+  font-size: 14px;
+  line-height: 1;
 }
 
 .prescription {
@@ -1033,6 +1049,41 @@ html.recovery-boot #authLoginForm {
 .rating-row button.selected {
   background: var(--main);
   color: #ffffff;
+}
+
+.exercise-help-card {
+  position: relative;
+}
+
+.exercise-help-card .eyebrow {
+  margin-bottom: var(--space-2);
+}
+
+.exercise-help-card h2 {
+  padding-right: 42px;
+  color: var(--main);
+}
+
+.exercise-help-cues {
+  margin: var(--space-4) 0;
+  padding-left: 20px;
+  color: var(--text);
+}
+
+.exercise-help-cues li {
+  margin-bottom: 8px;
+}
+
+.exercise-help-safety {
+  margin-bottom: 0;
+  color: var(--muted-text);
+  font-weight: 700;
+}
+
+.help-close {
+  border-color: var(--border);
+  background: #ffffff;
+  color: var(--main);
 }
 
 /* Goals and progress */
@@ -1108,6 +1159,41 @@ html.recovery-boot #authLoginForm {
   font-style: normal;
   font-weight: 900;
   white-space: nowrap;
+}
+
+.readiness-card h3 {
+  margin-bottom: var(--space-2);
+}
+
+.readiness-list {
+  display: grid;
+  gap: 8px;
+  margin-top: var(--space-4);
+}
+
+.readiness-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.readiness-item span {
+  min-width: 52px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--main);
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.readiness-item.ready span {
+  background: var(--main);
+  color: #ffffff;
 }
 
 .skill-row,
@@ -1439,6 +1525,27 @@ html.recovery-boot #authLoginForm {
   background: var(--soft);
   color: var(--main);
   font-weight: 800;
+}
+
+.compact-admin-row {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  padding: 10px 12px;
+}
+
+.compact-admin-row > strong {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--main);
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.compact-admin-row .admin-user-stats {
+  justify-content: flex-end;
 }
 
 /* Bottom navigation */

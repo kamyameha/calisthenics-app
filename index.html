@@ -30,7 +30,7 @@
     })();
   </script>
   <!-- Release rule: keep CSS/JS query versions aligned with service-worker.js CACHE_NAME. -->
-  <link rel="stylesheet" href="style.css?v=v8-26-share-blockers" />
+  <link rel="stylesheet" href="style.css?v=v8-28-progression-admin-polish" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -142,6 +142,11 @@
           <div id="adminAccountSection" class="account-section hidden">
             <h3>Admin</h3>
             <button class="account-list-btn" type="button" data-account-view="admin">Dashboard <span id="accountAdminSummary">Users</span></button>
+          </div>
+
+          <div class="account-section">
+            <h3>Support</h3>
+            <a class="account-list-btn" href="mailto:somthingreat@kamyameha.com?subject=Somthingreat%20support">Contact support <span>somthingreat@kamyameha.com</span></a>
           </div>
 
           <button id="logoutBtn" class="ghost-btn account-full-btn" type="button">Log out</button>
@@ -328,6 +333,13 @@
         <div id="pullupJourney" class="journey-list"></div>
       </section>
 
+      <section class="card readiness-card">
+        <p class="eyebrow">Readiness</p>
+        <h3 id="readinessTitle">Building the base</h3>
+        <p id="readinessMessage" class="muted">Complete workouts to unlock clearer readiness checks.</p>
+        <div id="readinessChecklist" class="readiness-list"></div>
+      </section>
+
       <section class="card">
         <p class="eyebrow">Skills</p>
         <div id="skillList" class="skill-list"></div>
@@ -371,17 +383,28 @@
       <p id="confirmMessage">Some exercises are not rated yet.</p>
       <div class="confirm-actions">
         <button id="confirmCancelBtn" class="ghost-btn" type="button">Go back</button>
-        <button id="confirmActionBtn" class="primary-btn" type="button">Complete anyway</button>
+        <button id="confirmActionBtn" class="primary-btn" type="button">Complete</button>
       </div>
     </div>
   </div>
 
-  <script src="auth.js?v=v8-26-share-blockers"></script>
-  <script src="workouts.js?v=v8-26-share-blockers"></script>
-  <script src="state.js?v=v8-26-share-blockers"></script>
-  <script src="account.js?v=v8-26-share-blockers"></script>
-  <script src="admin.js?v=v8-26-share-blockers"></script>
-  <script src="render.js?v=v8-26-share-blockers"></script>
-  <script src="app.js?v=v8-26-share-blockers"></script>
+  <div id="exerciseHelpPanel" class="confirm-panel hidden" role="dialog" aria-modal="true" aria-labelledby="exerciseHelpTitle">
+    <div class="confirm-card exercise-help-card">
+      <button id="closeExerciseHelpBtn" class="today-empty-close help-close" type="button" aria-label="Close">×</button>
+      <p class="eyebrow">How</p>
+      <h2 id="exerciseHelpTitle">Exercise</h2>
+      <p id="exerciseHelpPurpose"></p>
+      <ul id="exerciseHelpCues" class="exercise-help-cues"></ul>
+      <p id="exerciseHelpSafety" class="exercise-help-safety"></p>
+    </div>
+  </div>
+
+  <script src="auth.js?v=v8-28-progression-admin-polish"></script>
+  <script src="workouts.js?v=v8-28-progression-admin-polish"></script>
+  <script src="state.js?v=v8-28-progression-admin-polish"></script>
+  <script src="account.js?v=v8-28-progression-admin-polish"></script>
+  <script src="admin.js?v=v8-28-progression-admin-polish"></script>
+  <script src="render.js?v=v8-28-progression-admin-polish"></script>
+  <script src="app.js?v=v8-28-progression-admin-polish"></script>
 </body>
 </html>

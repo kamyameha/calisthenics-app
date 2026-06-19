@@ -1,17 +1,17 @@
 // Release rule: when deploying, keep this cache name aligned with the
 // CSS/JS query versions in index.html.
-const CACHE_NAME = 'somthingreat-v8-26-share-blockers';
+const CACHE_NAME = 'somthingreat-v8-28-progression-admin-polish';
 const APP_SHELL = [
   './',
   './index.html',
-  './style.css?v=v8-26-share-blockers',
-  './auth.js?v=v8-26-share-blockers',
-  './workouts.js?v=v8-26-share-blockers',
-  './state.js?v=v8-26-share-blockers',
-  './account.js?v=v8-26-share-blockers',
-  './admin.js?v=v8-26-share-blockers',
-  './render.js?v=v8-26-share-blockers',
-  './app.js?v=v8-26-share-blockers',
+  './style.css?v=v8-28-progression-admin-polish',
+  './auth.js?v=v8-28-progression-admin-polish',
+  './workouts.js?v=v8-28-progression-admin-polish',
+  './state.js?v=v8-28-progression-admin-polish',
+  './account.js?v=v8-28-progression-admin-polish',
+  './admin.js?v=v8-28-progression-admin-polish',
+  './render.js?v=v8-28-progression-admin-polish',
+  './app.js?v=v8-28-progression-admin-polish',
   './version.json',
   './manifest.json',
   './supabase-config.js',
