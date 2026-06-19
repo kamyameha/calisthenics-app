@@ -36,6 +36,7 @@ let waitingServiceWorker = null;
 let updateBannerReady = false;
 let applyingUpdate = false;
 let activeRecoveryClient = null;
+let authSessionCheckInProgress = false;
 
 function clearLegacyPasswordSession() {
   try {
@@ -117,6 +118,34 @@ async function getExistingAuthSession(client) {
   if (!client?.auth?.getSession) return null;
   const { data } = await client.auth.getSession();
   return data?.session?.user ? data.session : null;
+}
+
+async function signOutClient(client, options) {
+  if (!client?.auth?.signOut) return;
+  try {
+    await client.auth.signOut(options);
+  } catch (error) {
+    try { await client.auth.signOut(); } catch (_) {}
+  }
+}
+
+async function checkCurrentAuthSession() {
+  if (!supabaseClient || !currentUser || passwordRecoveryMode || authSessionCheckInProgress) return;
+  authSessionCheckInProgress = true;
+  try {
+    const { data, error } = await supabaseClient.auth.getUser();
+    if (error || !data?.user) {
+      currentUser = null;
+      currentProfileId = null;
+      await signOutClient(supabaseClient);
+      renderAll();
+      setAuthMessage('Session expired. Log in again.', 'info');
+    }
+  } catch (error) {
+    // Network hiccups should not log the user out.
+  } finally {
+    authSessionCheckInProgress = false;
+  }
 }
 
 async function waitForRecoverySession(client = recoveryAuthClient || supabaseClient) {
@@ -633,12 +662,12 @@ async function finishResetToLogin(client = supabaseClient) {
   currentUser = null;
   currentProfileId = null;
 
-  try { await client?.auth?.signOut(); } catch (error) {}
+  await signOutClient(client, { scope: 'global' });
   if (recoveryAuthClient && recoveryAuthClient !== client) {
-    try { await recoveryAuthClient.auth.signOut(); } catch (error) {}
+    await signOutClient(recoveryAuthClient);
   }
   if (supabaseClient && supabaseClient !== client) {
-    try { await supabaseClient.auth.signOut(); } catch (error) {}
+    await signOutClient(supabaseClient);
   }
   clearLegacyPasswordSession();
   clearRecoveryAuthSession();
@@ -1669,7 +1698,7 @@ async function updatePasswordFromRecovery() {
 
 async function logout() {
   if (!supabaseClient) return;
-  await supabaseClient.auth.signOut();
+  await signOutClient(supabaseClient);
   currentUser = null;
   currentProfileId = null;
   passwordRecoveryMode = false;
@@ -1815,6 +1844,12 @@ function registerServiceWorker() {
   });
 
   navigator.serviceWorker.register('./service-worker.js').then(registration => {
+    const checkForUpdate = () => {
+      registration.update().catch(error => {
+        console.warn('Service worker update check failed:', error);
+      });
+    };
+
     if (registration.waiting) {
       markUpdateReady(registration.waiting);
     }
@@ -1830,9 +1865,22 @@ function registerServiceWorker() {
       });
     });
 
-    // Check quietly on app open. The new worker activates naturally next time
-    // the user taps Refresh, so we never auto-reload during forms or workouts.
-    registration.update();
+    // Check quietly on app open, resume, focus, and periodically while open.
+    // The new worker activates only after the user taps Refresh.
+    checkForUpdate();
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        checkForUpdate();
+        checkCurrentAuthSession();
+      }
+    });
+    window.addEventListener('focus', () => {
+      checkForUpdate();
+      checkCurrentAuthSession();
+    });
+    window.setInterval(() => {
+      if (!document.hidden) checkForUpdate();
+    }, 5 * 60 * 1000);
   }).catch(error => {
     console.warn('Service worker registration failed:', error);
   });
