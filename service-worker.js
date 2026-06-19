@@ -1,13 +1,13 @@
 // Release rule: when deploying, keep this cache name aligned with the
 // CSS/JS query versions in index.html.
-const CACHE_NAME = 'somthingreat-v8-20-session-update-check';
+const CACHE_NAME = 'somthingreat-v8-21-new-account-state';
 const APP_SHELL = [
   './',
   './index.html',
-  './style.css?v=v8-20-session-update-check',
-  './auth.js?v=v8-20-session-update-check',
-  './workouts.js?v=v8-20-session-update-check',
-  './app.js?v=v8-20-session-update-check',
+  './style.css?v=v8-21-new-account-state',
+  './auth.js?v=v8-21-new-account-state',
+  './workouts.js?v=v8-21-new-account-state',
+  './app.js?v=v8-21-new-account-state',
   './manifest.json',
   './supabase-config.js',
   './somthingreat.svg',

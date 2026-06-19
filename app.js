@@ -580,8 +580,11 @@ async function loadCloudState() {
     renderAll();
     setSyncStatus(legacyState ? 'Progress recovered and upgraded.' : 'Progress loaded.');
   } else {
+    state = defaultState();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     await saveCloudState();
-    setSyncStatus('New recovery profile created.');
+    renderAll();
+    setSyncStatus('New account ready.');
   }
 }
 
