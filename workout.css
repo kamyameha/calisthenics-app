@@ -138,6 +138,13 @@
   margin: var(--space-2) 0;
 }
 
+.custom-checklist-name-input {
+  min-height: 52px;
+  height: 52px;
+  resize: none;
+  overflow: hidden;
+}
+
 .custom-type-row label {
   min-height: 52px;
   display: flex;
