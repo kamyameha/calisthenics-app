@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-30-css-help-cleanup';
+const APP_VERSION = 'v8-31-ipad-consistency';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -1122,8 +1122,13 @@ function renderConsistency(monthlyCount, now = new Date()) {
   }
 
   if (monthlyCount === 1) {
-    title.textContent = 'You came back this month.';
-    message.textContent = 'One workout is still proof: the door is open again.';
+    if (state.history.length <= 1) {
+      title.textContent = 'First workout logged.';
+      message.textContent = 'This is the start: one honest session, saved and ready to build on.';
+    } else {
+      title.textContent = 'You came back this month.';
+      message.textContent = 'One workout is still proof: the door is open again.';
+    }
     return;
   }
 

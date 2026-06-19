@@ -280,3 +280,15 @@
 .compact-admin-row .admin-user-stats {
   justify-content: flex-end;
 }
+
+@media (min-width: 700px) {
+  .account-modal-content {
+    width: min(100%, 680px);
+    padding: var(--space-6);
+  }
+
+  .account-panel.account-password-mode .account-modal-content {
+    width: min(100%, 680px);
+    padding: 0;
+  }
+}

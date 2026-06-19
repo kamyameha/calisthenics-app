@@ -400,3 +400,24 @@
   background: #ffffff;
   color: var(--main);
 }
+
+@media (min-width: 700px) {
+  .energy-grid {
+    grid-template-columns: repeat(2, 212px);
+    gap: 16px;
+  }
+
+  .energy-option {
+    width: 212px;
+    height: 212px;
+    min-height: 212px;
+  }
+
+  .selected-energy-mascot-card {
+    max-width: 420px;
+  }
+
+  .exercise-card {
+    margin-bottom: var(--space-6);
+  }
+}
