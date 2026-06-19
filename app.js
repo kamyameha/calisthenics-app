@@ -1846,7 +1846,7 @@ function registerServiceWorker() {
     window.location.reload();
   });
 
-  navigator.serviceWorker.register('./service-worker.js').then(registration => {
+  navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' }).then(registration => {
     const checkForUpdate = () => {
       registration.update().catch(error => {
         console.warn('Service worker update check failed:', error);
@@ -1883,7 +1883,7 @@ function registerServiceWorker() {
     });
     window.setInterval(() => {
       if (!document.hidden) checkForUpdate();
-    }, 5 * 60 * 1000);
+    }, 60 * 1000);
   }).catch(error => {
     console.warn('Service worker registration failed:', error);
   });

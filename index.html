@@ -30,7 +30,7 @@
     })();
   </script>
   <!-- Release rule: keep CSS/JS query versions aligned with service-worker.js CACHE_NAME. -->
-  <link rel="stylesheet" href="style.css?v=v8-21-new-account-state" />
+  <link rel="stylesheet" href="style.css?v=v8-23-welcome-equipment-autofill" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -64,13 +64,13 @@
           <div class="auth-content">
             <h2>Welcome!</h2>
             <p class="muted">Create an account so your progress can be saved.</p>
-            <input id="signupEmailInput" class="text-input" type="email" placeholder="Email" autocomplete="email" />
+            <input id="signupEmailInput" class="text-input" type="email" name="email" placeholder="Email" autocomplete="email" inputmode="email" />
             <div class="password-field">
-              <input id="signupPasswordInput" class="text-input" type="password" placeholder="Password" autocomplete="new-password" />
+              <input id="signupPasswordInput" class="text-input" type="password" name="new-password" placeholder="Password" autocomplete="new-password" />
               <button class="password-toggle" type="button" data-toggle-password="signupPasswordInput" aria-label="Show password">Show</button>
             </div>
             <div class="password-field">
-              <input id="signupConfirmPasswordInput" class="text-input" type="password" placeholder="Confirm password" autocomplete="new-password" />
+              <input id="signupConfirmPasswordInput" class="text-input" type="password" name="confirm-password" placeholder="Confirm password" autocomplete="new-password" />
               <button class="password-toggle" type="button" data-toggle-password="signupConfirmPasswordInput" aria-label="Show password">Show</button>
             </div>
           </div>
@@ -83,9 +83,9 @@
             <button id="backToAuthWelcomeFromLogin" class="text-btn" type="button">← Back</button>
             <h2>Welcome back!</h2>
             <p class="muted">Your progress will load after login.</p>
-            <input id="loginEmailInput" class="text-input" type="email" placeholder="Email" autocomplete="email" />
+            <input id="loginEmailInput" class="text-input" type="email" name="username" placeholder="Email" autocomplete="username" inputmode="email" />
             <div class="password-field">
-              <input id="loginPasswordInput" class="text-input" type="password" placeholder="Password" autocomplete="current-password" />
+              <input id="loginPasswordInput" class="text-input" type="password" name="current-password" placeholder="Password" autocomplete="current-password" />
               <button class="password-toggle" type="button" data-toggle-password="loginPasswordInput" aria-label="Show password">Show</button>
             </div>
           </div>
@@ -98,11 +98,11 @@
             <h2>Reset password</h2>
             <p class="muted">Choose a new password for your account.</p>
             <div class="password-field">
-              <input id="resetPasswordInput" class="text-input" type="password" placeholder="New password" autocomplete="new-password" />
+              <input id="resetPasswordInput" class="text-input" type="password" name="reset-new-password" placeholder="New password" autocomplete="new-password" />
               <button class="password-toggle" type="button" data-toggle-password="resetPasswordInput" aria-label="Show password">Show</button>
             </div>
             <div class="password-field">
-              <input id="resetConfirmPasswordInput" class="text-input" type="password" placeholder="Confirm new password" autocomplete="new-password" />
+              <input id="resetConfirmPasswordInput" class="text-input" type="password" name="reset-confirm-password" placeholder="Confirm new password" autocomplete="new-password" />
               <button class="password-toggle" type="button" data-toggle-password="resetConfirmPasswordInput" aria-label="Show password">Show</button>
             </div>
           </div>
@@ -357,8 +357,8 @@
     <button id="applyUpdateBtn" type="button">Refresh</button>
   </div>
 
-  <script src="auth.js?v=v8-21-new-account-state"></script>
-  <script src="workouts.js?v=v8-21-new-account-state"></script>
-  <script src="app.js?v=v8-21-new-account-state"></script>
+  <script src="auth.js?v=v8-23-welcome-equipment-autofill"></script>
+  <script src="workouts.js?v=v8-23-welcome-equipment-autofill"></script>
+  <script src="app.js?v=v8-23-welcome-equipment-autofill"></script>
 </body>
 </html>

@@ -1,13 +1,13 @@
 // Release rule: when deploying, keep this cache name aligned with the
 // CSS/JS query versions in index.html.
-const CACHE_NAME = 'somthingreat-v8-21-new-account-state';
+const CACHE_NAME = 'somthingreat-v8-23-welcome-equipment-autofill';
 const APP_SHELL = [
   './',
   './index.html',
-  './style.css?v=v8-21-new-account-state',
-  './auth.js?v=v8-21-new-account-state',
-  './workouts.js?v=v8-21-new-account-state',
-  './app.js?v=v8-21-new-account-state',
+  './style.css?v=v8-23-welcome-equipment-autofill',
+  './auth.js?v=v8-23-welcome-equipment-autofill',
+  './workouts.js?v=v8-23-welcome-equipment-autofill',
+  './app.js?v=v8-23-welcome-equipment-autofill',
   './manifest.json',
   './supabase-config.js',
   './somthingreat.svg',
@@ -27,7 +27,7 @@ const APP_SHELL = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL))
+      .then(cache => cacheAppShell(cache))
   );
 });
 
@@ -92,4 +92,19 @@ async function cacheFirst(request) {
   const freshResponse = await fetch(request);
   await cache.put(request, freshResponse.clone());
   return freshResponse;
+}
+
+async function cacheAppShell(cache) {
+  await Promise.all(APP_SHELL.map(async asset => {
+    try {
+      const response = await fetch(asset, { cache: 'no-store' });
+      if (response.ok) {
+        await cache.put(asset, response);
+      } else {
+        console.warn('Skipped app shell asset:', asset, response.status);
+      }
+    } catch (error) {
+      console.warn('Skipped app shell asset:', asset, error);
+    }
+  }));
 }

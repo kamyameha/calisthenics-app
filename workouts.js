@@ -185,9 +185,9 @@
 
     if (!hasDipBars) {
       tracks.dip = [
-        { name: 'Bench dip prep', prescription: '3 × 5' },
-        { name: 'Bench dip', prescription: '3 × 8' },
-        { name: 'Bench dip', prescription: '3 × 10' },
+        { name: 'Chair dip prep', prescription: '3 × 5' },
+        { name: 'Chair dip', prescription: '3 × 8' },
+        { name: 'Chair dip', prescription: '3 × 10' },
         { name: 'Close-grip push-up', prescription: '3 × 5' },
         { name: 'Dip bars recommended', prescription: 'Keep building pushing strength' }
       ];

@@ -33,6 +33,7 @@
   --title-md: 28px;
   --title-lg: 34px;
   --auth-cta-bottom: 136px;
+  --welcome-cta-bottom: 58px;
   --auth-cta-height: 52px;
   --auth-content-gap: 43px;
   --auth-footer-gap: 58px;
@@ -336,7 +337,7 @@ button {
   overflow: hidden;
   display: flex;
   justify-content: center;
-  padding: 24px var(--screen-x) calc(var(--auth-cta-bottom) + env(safe-area-inset-bottom));
+  padding: 24px var(--screen-x) calc(var(--welcome-cta-bottom) + env(safe-area-inset-bottom));
   background: var(--bg);
   color: var(--main);
 }
@@ -344,7 +345,7 @@ button {
 .welcome-inner {
   width: 100%;
   max-width: 560px;
-  min-height: calc(100dvh - 24px - var(--auth-cta-bottom) - env(safe-area-inset-bottom));
+  min-height: calc(100dvh - 24px - var(--welcome-cta-bottom) - env(safe-area-inset-bottom));
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -362,7 +363,7 @@ button {
 .welcome-copy {
   position: fixed;
   left: 50%;
-  bottom: calc(var(--auth-cta-bottom) + var(--auth-cta-height) + var(--auth-content-gap) + env(safe-area-inset-bottom));
+  bottom: calc(var(--welcome-cta-bottom) + var(--auth-cta-height) + var(--auth-content-gap) + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   width: var(--auth-control-width);
   margin: 0;
@@ -387,7 +388,7 @@ button {
 .welcome-next {
   position: fixed;
   left: 50%;
-  bottom: calc(var(--auth-cta-bottom) + env(safe-area-inset-bottom));
+  bottom: calc(var(--welcome-cta-bottom) + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   width: var(--auth-control-width);
   padding: 0 18px;
