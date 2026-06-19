@@ -30,11 +30,11 @@
     })();
   </script>
   <!-- Release rule: keep CSS/JS query versions aligned with service-worker.js CACHE_NAME. -->
-  <link rel="stylesheet" href="style.css?v=v8-34-custom-checklist-polish" />
-  <link rel="stylesheet" href="welcome.css?v=v8-34-custom-checklist-polish" />
-  <link rel="stylesheet" href="auth.css?v=v8-34-custom-checklist-polish" />
-  <link rel="stylesheet" href="workout.css?v=v8-34-custom-checklist-polish" />
-  <link rel="stylesheet" href="account.css?v=v8-34-custom-checklist-polish" />
+  <link rel="stylesheet" href="style.css?v=v8-35-autofill-polish" />
+  <link rel="stylesheet" href="welcome.css?v=v8-35-autofill-polish" />
+  <link rel="stylesheet" href="auth.css?v=v8-35-autofill-polish" />
+  <link rel="stylesheet" href="workout.css?v=v8-35-autofill-polish" />
+  <link rel="stylesheet" href="account.css?v=v8-35-autofill-polish" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -299,12 +299,12 @@
       <section id="customChecklistForm" class="card custom-checklist-form hidden">
         <button id="cancelCustomChecklistFormBtn" class="text-btn" type="button">← Back</button>
         <h3>Create checklist</h3>
-        <input id="customChecklistNameInput" class="text-input" type="text" placeholder="Name, e.g. Stairs" maxlength="40" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" name="custom-checklist-name">
+        <input id="customChecklistNameInput" class="text-input" type="search" placeholder="Activity, e.g. Stairs" maxlength="40" autocomplete="new-password" autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="next" name="sg-activity-label">
         <div class="custom-type-row" role="group" aria-label="Checklist type">
           <label><input type="radio" name="customChecklistType" value="rounds" checked> <span>Rounds</span></label>
           <label><input type="radio" name="customChecklistType" value="minutes"> <span>Minutes</span></label>
         </div>
-        <input id="customChecklistTargetInput" class="text-input" type="number" inputmode="numeric" min="1" max="240" placeholder="How many?" autocomplete="off" name="custom-checklist-target">
+        <input id="customChecklistTargetInput" class="text-input" type="number" inputmode="numeric" min="1" max="240" placeholder="How many?" autocomplete="new-password" enterkeyhint="done" name="sg-activity-count">
         <p id="customChecklistMessage" class="auth-message panel-message" aria-live="polite"></p>
         <button id="createCustomChecklistBtn" class="primary-btn" type="button">Start checklist</button>
       </section>
@@ -425,12 +425,12 @@
     </div>
   </div>
 
-  <script src="auth.js?v=v8-34-custom-checklist-polish"></script>
-  <script src="workouts.js?v=v8-34-custom-checklist-polish"></script>
-  <script src="state.js?v=v8-34-custom-checklist-polish"></script>
-  <script src="account.js?v=v8-34-custom-checklist-polish"></script>
-  <script src="admin.js?v=v8-34-custom-checklist-polish"></script>
-  <script src="render.js?v=v8-34-custom-checklist-polish"></script>
-  <script src="app.js?v=v8-34-custom-checklist-polish"></script>
+  <script src="auth.js?v=v8-35-autofill-polish"></script>
+  <script src="workouts.js?v=v8-35-autofill-polish"></script>
+  <script src="state.js?v=v8-35-autofill-polish"></script>
+  <script src="account.js?v=v8-35-autofill-polish"></script>
+  <script src="admin.js?v=v8-35-autofill-polish"></script>
+  <script src="render.js?v=v8-35-autofill-polish"></script>
+  <script src="app.js?v=v8-35-autofill-polish"></script>
 </body>
 </html>

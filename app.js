@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-34-custom-checklist-polish';
+const APP_VERSION = 'v8-35-autofill-polish';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -727,7 +727,6 @@ function openCustomChecklistForm() {
   document.getElementById('energyCard')?.classList.add('hidden');
   document.getElementById('customChecklistCard')?.classList.add('hidden');
   document.getElementById('customChecklistForm')?.classList.remove('hidden');
-  document.getElementById('customChecklistNameInput')?.focus();
   setCustomChecklistMessage('');
 }
 
