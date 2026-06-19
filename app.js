@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-32-label-case';
+const APP_VERSION = 'v8-33-custom-checklist';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -663,6 +663,16 @@ function togglePasswordVisibility(button) {
 function renderToday() {
   document.getElementById('exerciseList').innerHTML = '';
   document.getElementById('completeBtn').classList.add('hidden');
+  hideCustomChecklistViews();
+
+  if (state.customChecklist) {
+    document.getElementById('energyCard').classList.add('hidden');
+    document.getElementById('selectedEnergyCard').classList.add('hidden');
+    document.getElementById('generatedWorkoutCard').classList.add('hidden');
+    document.getElementById('exercisePreview').classList.add('hidden');
+    renderCustomChecklist();
+    return;
+  }
 
   if (state.current) {
     document.getElementById('energyCard').classList.add('hidden');
@@ -688,6 +698,7 @@ function renderToday() {
   }
 
   document.getElementById('energyCard').classList.remove('hidden');
+  document.getElementById('customChecklistCard')?.classList.remove('hidden');
   document.getElementById('selectedEnergyCard').classList.add('hidden');
   document.getElementById('generatedWorkoutCard').classList.add('hidden');
   document.getElementById('exercisePreview').classList.add('hidden');
@@ -697,6 +708,127 @@ function renderToday() {
     const shouldShowEmptyState = state.history.length === 0 && !state.todayEmptyStateDismissed;
     emptyState.classList.toggle('hidden', !shouldShowEmptyState);
   }
+}
+
+function hideCustomChecklistViews() {
+  document.getElementById('customChecklistCard')?.classList.add('hidden');
+  document.getElementById('customChecklistForm')?.classList.add('hidden');
+  document.getElementById('customChecklistActive')?.classList.add('hidden');
+}
+
+function setCustomChecklistMessage(message = '', type = 'info') {
+  const el = document.getElementById('customChecklistMessage');
+  if (!el) return;
+  el.textContent = message;
+  el.dataset.type = type;
+}
+
+function openCustomChecklistForm() {
+  document.getElementById('energyCard')?.classList.add('hidden');
+  document.getElementById('customChecklistCard')?.classList.add('hidden');
+  document.getElementById('customChecklistForm')?.classList.remove('hidden');
+  document.getElementById('customChecklistNameInput')?.focus();
+  setCustomChecklistMessage('');
+}
+
+function resetCustomChecklistForm() {
+  const name = document.getElementById('customChecklistNameInput');
+  const target = document.getElementById('customChecklistTargetInput');
+  const rounds = document.querySelector('input[name="customChecklistType"][value="rounds"]');
+  if (name) name.value = '';
+  if (target) target.value = '';
+  if (rounds) rounds.checked = true;
+  setCustomChecklistMessage('');
+}
+
+function customChecklistUnitLabel(type, target) {
+  if (type === 'minutes') return `${target} minute${target === 1 ? '' : 's'}`;
+  return `${target} round${target === 1 ? '' : 's'}`;
+}
+
+function customChecklistItemLabel(checklist, index) {
+  if (checklist.type === 'minutes') {
+    const start = index * 5;
+    const end = Math.min(checklist.target, start + 5);
+    return `${end} min`;
+  }
+  return `Round ${index + 1}`;
+}
+
+function createCustomChecklist() {
+  const name = document.getElementById('customChecklistNameInput')?.value.trim() || 'Custom checklist';
+  const type = document.querySelector('input[name="customChecklistType"]:checked')?.value || 'rounds';
+  const target = Math.round(Number(document.getElementById('customChecklistTargetInput')?.value || 0));
+  const max = type === 'minutes' ? 240 : 120;
+  if (!target || target < 1) {
+    setCustomChecklistMessage(type === 'minutes' ? 'Enter how many minutes to track.' : 'Enter how many rounds to track.', 'error');
+    return;
+  }
+  if (target > max) {
+    setCustomChecklistMessage(type === 'minutes' ? 'Keep it to 240 minutes or less.' : 'Keep it to 120 rounds or less.', 'error');
+    return;
+  }
+  const itemCount = type === 'minutes' ? Math.ceil(target / 5) : target;
+  state.customChecklist = {
+    name: name.slice(0, 40),
+    type,
+    target,
+    items: Array.from({ length: itemCount }, () => false)
+  };
+  resetCustomChecklistForm();
+  saveState();
+  renderToday();
+}
+
+function renderCustomChecklist() {
+  const checklist = state.customChecklist;
+  if (!checklist) return;
+  const active = document.getElementById('customChecklistActive');
+  const title = document.getElementById('customChecklistTitle');
+  const meta = document.getElementById('customChecklistMeta');
+  const items = document.getElementById('customChecklistItems');
+  const complete = document.getElementById('completeCustomChecklistBtn');
+  if (!active || !title || !meta || !items || !complete) return;
+
+  active.classList.remove('hidden');
+  title.textContent = checklist.name;
+  meta.textContent = customChecklistUnitLabel(checklist.type, checklist.target);
+  items.innerHTML = checklist.items.map((checked, index) => `
+    <label class="set-row custom-checklist-row">
+      <span>${customChecklistItemLabel(checklist, index)}</span>
+      <input type="checkbox" data-custom-check-index="${index}" ${checked ? 'checked' : ''}>
+    </label>
+  `).join('');
+  complete.disabled = !checklist.items.every(Boolean);
+}
+
+function cancelCustomChecklist() {
+  state.customChecklist = null;
+  saveState();
+  renderToday();
+}
+
+function completeCustomChecklist() {
+  const checklist = state.customChecklist;
+  if (!checklist || !checklist.items.every(Boolean)) return;
+  const prescription = customChecklistUnitLabel(checklist.type, checklist.target);
+  state.history.push({
+    type: 'custom',
+    date: new Date().toISOString(),
+    workout: checklist.name,
+    mode: 'custom',
+    customType: checklist.type,
+    target: checklist.target,
+    exercises: [{ name: checklist.name, prescription, trackKey: 'custom', isAddOn: false }]
+  });
+  state.customChecklist = null;
+  saveState();
+  renderToday();
+  renderGoals();
+  renderProgress();
+  renderAccount();
+  showWorkoutStatus('Checklist saved.', 'Your custom checklist is saved in your history.');
+  updateUpdateBanner();
 }
 
 function dismissTodayEmptyState() {
@@ -718,6 +850,7 @@ function renderSelectedEnergy() {
   const option = energyOptions[state.selectedEnergy || 'normal'];
   const previewWorkout = getTodayWorkout(option.mode);
 
+  hideCustomChecklistViews();
   document.getElementById('energyCard').classList.add('hidden');
   document.getElementById('selectedEnergyCard').classList.remove('hidden');
   document.getElementById('generatedWorkoutCard').classList.add('hidden');
@@ -758,6 +891,7 @@ function generateWorkout() {
 
 function renderGeneratedWorkout() {
   const generated = state.generated || getTodayWorkout('normal');
+  hideCustomChecklistViews();
   document.getElementById('energyCard').classList.add('hidden');
   document.getElementById('selectedEnergyCard').classList.add('hidden');
   document.getElementById('generatedWorkoutCard').classList.remove('hidden');
@@ -794,6 +928,7 @@ function startWorkout() {
 }
 
 function renderExercises() {
+  hideCustomChecklistViews();
   document.getElementById('energyCard').classList.add('hidden');
   document.getElementById('selectedEnergyCard').classList.add('hidden');
   document.getElementById('generatedWorkoutCard').classList.add('hidden');
@@ -933,9 +1068,13 @@ function completeWorkoutNow() {
   updateUpdateBanner();
 }
 
-function showWorkoutStatus() {
+function showWorkoutStatus(titleText = 'Well done for today.', messageText = 'You showed up, and that counts. Your progress is saved.') {
   const card = document.getElementById('workoutStatusCard');
   if (!card) return;
+  const title = card.querySelector('h2');
+  const message = card.querySelector('p');
+  if (title) title.textContent = titleText;
+  if (message) message.textContent = messageText;
   card.classList.remove('hidden');
   renderModule.focusFirstInteractive(card);
 }
@@ -1808,6 +1947,22 @@ document.addEventListener('click', event => {
   if (feelButton) selectEnergy(feelButton.dataset.feel);
   if (event.target.id === 'dismissTodayEmptyState') dismissTodayEmptyState();
   if (event.target.id === 'dismissWorkoutStatusBtn') dismissWorkoutStatus();
+  if (event.target.id === 'openCustomChecklistBtn') openCustomChecklistForm();
+  if (event.target.id === 'cancelCustomChecklistFormBtn') {
+    resetCustomChecklistForm();
+    renderToday();
+  }
+  if (event.target.id === 'createCustomChecklistBtn') createCustomChecklist();
+  if (event.target.id === 'cancelCustomChecklistBtn') cancelCustomChecklist();
+  if (event.target.id === 'completeCustomChecklistBtn') completeCustomChecklist();
+
+  if (event.target.matches('input[type="checkbox"][data-custom-check-index]')) {
+    if (!state.customChecklist) return;
+    const index = Number(event.target.dataset.customCheckIndex);
+    state.customChecklist.items[index] = event.target.checked;
+    saveState();
+    renderCustomChecklist();
+  }
 
   if (event.target.id === 'changeEnergyBtn') {
     state.selectedEnergy = null;

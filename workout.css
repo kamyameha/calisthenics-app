@@ -121,6 +121,47 @@
   transform: translateY(1px);
 }
 
+.custom-checklist-card h3,
+.custom-checklist-form h3,
+.custom-checklist-active h3 {
+  margin-bottom: var(--space-2);
+}
+
+.custom-type-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-2);
+  margin: var(--space-2) 0;
+}
+
+.custom-type-row label {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--soft);
+  font-weight: 900;
+}
+
+.custom-type-row input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--main);
+}
+
+.custom-checklist-items {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-4) 0;
+}
+
+.custom-checklist-row {
+  margin: 0;
+}
+
 .selected-energy-stack {
   display: grid;
   gap: 12px;

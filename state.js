@@ -76,6 +76,9 @@
           date: new Date(item.date).toISOString(),
           workout: typeof item.workout === 'string' ? item.workout : 'Workout',
           mode: typeof item.mode === 'string' ? item.mode : 'normal',
+          type: item.type === 'custom' ? 'custom' : 'workout',
+          customType: ['rounds', 'minutes'].includes(item.customType) ? item.customType : null,
+          target: Number.isFinite(Number(item.target)) ? Math.max(1, Math.round(Number(item.target))) : null,
           exercises: Array.isArray(item.exercises)
             ? item.exercises
                 .filter(exercise => exercise && typeof exercise === 'object' && exercise.name)
@@ -89,6 +92,23 @@
         }));
     }
 
+    function sanitizeCustomChecklist(checklist) {
+      if (!checklist || typeof checklist !== 'object') return null;
+      const type = ['rounds', 'minutes'].includes(checklist.type) ? checklist.type : 'rounds';
+      const target = Number.isFinite(Number(checklist.target)) ? Math.max(1, Math.min(Math.round(Number(checklist.target)), type === 'minutes' ? 240 : 120)) : 0;
+      if (!target) return null;
+      const itemCount = type === 'minutes' ? Math.ceil(target / 5) : target;
+      const items = Array.isArray(checklist.items)
+        ? Array.from({ length: itemCount }, (_, index) => Boolean(checklist.items[index]))
+        : Array.from({ length: itemCount }, () => false);
+      return {
+        name: typeof checklist.name === 'string' && checklist.name.trim() ? checklist.name.trim().slice(0, 40) : 'Custom checklist',
+        type,
+        target,
+        items
+      };
+    }
+
     function defaultState() {
       const levels = {};
       Object.assign(levels, workoutModule.createDefaultLevels());
@@ -100,6 +120,7 @@
         current: null,
         selectedEnergy: null,
         generated: null,
+        customChecklist: null,
         profile: null,
         includeWarmup: false,
         includeStretch: false,
@@ -122,13 +143,14 @@
       nextState.rotationIndex = Number.isFinite(Number(nextState.rotationIndex)) ? Math.max(0, Math.round(Number(nextState.rotationIndex))) : 0;
       nextState.current = sanitizeWorkout(nextState.current);
       nextState.generated = sanitizeWorkout(nextState.generated);
+      nextState.customChecklist = sanitizeCustomChecklist(nextState.customChecklist);
       nextState.selectedEnergy = energyOptions[nextState.selectedEnergy] ? nextState.selectedEnergy : null;
       nextState.includeWarmup = Boolean(nextState.includeWarmup);
       nextState.includeStretch = Boolean(nextState.includeStretch);
       nextState.todayEmptyStateDismissed = Boolean(nextState.todayEmptyStateDismissed);
       nextState.schemaVersion = STATE_SCHEMA_VERSION;
 
-      if (!nextState.current && !nextState.generated && !nextState.selectedEnergy) {
+      if (!nextState.current && !nextState.generated && !nextState.selectedEnergy && !nextState.customChecklist) {
         nextState.includeWarmup = false;
         nextState.includeStretch = false;
       }
@@ -170,6 +192,7 @@
         current: state.current,
         selectedEnergy: state.selectedEnergy,
         generated: state.generated,
+        customChecklist: state.customChecklist,
         profile: state.profile,
         includeWarmup: state.includeWarmup,
         includeStretch: state.includeStretch,

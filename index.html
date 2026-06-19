@@ -30,11 +30,11 @@
     })();
   </script>
   <!-- Release rule: keep CSS/JS query versions aligned with service-worker.js CACHE_NAME. -->
-  <link rel="stylesheet" href="style.css?v=v8-32-label-case" />
-  <link rel="stylesheet" href="welcome.css?v=v8-32-label-case" />
-  <link rel="stylesheet" href="auth.css?v=v8-32-label-case" />
-  <link rel="stylesheet" href="workout.css?v=v8-32-label-case" />
-  <link rel="stylesheet" href="account.css?v=v8-32-label-case" />
+  <link rel="stylesheet" href="style.css?v=v8-33-custom-checklist" />
+  <link rel="stylesheet" href="welcome.css?v=v8-33-custom-checklist" />
+  <link rel="stylesheet" href="auth.css?v=v8-33-custom-checklist" />
+  <link rel="stylesheet" href="workout.css?v=v8-33-custom-checklist" />
+  <link rel="stylesheet" href="account.css?v=v8-33-custom-checklist" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -289,6 +289,35 @@
         </div>
       </section>
 
+      <section id="customChecklistCard" class="card custom-checklist-card">
+        <p class="eyebrow">Custom checklist</p>
+        <h3>Track anything simple.</h3>
+        <p class="muted">Use rounds or minutes for stairs, walks, circuits, mobility, or whatever you want to count.</p>
+        <button id="openCustomChecklistBtn" class="ghost-btn account-full-btn" type="button">Create checklist</button>
+      </section>
+
+      <section id="customChecklistForm" class="card custom-checklist-form hidden">
+        <button id="cancelCustomChecklistFormBtn" class="text-btn" type="button">← Back</button>
+        <h3>Create checklist</h3>
+        <input id="customChecklistNameInput" class="text-input" type="text" placeholder="Name, e.g. Stairs" maxlength="40">
+        <div class="custom-type-row" role="group" aria-label="Checklist type">
+          <label><input type="radio" name="customChecklistType" value="rounds" checked> <span>Rounds</span></label>
+          <label><input type="radio" name="customChecklistType" value="minutes"> <span>Minutes</span></label>
+        </div>
+        <input id="customChecklistTargetInput" class="text-input" type="number" inputmode="numeric" min="1" max="240" placeholder="How many?">
+        <p id="customChecklistMessage" class="auth-message panel-message" aria-live="polite"></p>
+        <button id="createCustomChecklistBtn" class="primary-btn" type="button">Start checklist</button>
+      </section>
+
+      <section id="customChecklistActive" class="card custom-checklist-active hidden">
+        <button id="cancelCustomChecklistBtn" class="text-btn" type="button">← Cancel checklist</button>
+        <p class="eyebrow">Custom checklist</p>
+        <h3 id="customChecklistTitle">Stairs</h3>
+        <p id="customChecklistMeta" class="muted">8 rounds</p>
+        <div id="customChecklistItems" class="custom-checklist-items"></div>
+        <button id="completeCustomChecklistBtn" class="primary-btn" type="button">Complete checklist</button>
+      </section>
+
       <section id="selectedEnergyCard" class="selected-energy-stack hidden">
         <div class="card selected-energy-mascot-card">
           <span id="selectedEnergyPill" class="energy-pill">Normal</span>
@@ -396,12 +425,12 @@
     </div>
   </div>
 
-  <script src="auth.js?v=v8-32-label-case"></script>
-  <script src="workouts.js?v=v8-32-label-case"></script>
-  <script src="state.js?v=v8-32-label-case"></script>
-  <script src="account.js?v=v8-32-label-case"></script>
-  <script src="admin.js?v=v8-32-label-case"></script>
-  <script src="render.js?v=v8-32-label-case"></script>
-  <script src="app.js?v=v8-32-label-case"></script>
+  <script src="auth.js?v=v8-33-custom-checklist"></script>
+  <script src="workouts.js?v=v8-33-custom-checklist"></script>
+  <script src="state.js?v=v8-33-custom-checklist"></script>
+  <script src="account.js?v=v8-33-custom-checklist"></script>
+  <script src="admin.js?v=v8-33-custom-checklist"></script>
+  <script src="render.js?v=v8-33-custom-checklist"></script>
+  <script src="app.js?v=v8-33-custom-checklist"></script>
 </body>
 </html>

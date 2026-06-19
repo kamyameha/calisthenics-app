@@ -1,4 +1,14 @@
 (function () {
+  function escapeHTML(value = '') {
+    return String(value).replace(/[&<>"']/g, char => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    }[char]));
+  }
+
   function workoutItemsForMonth(history = [], date = new Date()) {
     const month = date.getMonth();
     const year = date.getFullYear();
@@ -46,7 +56,12 @@
 
   function renderHistoryList(list, monthItems, energyOptions) {
     list.innerHTML = monthItems.length
-      ? monthItems.map(item => `<div class="history-item"><strong>${item.parsedDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</strong><span>${item.workout || 'Workout'} · ${energyOptions[item.mode]?.title || item.mode || 'Done'}</span></div>`).join('')
+      ? monthItems.map(item => {
+        const label = item.type === 'custom'
+          ? `${item.workout || 'Custom checklist'} · Custom checklist`
+          : `${item.workout || 'Workout'} · ${energyOptions[item.mode]?.title || item.mode || 'Done'}`;
+          return `<div class="history-item"><strong>${escapeHTML(item.parsedDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }))}</strong><span>${escapeHTML(label)}</span></div>`;
+        }).join('')
       : '<p class="muted">No workouts completed this month yet.</p>';
   }
 
