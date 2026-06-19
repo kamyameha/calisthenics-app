@@ -1,0 +1,13 @@
+{
+  "name": "somthingreat",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "test": "node tests/unit/workouts-state.test.js",
+    "qa": "node --check auth.js && node --check workouts.js && node --check state.js && node --check account.js && node --check admin.js && node --check render.js && node --check app.js && node --check service-worker.js && npm test",
+    "qa:visual": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.45.0"
+  }
+}

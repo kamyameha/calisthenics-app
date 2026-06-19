@@ -1,0 +1,201 @@
+(function () {
+  const STORAGE_KEY = 'camille-calisthenics-v4';
+  const LEGACY_STORAGE_KEY = 'camille-calisthenics-v2';
+  const OLDER_LEGACY_STORAGE_KEY = 'camille-calisthenics-v1';
+  const STATE_SCHEMA_VERSION = 1;
+
+  function create(config) {
+    const {
+      workoutModule,
+      baseTracks,
+      energyOptions,
+      sanitizeWorkout,
+      goalLabels,
+      equipmentLabels,
+      onSave
+    } = config;
+
+    const validProfileValues = {
+      goals: new Set(Object.keys(goalLabels)),
+      equipment: new Set(Object.keys(equipmentLabels)),
+      pushups: new Set(['zero', 'oneFive', 'sixTen', 'tenPlus']),
+      squats: new Set(['zeroFive', 'sixTen', 'tenPlus']),
+      yesNo: new Set(['yes', 'no'])
+    };
+
+    function sanitizeProfile(profile) {
+      if (!profile || typeof profile !== 'object') return null;
+      const goal = validProfileValues.goals.has(profile.goal) ? profile.goal : null;
+      const equipment = Array.isArray(profile.equipment)
+        ? profile.equipment.filter(item => validProfileValues.equipment.has(item))
+        : [];
+      const cleanEquipment = equipment.includes('none') && equipment.length > 1
+        ? equipment.filter(item => item !== 'none')
+        : equipment;
+      const pushups = validProfileValues.pushups.has(profile.pushups) ? profile.pushups : null;
+      const squats = validProfileValues.squats.has(profile.squats) ? profile.squats : null;
+      const deadHang = validProfileValues.yesNo.has(profile.deadHang) ? profile.deadHang : null;
+      const negativePullup = validProfileValues.yesNo.has(profile.negativePullup) ? profile.negativePullup : null;
+      const dip = validProfileValues.yesNo.has(profile.dip) ? profile.dip : null;
+
+      if (!goal || !pushups || !squats || !cleanEquipment.length) return null;
+
+      return {
+        ...profile,
+        goal,
+        equipment: cleanEquipment,
+        pushups,
+        squats,
+        deadHang: cleanEquipment.includes('pullupBar') ? deadHang : null,
+        negativePullup: cleanEquipment.includes('pullupBar') ? negativePullup : null,
+        dip: cleanEquipment.includes('dipBars') ? dip : null
+      };
+    }
+
+    function sanitizeLevels(levels = {}, profile = null) {
+      const defaults = workoutModule.createDefaultLevels();
+      const tracks = workoutModule.getTracks(profile);
+      Object.keys(defaults).forEach(key => {
+        const source = levels[key] || {};
+        const trackLength = Math.max(1, (tracks[key] || baseTracks[key] || []).length);
+        const level = Number.isFinite(Number(source.level)) ? Number(source.level) : defaults[key].level;
+        const points = Number.isFinite(Number(source.points)) ? Number(source.points) : defaults[key].points;
+        defaults[key] = {
+          level: Math.max(0, Math.min(Math.round(level), trackLength - 1)),
+          points: Math.max(-1, Math.min(Math.round(points), 2))
+        };
+      });
+      return defaults;
+    }
+
+    function sanitizeHistory(history) {
+      if (!Array.isArray(history)) return [];
+      return history
+        .filter(item => item && typeof item === 'object' && !Number.isNaN(new Date(item.date).getTime()))
+        .map(item => ({
+          date: new Date(item.date).toISOString(),
+          workout: typeof item.workout === 'string' ? item.workout : 'Workout',
+          mode: typeof item.mode === 'string' ? item.mode : 'normal',
+          exercises: Array.isArray(item.exercises)
+            ? item.exercises
+                .filter(exercise => exercise && typeof exercise === 'object' && exercise.name)
+                .map(exercise => ({
+                  name: String(exercise.name),
+                  prescription: typeof exercise.prescription === 'string' ? exercise.prescription : '',
+                  trackKey: typeof exercise.trackKey === 'string' ? exercise.trackKey : '',
+                  isAddOn: Boolean(exercise.isAddOn)
+                }))
+            : []
+        }));
+    }
+
+    function defaultState() {
+      const levels = {};
+      Object.assign(levels, workoutModule.createDefaultLevels());
+      return {
+        schemaVersion: STATE_SCHEMA_VERSION,
+        rotationIndex: 0,
+        levels,
+        history: [],
+        current: null,
+        selectedEnergy: null,
+        generated: null,
+        profile: null,
+        includeWarmup: false,
+        includeStretch: false,
+        todayEmptyStateDismissed: false
+      };
+    }
+
+    function migrateState(rawState) {
+      if (!rawState || typeof rawState !== 'object') return defaultState();
+      return { ...rawState, schemaVersion: STATE_SCHEMA_VERSION };
+    }
+
+    function sanitizeState(nextState) {
+      if (!nextState || typeof nextState !== 'object') return defaultState();
+      nextState = migrateState(nextState);
+
+      nextState.profile = sanitizeProfile(nextState.profile);
+      nextState.levels = sanitizeLevels(nextState.levels, nextState.profile);
+      nextState.history = sanitizeHistory(nextState.history);
+      nextState.rotationIndex = Number.isFinite(Number(nextState.rotationIndex)) ? Math.max(0, Math.round(Number(nextState.rotationIndex))) : 0;
+      nextState.current = sanitizeWorkout(nextState.current);
+      nextState.generated = sanitizeWorkout(nextState.generated);
+      nextState.selectedEnergy = energyOptions[nextState.selectedEnergy] ? nextState.selectedEnergy : null;
+      nextState.includeWarmup = Boolean(nextState.includeWarmup);
+      nextState.includeStretch = Boolean(nextState.includeStretch);
+      nextState.todayEmptyStateDismissed = Boolean(nextState.todayEmptyStateDismissed);
+      nextState.schemaVersion = STATE_SCHEMA_VERSION;
+
+      if (!nextState.current && !nextState.generated && !nextState.selectedEnergy) {
+        nextState.includeWarmup = false;
+        nextState.includeStretch = false;
+      }
+
+      return nextState;
+    }
+
+    function loadState() {
+      const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY) || localStorage.getItem(OLDER_LEGACY_STORAGE_KEY);
+      if (!saved) return defaultState();
+      try {
+        const parsed = JSON.parse(saved);
+        const merged = { ...defaultState(), ...parsed };
+        return sanitizeState(merged);
+      } catch {
+        return defaultState();
+      }
+    }
+
+    function saveState(state) {
+      const cleanState = sanitizeState(state);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanState));
+      if (typeof onSave === 'function') onSave(cleanState);
+      return cleanState;
+    }
+
+    function writeLocalState(state) {
+      const cleanState = sanitizeState(state);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanState));
+      return cleanState;
+    }
+
+    function publicState(state) {
+      return {
+        schemaVersion: STATE_SCHEMA_VERSION,
+        rotationIndex: state.rotationIndex,
+        levels: state.levels,
+        history: state.history,
+        current: state.current,
+        selectedEnergy: state.selectedEnergy,
+        generated: state.generated,
+        profile: state.profile,
+        includeWarmup: state.includeWarmup,
+        includeStretch: state.includeStretch,
+        todayEmptyStateDismissed: state.todayEmptyStateDismissed
+      };
+    }
+
+    return {
+      defaultState,
+      loadState,
+      migrateState,
+      publicState,
+      sanitizeState,
+      saveState,
+      writeLocalState,
+      schemaVersion: STATE_SCHEMA_VERSION,
+      storageKey: STORAGE_KEY,
+      legacyStorageKeys: [LEGACY_STORAGE_KEY, OLDER_LEGACY_STORAGE_KEY]
+    };
+  }
+
+  window.SomthingreatState = {
+    create,
+    STATE_SCHEMA_VERSION,
+    STORAGE_KEY,
+    LEGACY_STORAGE_KEY,
+    OLDER_LEGACY_STORAGE_KEY
+  };
+})();

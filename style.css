@@ -197,6 +197,11 @@ button {
   text-align: center;
 }
 
+button:disabled {
+  cursor: default;
+  opacity: 0.68;
+}
+
 .compact {
   padding: 10px var(--space-4);
 }
@@ -323,9 +328,64 @@ button {
   color: var(--muted-text);
 }
 
+.panel-message {
+  margin-top: var(--space-3);
+  text-align: center;
+}
+
 .sync-status {
   font-weight: 900;
   color: var(--main);
+}
+
+.workout-status-card {
+  margin-top: var(--space-5);
+}
+
+.workout-status-card h2,
+.workout-status-card p {
+  color: #ffffff;
+}
+
+.confirm-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: var(--screen-x);
+  background: rgba(17, 19, 24, 0.28);
+}
+
+.confirm-card {
+  width: min(100%, 420px);
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #ffffff;
+  box-shadow: 0 22px 60px rgba(1, 45, 237, 0.22);
+}
+
+.confirm-card h2 {
+  color: var(--main);
+}
+
+.confirm-card p {
+  color: var(--muted-text);
+}
+
+.confirm-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.confirm-actions .primary-btn,
+.confirm-actions .ghost-btn {
+  min-height: 48px;
+  height: 48px;
+  margin: 0;
 }
 
 /* Welcome screen */

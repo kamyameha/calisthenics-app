@@ -30,7 +30,7 @@
     })();
   </script>
   <!-- Release rule: keep CSS/JS query versions aligned with service-worker.js CACHE_NAME. -->
-  <link rel="stylesheet" href="style.css?v=v8-24-progress-history-polish" />
+  <link rel="stylesheet" href="style.css?v=v8-25-public-qa-batch" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -55,7 +55,7 @@
       <div class="brand-block">
         <img src="somthingreat.svg" alt="Somthingreat" class="brand-logo" />
       </div>
-      <button id="accountBtn" class="ghost-btn compact">Account</button>
+      <button id="accountBtn" class="ghost-btn compact" type="button">Account</button>
     </header>
 
     <section id="accountPanel" class="card account-panel">
@@ -148,7 +148,7 @@
         </div>
 
         <div id="accountGoalView" class="account-view hidden">
-          <button class="text-btn" type="button" data-account-view="main">← Back</button>
+          <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
           <p class="muted">Choose the main goal your workouts should prioritize.</p>
           <label class="option-row"><input type="radio" name="accountGoal" value="pullup"> <span>First Pull-Up</span></label>
           <label class="option-row"><input type="radio" name="accountGoal" value="handstand"> <span>First Handstand</span></label>
@@ -156,10 +156,11 @@
           <label class="option-row"><input type="radio" name="accountGoal" value="muscleup"> <span>First Muscle-Up</span></label>
           <label class="option-row"><input type="radio" name="accountGoal" value="general"> <span>General Fitness</span></label>
           <button id="saveAccountGoalBtn" class="primary-btn account-full-btn" type="button">Save goal</button>
+          <p id="accountGoalMessage" class="auth-message" aria-live="polite"></p>
         </div>
 
         <div id="accountEquipmentView" class="account-view hidden">
-          <button class="text-btn" type="button" data-account-view="main">← Back</button>
+          <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
           <p class="muted">Update the equipment you can use right now.</p>
           <label class="option-row"><input type="checkbox" name="accountEquipment" value="none"> <span>No equipment</span></label>
           <label class="option-row"><input type="checkbox" name="accountEquipment" value="pullupBar"> <span>Pull-up bar</span></label>
@@ -167,21 +168,22 @@
           <label class="option-row"><input type="checkbox" name="accountEquipment" value="bands"> <span>Resistance bands</span></label>
           <label class="option-row"><input type="checkbox" name="accountEquipment" value="jumpRope"> <span>Jump rope</span></label>
           <button id="saveAccountEquipmentBtn" class="primary-btn account-full-btn" type="button">Save equipment</button>
+          <p id="accountEquipmentMessage" class="auth-message" aria-live="polite"></p>
         </div>
 
         <div id="accountPasswordView" class="account-view hidden">
-          <button class="text-btn" type="button" data-account-view="main">← Back</button>
+          <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
           <p class="muted">We will email you a secure reset link. After choosing a new password, log in again with the new password.</p>
           <button id="saveAccountPasswordBtn" class="primary-btn account-full-btn" type="button">Email reset link</button>
           <p id="accountPasswordMessage" class="auth-message" aria-live="polite"></p>
         </div>
 
         <div id="accountHistoryView" class="account-view hidden">
-          <button class="text-btn" type="button" data-account-view="main">← Back</button>
+          <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
           <div class="history-header">
-            <button id="historyPrevMonthBtn" class="ghost-btn compact" type="button">←</button>
+            <button id="historyPrevMonthBtn" class="ghost-btn compact" type="button" aria-label="Previous month">←</button>
             <h3 id="historyMonthTitle">This month</h3>
-            <button id="historyNextMonthBtn" class="ghost-btn compact" type="button">→</button>
+            <button id="historyNextMonthBtn" class="ghost-btn compact" type="button" aria-label="Next month">→</button>
           </div>
           <div class="history-weekdays"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
           <div id="historyCalendar" class="history-calendar"></div>
@@ -189,7 +191,7 @@
         </div>
 
         <div id="accountAdminView" class="account-view hidden">
-          <button class="text-btn" type="button" data-account-view="main">← Back</button>
+          <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
           <p class="muted">Admin-only view for grascam@gmail.com.</p>
           <button id="refreshAdminDashboardBtn" class="ghost-btn account-full-btn" type="button">Refresh dashboard</button>
           <p id="adminDashboardMessage" class="sync-status">Loading users...</p>
@@ -253,6 +255,7 @@
       </div>
 
       <button id="saveProfileBtn" class="primary-btn">Create My Plan</button>
+      <p id="onboardingMessage" class="auth-message panel-message" aria-live="polite"></p>
     </section>
 
     <section id="today" class="screen active">
@@ -278,7 +281,7 @@
           <img id="selectedEnergyMascot" class="selected-energy-mascot" src="Assets/Energy/normal-icon.png" alt="" aria-hidden="true" />
         </div>
         <div class="hero-card selected-workout-preview">
-          <button class="text-btn selected-back-btn" id="changeEnergyBtn" type="button">← Back</button>
+          <button class="text-btn selected-back-btn" id="changeEnergyBtn" type="button" aria-label="Back to energy check">← Back</button>
           <h2 id="selectedWorkoutName">Push</h2>
           <p id="selectedWorkoutMeta">4 exercises · Full volume</p>
           <div class="add-on-panel" aria-label="Optional workout add-ons">
@@ -306,6 +309,11 @@
 
       <section id="exerciseList"></section>
       <button id="completeBtn" class="primary-btn hidden">Complete Workout</button>
+      <div id="workoutStatusCard" class="hero-card workout-status-card hidden" role="status" aria-live="polite">
+        <h2>Done for today.</h2>
+        <p>You showed up. Progress saved.</p>
+        <button id="dismissWorkoutStatusBtn" class="hero-action" type="button">Done</button>
+      </div>
     </section>
 
     <section id="goals" class="screen">
@@ -347,7 +355,7 @@
   </main>
 
   <nav class="bottom-nav hidden">
-    <button class="nav-btn active" data-screen="today">Today</button>
+    <button class="nav-btn active" data-screen="today" aria-current="page">Today</button>
     <button class="nav-btn" data-screen="goals">Goal</button>
     <button class="nav-btn" data-screen="progress">Progress</button>
   </nav>
@@ -357,8 +365,23 @@
     <button id="applyUpdateBtn" type="button">Refresh</button>
   </div>
 
-  <script src="auth.js?v=v8-24-progress-history-polish"></script>
-  <script src="workouts.js?v=v8-24-progress-history-polish"></script>
-  <script src="app.js?v=v8-24-progress-history-polish"></script>
+  <div id="confirmPanel" class="confirm-panel hidden" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="confirm-card">
+      <h2 id="confirmTitle">Complete workout?</h2>
+      <p id="confirmMessage">Some exercises are not rated yet.</p>
+      <div class="confirm-actions">
+        <button id="confirmCancelBtn" class="ghost-btn" type="button">Go back</button>
+        <button id="confirmActionBtn" class="primary-btn" type="button">Complete anyway</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="auth.js?v=v8-25-public-qa-batch"></script>
+  <script src="workouts.js?v=v8-25-public-qa-batch"></script>
+  <script src="state.js?v=v8-25-public-qa-batch"></script>
+  <script src="account.js?v=v8-25-public-qa-batch"></script>
+  <script src="admin.js?v=v8-25-public-qa-batch"></script>
+  <script src="render.js?v=v8-25-public-qa-batch"></script>
+  <script src="app.js?v=v8-25-public-qa-batch"></script>
 </body>
 </html>

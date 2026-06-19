@@ -1,9 +1,5 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const STORAGE_KEY = 'camille-calisthenics-v4';
-const LEGACY_STORAGE_KEY = 'camille-calisthenics-v2';
-const OLDER_LEGACY_STORAGE_KEY = 'camille-calisthenics-v1';
-const STATE_SCHEMA_VERSION = 1;
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -37,6 +33,8 @@ let updateBannerReady = false;
 let applyingUpdate = false;
 let activeRecoveryClient = null;
 let authSessionCheckInProgress = false;
+let pendingConfirmAction = null;
+let lastFocusedElement = null;
 
 function clearLegacyPasswordSession() {
   try {
@@ -213,6 +211,10 @@ async function ensureRecoverySession() {
 let passwordRecoveryMode = isPasswordRecoveryUrl() || hasRecoveryBootFlag();
 let accountHistoryMonth = new Date();
 const ADMIN_EMAILS = ['grascam@gmail.com'];
+const accountModule = window.SomthingreatAccount;
+const adminModule = window.SomthingreatAdmin;
+const renderModule = window.SomthingreatRender;
+if (!accountModule || !adminModule || !renderModule) throw new Error('Somthingreat UI modules missing.');
 
 function setWelcomeVisible(visible) {
   const welcome = document.getElementById('welcomeScreen');
@@ -278,13 +280,15 @@ const equipmentLabels = {
   jumpRope: 'Jump rope'
 };
 
-const validProfileValues = {
-  goals: new Set(Object.keys(goalLabels)),
-  equipment: new Set(Object.keys(equipmentLabels)),
-  pushups: new Set(['zero', 'oneFive', 'sixTen', 'tenPlus']),
-  squats: new Set(['zeroFive', 'sixTen', 'tenPlus']),
-  yesNo: new Set(['yes', 'no'])
-};
+const stateStore = window.SomthingreatState?.create({
+  workoutModule,
+  baseTracks,
+  energyOptions,
+  sanitizeWorkout,
+  goalLabels,
+  equipmentLabels
+});
+if (!stateStore) throw new Error('Somthingreat state module missing.');
 
 function getProfile() {
   return state?.profile || null;
@@ -325,142 +329,27 @@ function applyRating(trackKey, rating) {
   workoutModule.applyRating(state.levels, trackKey, rating, getProfile());
 }
 
-function sanitizeProfile(profile) {
-  if (!profile || typeof profile !== 'object') return null;
-  const goal = validProfileValues.goals.has(profile.goal) ? profile.goal : null;
-  const equipment = Array.isArray(profile.equipment)
-    ? profile.equipment.filter(item => validProfileValues.equipment.has(item))
-    : [];
-  const cleanEquipment = equipment.includes('none') && equipment.length > 1
-    ? equipment.filter(item => item !== 'none')
-    : equipment;
-  const pushups = validProfileValues.pushups.has(profile.pushups) ? profile.pushups : null;
-  const squats = validProfileValues.squats.has(profile.squats) ? profile.squats : null;
-  const deadHang = validProfileValues.yesNo.has(profile.deadHang) ? profile.deadHang : null;
-  const negativePullup = validProfileValues.yesNo.has(profile.negativePullup) ? profile.negativePullup : null;
-  const dip = validProfileValues.yesNo.has(profile.dip) ? profile.dip : null;
-
-  if (!goal || !pushups || !squats || !cleanEquipment.length) return null;
-
-  return {
-    ...profile,
-    goal,
-    equipment: cleanEquipment,
-    pushups,
-    squats,
-    deadHang: cleanEquipment.includes('pullupBar') ? deadHang : null,
-    negativePullup: cleanEquipment.includes('pullupBar') ? negativePullup : null,
-    dip: cleanEquipment.includes('dipBars') ? dip : null
-  };
-}
-
-function sanitizeLevels(levels = {}, profile = null) {
-  const defaults = workoutModule.createDefaultLevels();
-  const tracks = workoutModule.getTracks(profile);
-  Object.keys(defaults).forEach(key => {
-    const source = levels[key] || {};
-    const trackLength = Math.max(1, (tracks[key] || baseTracks[key] || []).length);
-    const level = Number.isFinite(Number(source.level)) ? Number(source.level) : defaults[key].level;
-    const points = Number.isFinite(Number(source.points)) ? Number(source.points) : defaults[key].points;
-    defaults[key] = {
-      level: Math.max(0, Math.min(Math.round(level), trackLength - 1)),
-      points: Math.max(-1, Math.min(Math.round(points), 2))
-    };
-  });
-  return defaults;
-}
-
-function sanitizeHistory(history) {
-  if (!Array.isArray(history)) return [];
-  return history
-    .filter(item => item && typeof item === 'object' && !Number.isNaN(new Date(item.date).getTime()))
-    .map(item => ({
-      date: new Date(item.date).toISOString(),
-      workout: typeof item.workout === 'string' ? item.workout : 'Workout',
-      mode: typeof item.mode === 'string' ? item.mode : 'normal',
-      exercises: Array.isArray(item.exercises)
-        ? item.exercises
-            .filter(exercise => exercise && typeof exercise === 'object' && exercise.name)
-            .map(exercise => ({
-              name: String(exercise.name),
-              prescription: typeof exercise.prescription === 'string' ? exercise.prescription : '',
-              trackKey: typeof exercise.trackKey === 'string' ? exercise.trackKey : '',
-              isAddOn: Boolean(exercise.isAddOn)
-            }))
-        : []
-    }));
-}
-
-function migrateState(rawState) {
-  if (!rawState || typeof rawState !== 'object') return defaultState();
-  return { ...rawState, schemaVersion: STATE_SCHEMA_VERSION };
-}
+let state = stateStore.loadState();
 
 function sanitizeState(nextState) {
-  if (!nextState || typeof nextState !== 'object') return defaultState();
-  nextState = migrateState(nextState);
-
-  nextState.profile = sanitizeProfile(nextState.profile);
-  nextState.levels = sanitizeLevels(nextState.levels, nextState.profile);
-  nextState.history = sanitizeHistory(nextState.history);
-  nextState.rotationIndex = Number.isFinite(Number(nextState.rotationIndex)) ? Math.max(0, Math.round(Number(nextState.rotationIndex))) : 0;
-  nextState.current = sanitizeWorkout(nextState.current);
-  nextState.generated = sanitizeWorkout(nextState.generated);
-  nextState.selectedEnergy = energyOptions[nextState.selectedEnergy] ? nextState.selectedEnergy : null;
-  nextState.includeWarmup = Boolean(nextState.includeWarmup);
-  nextState.includeStretch = Boolean(nextState.includeStretch);
-  nextState.todayEmptyStateDismissed = Boolean(nextState.todayEmptyStateDismissed);
-  nextState.schemaVersion = STATE_SCHEMA_VERSION;
-
-  if (!nextState.current && !nextState.generated && !nextState.selectedEnergy) {
-    nextState.includeWarmup = false;
-    nextState.includeStretch = false;
-  }
-
-  return nextState;
+  return stateStore.sanitizeState(nextState);
 }
 
 function defaultState() {
-  const levels = {};
-  Object.assign(levels, workoutModule.createDefaultLevels());
-  return { schemaVersion: STATE_SCHEMA_VERSION, rotationIndex: 0, levels, history: [], current: null, selectedEnergy: null, generated: null, profile: null, includeWarmup: false, includeStretch: false, todayEmptyStateDismissed: false };
+  return stateStore.defaultState();
 }
-
-let state = loadState();
-
-function loadState() {
-  const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY) || localStorage.getItem(OLDER_LEGACY_STORAGE_KEY);
-  if (!saved) return defaultState();
-  try {
-    const parsed = JSON.parse(saved);
-    const merged = { ...defaultState(), ...parsed };
-    return sanitizeState(merged);
-  } catch {
-    return defaultState();
-  }
-}
-
 
 function saveState() {
-  state = sanitizeState(state);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  state = stateStore.saveState(state);
   queueCloudSave();
 }
 
+function saveLocalStateOnly() {
+  state = stateStore.writeLocalState(state);
+}
+
 function publicState() {
-  return {
-    schemaVersion: STATE_SCHEMA_VERSION,
-    rotationIndex: state.rotationIndex,
-    levels: state.levels,
-    history: state.history,
-    current: state.current,
-    selectedEnergy: state.selectedEnergy,
-    generated: state.generated,
-    profile: state.profile,
-    includeWarmup: state.includeWarmup,
-    includeStretch: state.includeStretch,
-    todayEmptyStateDismissed: state.todayEmptyStateDismissed
-  };
+  return stateStore.publicState(state);
 }
 
 function queueCloudSave() {
@@ -470,34 +359,26 @@ function queueCloudSave() {
 }
 
 function normaliseEmail(email = '') {
-  return email.trim().toLowerCase();
+  return adminModule.normaliseEmail(email);
 }
 function isAdminUser() {
-  return Boolean(currentUser?.email && ADMIN_EMAILS.includes(normaliseEmail(currentUser.email)));
+  return adminModule.isAdminUser(currentUser, ADMIN_EMAILS);
 }
 
 function getCompletedWorkoutCount(savedState) {
-  return Array.isArray(savedState?.history) ? savedState.history.length : 0;
+  return adminModule.getCompletedWorkoutCount(savedState);
 }
 
 function formatAdminGoal(savedState) {
-  const goal = savedState?.profile?.goal;
-  return goalLabels[goal] || goal || 'Not set';
+  return adminModule.formatAdminGoal(savedState, goalLabels);
 }
 
 function formatAdminActive(profile, savedState) {
-  if (profile?.deleted_at) return 'N';
-  if (profile?.current_auth_user_id) return 'Y';
-  return savedState ? 'Y' : 'N';
+  return adminModule.formatAdminActive(profile, savedState);
 }
 
 function escapeHTML(value = '') {
-  return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
+  return adminModule.escapeHTML(value);
 }
 
 
@@ -575,13 +456,13 @@ async function loadCloudState() {
 
   if (cloudState) {
     state = sanitizeState({ ...defaultState(), ...cloudState });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    saveLocalStateOnly();
     if (legacyState) await saveCloudState();
     renderAll();
     setSyncStatus(legacyState ? 'Progress recovered and upgraded.' : 'Progress loaded.');
   } else {
     state = defaultState();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    saveLocalStateOnly();
     await saveCloudState();
     renderAll();
     setSyncStatus('New account ready.');
@@ -596,9 +477,21 @@ function setSyncStatus(message) {
 
 function setAuthMessage(message, type = 'info') {
   const el = document.getElementById('authMessage');
-  if (!el) return;
-  el.textContent = message || '';
-  el.dataset.type = type;
+  renderModule.setMessage(el, message, type);
+}
+
+function setPanelMessage(id, message, type = 'info') {
+  renderModule.setMessage(document.getElementById(id), message, type);
+}
+
+async function withButtonLoading(buttonId, label, task) {
+  const button = document.getElementById(buttonId);
+  renderModule.setButtonLoading(button, true, label);
+  try {
+    return await task();
+  } finally {
+    renderModule.setButtonLoading(button, false);
+  }
 }
 
 function blurActiveAuthField() {
@@ -943,15 +836,51 @@ function renderExercises() {
   document.getElementById('completeBtn').classList.remove('hidden');
 }
 
-function completeWorkout() {
+function showConfirmPanel({ title, message, actionLabel, onConfirm }) {
+  const panel = document.getElementById('confirmPanel');
+  const titleEl = document.getElementById('confirmTitle');
+  const messageEl = document.getElementById('confirmMessage');
+  const actionBtn = document.getElementById('confirmActionBtn');
+  if (!panel || !titleEl || !messageEl || !actionBtn) return;
+
+  lastFocusedElement = document.activeElement;
+  pendingConfirmAction = onConfirm;
+  titleEl.textContent = title;
+  messageEl.textContent = message;
+  actionBtn.textContent = actionLabel;
+  panel.classList.remove('hidden');
+  renderModule.focusFirstInteractive(panel);
+}
+
+function closeConfirmPanel() {
+  const panel = document.getElementById('confirmPanel');
+  if (panel) panel.classList.add('hidden');
+  pendingConfirmAction = null;
+  if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+    lastFocusedElement.focus();
+  }
+  lastFocusedElement = null;
+}
+
+function completeWorkout(skipMissingRatingConfirm = false) {
   if (!state.current) return;
   const rateableExercises = state.current.exercises.filter(exercise => !exercise.isAddOn);
   const ratedCount = Object.keys(state.current.ratings).length;
-  if (ratedCount < rateableExercises.length) {
-    const ok = confirm('Some exercises are not rated yet. Complete workout anyway?');
-    if (!ok) return;
+  if (!skipMissingRatingConfirm && ratedCount < rateableExercises.length) {
+    showConfirmPanel({
+      title: 'Complete workout?',
+      message: 'Some exercises are not rated yet. You can go back and rate them, or complete anyway.',
+      actionLabel: 'Complete anyway',
+      onConfirm: () => completeWorkout(true)
+    });
+    return;
   }
 
+  completeWorkoutNow();
+}
+
+function completeWorkoutNow() {
+  if (!state.current) return;
   Object.entries(state.current.ratings).forEach(([trackKey, rating]) => {
     if (state.levels[trackKey]) applyRating(trackKey, rating);
   });
@@ -961,12 +890,23 @@ function completeWorkout() {
   state.selectedEnergy = null;
   state.generated = null;
   saveState();
-  alert('Workout complete. See you next time.');
   renderToday();
   renderGoals();
   renderProgress();
   renderAccount();
+  showWorkoutStatus();
   updateUpdateBanner();
+}
+
+function showWorkoutStatus() {
+  const card = document.getElementById('workoutStatusCard');
+  if (!card) return;
+  card.classList.remove('hidden');
+  renderModule.focusFirstInteractive(card);
+}
+
+function dismissWorkoutStatus() {
+  document.getElementById('workoutStatusCard')?.classList.add('hidden');
 }
 
 function getTrackLevel(trackKey) {
@@ -1073,15 +1013,11 @@ function monthWeekKey(date) {
 }
 
 function workoutItemsForMonth(date = new Date()) {
-  const month = date.getMonth();
-  const year = date.getFullYear();
-  return state.history
-    .map(item => ({ ...item, parsedDate: new Date(item.date) }))
-    .filter(item => item.parsedDate.getMonth() === month && item.parsedDate.getFullYear() === year);
+  return accountModule.workoutItemsForMonth(state.history, date);
 }
 
 function workoutCountForMonth(date = new Date()) {
-  return workoutItemsForMonth(date).length;
+  return accountModule.workoutCountForMonth(state.history, date);
 }
 
 function elapsedWeeksInMonth(date = new Date()) {
@@ -1145,18 +1081,19 @@ function saveProfileFromOnboarding() {
   const dip = equipment.includes('dipBars') ? document.querySelector('input[name="dip"]:checked')?.value : null;
 
   if (!goal || !pushups || !squats || equipment.length === 0) {
-    alert('Please complete goal, equipment, push-ups and squats.');
+    setPanelMessage('onboardingMessage', 'Choose a goal, equipment, push-up level, and squat level to continue.', 'error');
     return;
   }
   if (equipment.includes('pullupBar') && (!deadHang || !negativePullup)) {
-    alert('Please answer the pull-up bar questions.');
+    setPanelMessage('onboardingMessage', 'Answer the pull-up bar questions to continue.', 'error');
     return;
   }
   if (equipment.includes('dipBars') && !dip) {
-    alert('Please answer the dip bars question.');
+    setPanelMessage('onboardingMessage', 'Answer the dip bars question to continue.', 'error');
     return;
   }
 
+  setPanelMessage('onboardingMessage', 'Building your plan...', 'info');
   state.profile = { goal, equipment, pushups, squats, deadHang, negativePullup, dip, createdAt: new Date().toISOString() };
   state.levels = initialLevelsFromProfile(state.profile, state.levels);
   state.rotationIndex = 0;
@@ -1353,6 +1290,7 @@ function openAccountModal() {
   panel.classList.add('account-modal', 'account-open');
   panel.classList.remove('hidden');
   showAccountView('main');
+  renderModule.focusFirstInteractive(panel);
 }
 
 function closeAccountModal() {
@@ -1389,6 +1327,8 @@ function showAccountView(view) {
   if (view === 'equipment') populateAccountEquipment();
   if (view === 'history') renderAccountHistory();
   if (view === 'admin') renderAdminDashboard();
+  setPanelMessage('accountGoalMessage', '');
+  setPanelMessage('accountEquipmentMessage', '');
 }
 
 function renderAccountMainSummary() {
@@ -1424,7 +1364,8 @@ function populateAccountEquipment() {
 
 async function saveAccountGoal() {
   const goal = document.querySelector('input[name="accountGoal"]:checked')?.value;
-  if (!goal) return alert('Choose a goal first.');
+  if (!goal) return setPanelMessage('accountGoalMessage', 'Choose a goal first.', 'error');
+  setPanelMessage('accountGoalMessage', 'Saving goal...', 'info');
   state.profile = { ...(state.profile || {}), goal, updatedAt: new Date().toISOString() };
   state.current = null;
   state.generated = null;
@@ -1437,7 +1378,8 @@ async function saveAccountGoal() {
 
 async function saveAccountEquipment() {
   const equipment = Array.from(document.querySelectorAll('input[name="accountEquipment"]:checked')).map(input => input.value);
-  if (equipment.length === 0) return alert('Choose at least one equipment option.');
+  if (equipment.length === 0) return setPanelMessage('accountEquipmentMessage', 'Choose at least one equipment option.', 'error');
+  setPanelMessage('accountEquipmentMessage', 'Saving equipment...', 'info');
   state.profile = { ...(state.profile || {}), equipment, updatedAt: new Date().toISOString() };
   state.current = null;
   state.generated = null;
@@ -1449,21 +1391,23 @@ async function saveAccountEquipment() {
 }
 
 async function changePasswordFromAccount() {
-  if (!supabaseClient || !currentUser) return;
-  const message = document.getElementById('accountPasswordMessage');
-  const email = currentUser.email || document.getElementById('accountEmail')?.textContent.trim();
-  if (message) message.textContent = '';
-  if (!email) {
-    if (message) message.textContent = 'Log in again before changing your password.';
-    return;
-  }
-  if (message) message.textContent = 'Sending reset link...';
-  const { error } = await sendPasswordResetToEmail(email);
-  if (error) {
-    if (message) message.textContent = friendlyAuthError(error.message);
-    return;
-  }
-  if (message) message.textContent = 'Password reset link sent. Check your email.';
+  return withButtonLoading('saveAccountPasswordBtn', 'Sending...', async () => {
+    if (!supabaseClient || !currentUser) return;
+    const message = document.getElementById('accountPasswordMessage');
+    const email = currentUser.email || document.getElementById('accountEmail')?.textContent.trim();
+    renderModule.setMessage(message, '', 'info');
+    if (!email) {
+      renderModule.setMessage(message, 'Log in again before changing your password.', 'error');
+      return;
+    }
+    renderModule.setMessage(message, 'Sending reset link...', 'info');
+    const { error } = await sendPasswordResetToEmail(email);
+    if (error) {
+      renderModule.setMessage(message, friendlyAuthError(error.message), 'error');
+      return;
+    }
+    renderModule.setMessage(message, 'Password reset link sent. Check your email.', 'success');
+  });
 }
 
 function renderAccountHistory() {
@@ -1479,33 +1423,8 @@ function renderAccountHistory() {
 
   const monthItems = workoutItemsForMonth(accountHistoryMonth).sort((a, b) => a.parsedDate - b.parsedDate);
 
-  const byDay = new Map();
-  monthItems.forEach(item => {
-    const day = item.parsedDate.getDate();
-    if (!byDay.has(day)) byDay.set(day, []);
-    byDay.get(day).push(item);
-  });
-
-  const firstDay = new Date(year, month, 1);
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const mondayOffset = (firstDay.getDay() + 6) % 7;
-  calendar.innerHTML = '';
-  for (let i = 0; i < mondayOffset; i++) {
-    const empty = document.createElement('div');
-    empty.className = 'history-day history-empty';
-    calendar.appendChild(empty);
-  }
-  for (let day = 1; day <= daysInMonth; day++) {
-    const cell = document.createElement('div');
-    const workouts = byDay.get(day) || [];
-    cell.className = `history-day${workouts.length ? ' has-workout' : ''}`;
-    cell.innerHTML = `<span>${day}</span>`;
-    calendar.appendChild(cell);
-  }
-
-  list.innerHTML = monthItems.length
-    ? monthItems.map(item => `<div class="history-item"><strong>${item.parsedDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</strong><span>${item.workout || 'Workout'} · ${energyOptions[item.mode]?.title || item.mode || 'Done'}</span></div>`).join('')
-    : '<p class="muted">No workouts completed this month yet.</p>';
+  accountModule.renderHistoryCalendar(calendar, accountHistoryMonth, monthItems);
+  accountModule.renderHistoryList(list, monthItems, energyOptions);
 }
 
 async function renderAdminDashboard() {
@@ -1618,92 +1537,100 @@ async function initCloudSync() {
 }
 
 async function signUp() {
-  passwordRecoveryMode = false;
-  clearRecoveryBootFlag();
-  if (!supabaseClient) return setAuthMessage('Account connection is not configured yet.', 'error');
-  const email = document.getElementById('signupEmailInput')?.value.trim();
-  const password = document.getElementById('signupPasswordInput')?.value;
-  const confirmPassword = document.getElementById('signupConfirmPasswordInput')?.value;
-  if (!email || !password || !confirmPassword) return setAuthMessage('Enter your email, password, and confirmation.', 'error');
-  if (password.length < 6) return setAuthMessage('Password must be at least 6 characters.', 'error');
-  if (password !== confirmPassword) return setAuthMessage('Passwords do not match.', 'error');
-  setAuthMessage('Creating your account...', 'info');
-  const { data, error } = await supabaseClient.auth.signUp({ email, password });
-  if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
-  currentUser = data?.session?.user || data?.user || currentUser;
-  currentProfileId = null;
-  if (currentUser) await loadCloudState();
-  setAuthMessage('Account created. Let’s build your plan.', 'success');
-  renderAll();
+  return withButtonLoading('signupBtn', 'Creating...', async () => {
+    passwordRecoveryMode = false;
+    clearRecoveryBootFlag();
+    if (!supabaseClient) return setAuthMessage('Account connection is not configured yet.', 'error');
+    const email = document.getElementById('signupEmailInput')?.value.trim();
+    const password = document.getElementById('signupPasswordInput')?.value;
+    const confirmPassword = document.getElementById('signupConfirmPasswordInput')?.value;
+    if (!email || !password || !confirmPassword) return setAuthMessage('Enter your email, password, and confirmation.', 'error');
+    if (password.length < 6) return setAuthMessage('Password must be at least 6 characters.', 'error');
+    if (password !== confirmPassword) return setAuthMessage('Passwords do not match.', 'error');
+    setAuthMessage('Creating your account...', 'info');
+    const { data, error } = await supabaseClient.auth.signUp({ email, password });
+    if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
+    currentUser = data?.session?.user || data?.user || currentUser;
+    currentProfileId = null;
+    if (currentUser) await loadCloudState();
+    setAuthMessage('Account created. Let’s build your plan.', 'success');
+    renderAll();
+  });
 }
 
 async function login() {
-  passwordRecoveryMode = false;
-  clearRecoveryBootFlag();
-  if (!supabaseClient) return setAuthMessage('Account connection is not configured yet.', 'error');
-  const email = document.getElementById('loginEmailInput')?.value.trim();
-  const password = document.getElementById('loginPasswordInput')?.value;
-  if (!email || !password) return setAuthMessage('Enter your email and password.', 'error');
-
-  setAuthMessage('Logging in...', 'info');
-
-  try {
-    const { data, error } = await withTimeout(
-      supabaseClient.auth.signInWithPassword({ email, password }),
-      12000,
-      'Login is taking too long. Check your connection and try again.'
-    );
-
-    if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
-
+  return withButtonLoading('loginBtn', 'Logging in...', async () => {
     passwordRecoveryMode = false;
-    currentUser = data?.session?.user || currentUser;
-    currentProfileId = null;
+    clearRecoveryBootFlag();
+    if (!supabaseClient) return setAuthMessage('Account connection is not configured yet.', 'error');
+    const email = document.getElementById('loginEmailInput')?.value.trim();
+    const password = document.getElementById('loginPasswordInput')?.value;
+    if (!email || !password) return setAuthMessage('Enter your email and password.', 'error');
 
-    setAuthMessage('Logged in. Loading your progress...', 'success');
-    renderAll();
-    loadCloudStateInBackground();
-  } catch (error) {
-    setAuthMessage(error.message || 'Login failed. Please try again.', 'error');
-  }
+    setAuthMessage('Logging in...', 'info');
+
+    try {
+      const { data, error } = await withTimeout(
+        supabaseClient.auth.signInWithPassword({ email, password }),
+        12000,
+        'Login is taking too long. Check your connection and try again.'
+      );
+
+      if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
+
+      passwordRecoveryMode = false;
+      currentUser = data?.session?.user || currentUser;
+      currentProfileId = null;
+
+      setAuthMessage('Logged in. Loading your progress...', 'success');
+      renderAll();
+      loadCloudStateInBackground();
+    } catch (error) {
+      setAuthMessage(error.message || 'Login failed. Please try again.', 'error');
+    }
+  });
 }
 
 async function sendPasswordReset() {
-  if (!supabaseClient) return setAuthMessage('Account connection is not configured yet.', 'error');
-  const email = document.getElementById('loginEmailInput')?.value.trim();
-  if (!email) return setAuthMessage('Enter your email first, then tap Forgot password.', 'error');
+  return withButtonLoading('forgotPasswordBtn', 'Sending...', async () => {
+    if (!supabaseClient) return setAuthMessage('Account connection is not configured yet.', 'error');
+    const email = document.getElementById('loginEmailInput')?.value.trim();
+    if (!email) return setAuthMessage('Enter your email first, then tap Forgot password.', 'error');
 
-  setAuthMessage('Sending reset link...', 'info');
-  const { error } = await sendPasswordResetToEmail(email);
-  if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
-  setAuthMessage('Password reset link sent. Check your email.', 'success');
+    setAuthMessage('Sending reset link...', 'info');
+    const { error } = await sendPasswordResetToEmail(email);
+    if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
+    setAuthMessage('Password reset link sent. Check your email.', 'success');
+  });
 }
 
 async function updatePasswordFromRecovery() {
-  if (!supabaseClient) return setAuthMessage('Account connection is not configured yet.', 'error');
+  return withButtonLoading('resetPasswordBtn', 'Updating...', async () => {
+    if (!supabaseClient) return setAuthMessage('Account connection is not configured yet.', 'error');
 
-  passwordRecoveryMode = true;
-  const session = await ensureRecoverySession();
-  if (!session?.user) return setAuthMessage('This reset link was not recognised. Please request a new reset link and open it directly from your email.', 'error');
-  currentUser = session.user;
+    passwordRecoveryMode = true;
+    const session = await ensureRecoverySession();
+    if (!session?.user) return setAuthMessage('This reset link was not recognised. Please request a new reset link and open it directly from your email.', 'error');
+    currentUser = session.user;
 
-  const password = document.getElementById('resetPasswordInput')?.value;
-  const confirmPassword = document.getElementById('resetConfirmPasswordInput')?.value;
-  if (!password || !confirmPassword) return setAuthMessage('Enter and confirm your new password.', 'error');
-  if (password.length < 6) return setAuthMessage('Password must be at least 6 characters.', 'error');
-  if (password !== confirmPassword) return setAuthMessage('Passwords do not match.', 'error');
+    const password = document.getElementById('resetPasswordInput')?.value;
+    const confirmPassword = document.getElementById('resetConfirmPasswordInput')?.value;
+    if (!password || !confirmPassword) return setAuthMessage('Enter and confirm your new password.', 'error');
+    if (password.length < 6) return setAuthMessage('Password must be at least 6 characters.', 'error');
+    if (password !== confirmPassword) return setAuthMessage('Passwords do not match.', 'error');
 
-  setAuthMessage('Updating password...', 'info');
-  const client = activeRecoveryClient || supabaseClient;
-  const { error } = await client.auth.updateUser({ password });
-  if (error) {
-    const lower = (error.message || '').toLowerCase();
-    if (lower.includes('current password') || lower.includes('auth session missing') || lower.includes('session missing')) {
-      return setAuthMessage('This reset session was not recognised. Please request a new reset link and open it directly from your email.', 'error');
+    setAuthMessage('Updating password...', 'info');
+    const client = activeRecoveryClient || supabaseClient;
+    const { error } = await client.auth.updateUser({ password });
+    if (error) {
+      const lower = (error.message || '').toLowerCase();
+      if (lower.includes('current password') || lower.includes('auth session missing') || lower.includes('session missing')) {
+        return setAuthMessage('This reset session was not recognised. Please request a new reset link and open it directly from your email.', 'error');
+      }
+      return setAuthMessage(friendlyAuthError(error.message), 'error');
     }
-    return setAuthMessage(friendlyAuthError(error.message), 'error');
-  }
-  await finishResetToLogin(client);
+    await finishResetToLogin(client);
+  });
 }
 
 async function logout() {
@@ -1729,6 +1656,21 @@ document.addEventListener('touchend', event => {
   togglePasswordVisibility(event.target);
 }, { passive: false });
 
+document.addEventListener('keydown', event => {
+  const confirmPanel = document.getElementById('confirmPanel');
+  if (confirmPanel && !confirmPanel.classList.contains('hidden')) {
+    if (event.key === 'Escape') closeConfirmPanel();
+    renderModule.trapTabKey(event, confirmPanel);
+    return;
+  }
+
+  const accountPanel = document.getElementById('accountPanel');
+  if (accountPanel?.classList.contains('account-open')) {
+    if (event.key === 'Escape') closeAccountModal();
+    renderModule.trapTabKey(event, accountPanel);
+  }
+});
+
 document.addEventListener('click', event => {
   if (event.target.id === 'welcomeNextBtn') {
     welcomeDismissed = true;
@@ -1742,10 +1684,17 @@ document.addEventListener('click', event => {
   }
 
   if (event.target.id === 'applyUpdateBtn') applyWaitingUpdate();
+  if (event.target.id === 'confirmCancelBtn') closeConfirmPanel();
+  if (event.target.id === 'confirmActionBtn') {
+    const action = pendingConfirmAction;
+    closeConfirmPanel();
+    if (typeof action === 'function') action();
+  }
 
   const feelButton = event.target.closest('.feel-btn');
   if (feelButton) selectEnergy(feelButton.dataset.feel);
   if (event.target.id === 'dismissTodayEmptyState') dismissTodayEmptyState();
+  if (event.target.id === 'dismissWorkoutStatusBtn') dismissWorkoutStatus();
 
   if (event.target.id === 'changeEnergyBtn') {
     state.selectedEnergy = null;
@@ -1817,8 +1766,12 @@ document.addEventListener('click', event => {
   if (event.target.id === 'saveProfileBtn') saveProfileFromOnboarding();
 
   if (event.target.matches('.nav-btn')) {
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => {
+      b.classList.remove('active');
+      b.removeAttribute('aria-current');
+    });
     event.target.classList.add('active');
+    event.target.setAttribute('aria-current', 'page');
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(event.target.dataset.screen).classList.add('active');
     const title = document.getElementById('screenTitle');
