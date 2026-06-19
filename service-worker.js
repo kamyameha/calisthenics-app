@@ -1,17 +1,17 @@
 // Release rule: when deploying, keep this cache name aligned with the
 // CSS/JS query versions in index.html.
-const CACHE_NAME = 'somthingreat-v8-28-progression-admin-polish';
+const CACHE_NAME = 'somthingreat-v8-29-goal-help-polish';
 const APP_SHELL = [
   './',
   './index.html',
-  './style.css?v=v8-28-progression-admin-polish',
-  './auth.js?v=v8-28-progression-admin-polish',
-  './workouts.js?v=v8-28-progression-admin-polish',
-  './state.js?v=v8-28-progression-admin-polish',
-  './account.js?v=v8-28-progression-admin-polish',
-  './admin.js?v=v8-28-progression-admin-polish',
-  './render.js?v=v8-28-progression-admin-polish',
-  './app.js?v=v8-28-progression-admin-polish',
+  './style.css?v=v8-29-goal-help-polish',
+  './auth.js?v=v8-29-goal-help-polish',
+  './workouts.js?v=v8-29-goal-help-polish',
+  './state.js?v=v8-29-goal-help-polish',
+  './account.js?v=v8-29-goal-help-polish',
+  './admin.js?v=v8-29-goal-help-polish',
+  './render.js?v=v8-29-goal-help-polish',
+  './app.js?v=v8-29-goal-help-polish',
   './version.json',
   './manifest.json',
   './supabase-config.js',

@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-28-progression-admin-polish';
+const APP_VERSION = 'v8-29-goal-help-polish';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -820,9 +820,8 @@ function renderExercises() {
       const label = exercise.setLabels?.[index] || `Set ${index + 1}`;
       return `<div class="set-row"><span>${label}</span><input type="checkbox" data-track="${exercise.trackKey}" data-set-index="${index}" ${completedSets[index] ? 'checked' : ''}></div>`;
     }).join('');
-    const levelLabel = exercise.isAddOn ? 'Add-on' : (exercise.originalLevel && exercise.originalLevel !== exercise.level ? `L${exercise.level} · easier` : `L${exercise.level}`);
     const help = getExerciseHelp(exercise.name);
-    const helpButton = help ? `<button class="exercise-help-btn" type="button" data-exercise-name="${escapeHTML(exercise.name)}" aria-label="How to do ${escapeHTML(exercise.name)}">How</button>` : '';
+    const helpButton = help ? `<button class="exercise-help-btn" type="button" data-exercise-name="${escapeHTML(exercise.name)}" aria-label="Help with ${escapeHTML(exercise.name)}">Help</button>` : '';
     const ratingBlock = exercise.isAddOn ? '' : `
       <p class="rating-label">How was it?</p>
       <div class="rating-row" data-track="${exercise.trackKey}">
@@ -832,8 +831,7 @@ function renderExercises() {
         <button data-rating="failed" class="${selectedRating === 'failed' ? 'selected' : ''}">Failed</button>
       </div>`;
     card.innerHTML = `
-      <h3>${exercise.name}<span>${levelLabel}</span></h3>
-      ${helpButton}
+      <h3>${exercise.name}${helpButton}</h3>
       <p class="prescription">${exercise.prescription}</p>
       ${setRows}
       ${ratingBlock}
@@ -954,63 +952,27 @@ function getGoalTrackKey(goal) {
   return goal === 'handstand' ? 'handstand' : goal === 'lsit' ? 'lsit' : goal === 'muscleup' ? 'muscleup' : 'pullup';
 }
 
-function getReadinessCopy(goal, level, trackLength) {
-  const nearGoal = level >= Math.max(0, trackLength - 2);
-  const midPath = level >= Math.max(1, Math.floor(trackLength * 0.5));
-  const copy = {
-    pullup: {
-      base: 'You are building grip, shoulder control, and pulling strength before testing a clean pull-up.',
-      mid: 'You are past the foundation. Keep the reps controlled; the app will keep building the pieces before a real pull-up test.',
-      near: 'You are close enough to start treating the next attempts as readiness checks, not pass/fail exams.',
-      checks: ['Controlled negatives', 'Active shoulders', 'Quiet body without swinging']
-    },
-    muscleup: {
-      base: 'You are building the pull height and transition control needed before muscle-up attempts.',
-      mid: 'Your path is now about power plus technique. Clean high pulls matter more than rushing attempts.',
-      near: 'Treat muscle-up attempts as skill checks. If they fail, the app should keep building high pulls and transition work.',
-      checks: ['High pull strength', 'Smooth transition', 'Stable dip support']
-    },
-    handstand: {
-      base: 'You are building shoulder strength, body line, and confidence upside down.',
-      mid: 'You are now practicing stronger positions. Control matters more than longer holds.',
-      near: 'Your handstand work is ready for regular skill checks against the wall and short free attempts.',
-      checks: ['Shoulder push', 'Rib control', 'Calm wall exit']
-    },
-    lsit: {
-      base: 'You are building support strength, compression, and core tension for a clean L-sit.',
-      mid: 'The base is forming. Keep holds short and honest rather than chasing messy time.',
-      near: 'You are ready to test cleaner, longer L-sit attempts while keeping backup progressions.',
-      checks: ['Strong arm support', 'Hips lifted', 'Legs controlled']
-    },
-    general: {
-      base: 'You are building a balanced base across push, pull, legs, core, and skill work.',
-      mid: 'Your consistency is becoming the goal. The app will keep rotating patterns so no single area carries everything.',
-      near: 'You have a strong base. Keep training varied and use harder levels as periodic checks.',
-      checks: ['Repeatable workouts', 'Balanced movement', 'Recoverable effort']
-    }
-  }[goal] || {};
-
+function getGoalJourneyTitle(goal) {
   return {
-    message: nearGoal ? copy.near : midPath ? copy.mid : copy.base,
-    checks: copy.checks || ['Clean control', 'Repeatable reps', 'No sharp pain']
-  };
+    pullup: 'Pull-Up Journey',
+    muscleup: 'Muscle-Up Journey',
+    handstand: 'Handstand Journey',
+    lsit: 'L-Sit Journey',
+    general: 'General Fitness Path'
+  }[goal] || 'Goal Journey';
 }
 
-function renderReadiness(goal, level, trackLength) {
-  const title = document.getElementById('readinessTitle');
-  const message = document.getElementById('readinessMessage');
-  const list = document.getElementById('readinessChecklist');
-  if (!title || !message || !list) return;
-
-  const percent = Math.round(((level + 1) / trackLength) * 100);
-  const nearGoal = level >= Math.max(0, trackLength - 2);
-  const { message: readinessMessage, checks } = getReadinessCopy(goal, level, trackLength);
-  title.textContent = nearGoal ? 'Ready for skill checks soon.' : 'Building the missing pieces.';
-  message.textContent = `${readinessMessage} Readiness is about clean control, not just reaching the last level.`;
-  list.innerHTML = checks.map((check, index) => {
-    const done = percent >= ((index + 1) / checks.length) * 70;
-    return `<div class="readiness-item${done ? ' ready' : ''}"><span>${done ? 'Ready' : 'Build'}</span><strong>${check}</strong></div>`;
-  }).join('');
+function renderGeneralGoalJourney(journey) {
+  const monthly = workoutCountForMonth(new Date());
+  const total = state.history.length;
+  const percent = Math.min(100, Math.round((Math.min(total, 12) / 12) * 100));
+  const progress = document.getElementById('pullupProgressBar');
+  if (progress) progress.style.width = `${percent}%`;
+  journey.innerHTML = `
+    <div class="journey-summary current-stage"><div><p class="eyebrow">Current focus</p><strong>Balanced training</strong><span>Workouts rotate push, pull, legs, core, and skill work so one area does not carry everything.</span></div><em>Now</em></div>
+    <div class="journey-summary"><div><p class="eyebrow">Builds next</p><strong>Stronger basics</strong><span>Rate each exercise honestly. The app uses that feedback to make future sessions easier or harder.</span></div><em>Next</em></div>
+    <div class="journey-summary"><div><p class="eyebrow">Progress so far</p><strong>${total} workout${total === 1 ? '' : 's'} completed</strong><span>${monthly} this month. Keep showing up to build a reliable base.</span></div><em>${Math.min(total, 12)}/12</em></div>
+  `;
 }
 
 function renderGoals() {
@@ -1033,6 +995,11 @@ function renderGoals() {
 
   const journey = document.getElementById('pullupJourney');
   if (!journey) return;
+  const journeyTitle = document.getElementById('goalJourneyTitle');
+  if (journeyTitle) journeyTitle.textContent = getGoalJourneyTitle(goal);
+  if (goal === 'general') {
+    renderGeneralGoalJourney(journey);
+  } else {
   const completedNames = track.slice(0, level).map(step => step.name).join(' · ');
   const hasCompletedWorkout = state.history.length > 0;
   const progressLabel = hasCompletedWorkout ? 'Progress so far' : 'Starting point';
@@ -1048,14 +1015,14 @@ function renderGoals() {
     <div class="journey-summary"><div><p class="eyebrow">Unlocks next</p><strong>${level >= track.length - 1 ? 'Goal unlocked' : next.name}</strong><span>${level >= track.length - 1 ? 'Keep training and consolidate the skill.' : `Next target: ${next.prescription}`}</span></div><em>Next</em></div>
     <div class="journey-summary"><div><p class="eyebrow">${progressLabel}</p><strong>${progressTitle}</strong><span>${progressDescription}</span></div><em>${progressPill}</em></div>
   `;
-  renderReadiness(goal, level, track.length);
+  }
 
   const skills = [
     { key: 'pullup', label: 'Pull-Up' },
     { key: 'handstand', label: 'Handstand' },
     { key: 'lsit', label: 'L-Sit' },
     { key: 'muscleup', label: 'Muscle-Up' }
-  ].filter(skill => skill.key !== goalTrackKey).slice(0, 3);
+  ].filter(skill => goal === 'general' || skill.key !== goalTrackKey).slice(0, 3);
   const skillList = document.getElementById('skillList');
   if (!skillList) return;
   skillList.innerHTML = '';
