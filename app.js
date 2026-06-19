@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-36-checklist-input-cta';
+const APP_VERSION = 'v8-37-workout-timers';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -38,6 +38,8 @@ let activeRecoveryClient = null;
 let authSessionCheckInProgress = false;
 let pendingConfirmAction = null;
 let lastFocusedElement = null;
+let timerInterval = null;
+let activeTimer = null;
 
 function clearLegacyPasswordSession() {
   try {
@@ -841,6 +843,9 @@ function selectEnergy(feel) {
   state.generated = null;
   state.includeWarmup = false;
   state.includeStretch = false;
+  state.includeExerciseTimer = false;
+  state.includeRestTimer = false;
+  state.restTimerSeconds = 60;
   saveState();
   renderSelectedEnergy();
 }
@@ -869,21 +874,38 @@ function renderSelectedEnergy() {
 
   const warmupInput = document.getElementById('includeWarmup');
   const stretchInput = document.getElementById('includeStretch');
+  const exerciseTimerInput = document.getElementById('includeExerciseTimer');
+  const restTimerInput = document.getElementById('includeRestTimer');
+  const restTimerOptions = document.getElementById('restTimerOptions');
   if (warmupInput) warmupInput.checked = Boolean(state.includeWarmup);
   if (stretchInput) stretchInput.checked = Boolean(state.includeStretch);
+  if (exerciseTimerInput) exerciseTimerInput.checked = Boolean(state.includeExerciseTimer);
+  if (restTimerInput) restTimerInput.checked = Boolean(state.includeRestTimer);
+  if (restTimerOptions) restTimerOptions.classList.toggle('hidden', !state.includeRestTimer);
+  document.querySelectorAll('input[name="restTimerSeconds"]').forEach(input => {
+    input.checked = Number(input.value) === Number(state.restTimerSeconds || 60);
+  });
   updateAddOnSummary();
 }
 
 function updateAddOnSummary() {
   const total = document.getElementById('sessionTotalPreview');
   const extra = getExtraSessionMinutes();
-  if (total) total.textContent = extra ? `Workout + ${extra} min add-ons` : 'Workout only';
+  if (!total) return;
+  const extras = [];
+  if (extra) extras.push(`${extra} min`);
+  if (state.includeExerciseTimer) extras.push('exercise timers');
+  if (state.includeRestTimer) extras.push(`${state.restTimerSeconds || 60}s rest`);
+  total.textContent = extras.length ? `Workout + ${extras.join(' · ')}` : 'Workout only';
 }
 
 function generateWorkout() {
   const option = energyOptions[state.selectedEnergy || 'normal'];
   const baseWorkout = getTodayWorkout(option.mode);
   state.generated = applyWorkoutAddOns(baseWorkout);
+  state.generated.includeExerciseTimer = Boolean(state.includeExerciseTimer);
+  state.generated.includeRestTimer = Boolean(state.includeRestTimer);
+  state.generated.restTimerSeconds = state.restTimerSeconds || 60;
   saveState();
   renderGeneratedWorkout();
 }
@@ -917,7 +939,14 @@ function startWorkout() {
     renderToday();
     return;
   }
-  state.current = { ...state.generated, ratings: {}, sets: {} };
+  state.current = {
+    ...state.generated,
+    includeExerciseTimer: Boolean(state.generated.includeExerciseTimer),
+    includeRestTimer: Boolean(state.generated.includeRestTimer),
+    restTimerSeconds: state.generated.restTimerSeconds || 60,
+    ratings: {},
+    sets: {}
+  };
   state.current.exercises.forEach(exercise => {
     state.current.sets[exercise.trackKey] = Array.from({ length: exercise.setCount || 1 }, () => false);
   });
@@ -950,9 +979,13 @@ function renderExercises() {
     if (!state.current.sets) state.current.sets = {};
     if (!state.current.sets[exercise.trackKey]) state.current.sets[exercise.trackKey] = Array.from({ length: exercise.setCount || 1 }, () => false);
     const completedSets = state.current.sets[exercise.trackKey];
+    const timedSeconds = !exercise.isAddOn && state.current.includeExerciseTimer ? getTimedExerciseSeconds(exercise) : null;
     const setRows = Array.from({ length: exercise.setCount || completedSets.length || 1 }, (_, index) => {
       const label = exercise.setLabels?.[index] || `Set ${index + 1}`;
-      return `<div class="set-row"><span>${label}</span><input type="checkbox" data-track="${exercise.trackKey}" data-set-index="${index}" ${completedSets[index] ? 'checked' : ''}></div>`;
+      const timerButton = timedSeconds
+        ? `<button class="set-timer-btn" type="button" data-timer-seconds="${timedSeconds}" data-exercise-name="${escapeHTML(exercise.name)}" data-set-label="${escapeHTML(label)}">Start ${formatTimerDuration(timedSeconds)}</button>`
+        : '';
+      return `<div class="set-row ${timerButton ? 'timed-set-row' : ''}"><span>${label}</span>${timerButton}<input type="checkbox" data-track="${exercise.trackKey}" data-set-index="${index}" ${completedSets[index] ? 'checked' : ''}></div>`;
     }).join('');
     const help = getExerciseHelp(exercise.name);
     const helpButton = help ? `<button class="exercise-help-btn" type="button" data-exercise-name="${escapeHTML(exercise.name)}" aria-label="Help with ${escapeHTML(exercise.name)}">Help</button>` : '';
@@ -1029,6 +1062,115 @@ function closeExerciseHelp() {
     lastFocusedElement.focus();
   }
   lastFocusedElement = null;
+}
+
+function formatTimerDuration(seconds) {
+  const safeSeconds = Math.max(0, Math.round(Number(seconds) || 0));
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainingSeconds = String(safeSeconds % 60).padStart(2, '0');
+  return `${minutes}:${remainingSeconds}`;
+}
+
+function getTimedExerciseSeconds(exercise) {
+  if (!exercise?.prescription) return null;
+  const text = `${exercise.prescription} ${exercise.basePrescription || ''}`.toLowerCase();
+  const eachMatch = text.match(/(\d+)\s*s\s+each/);
+  if (eachMatch) return Number(eachMatch[1]);
+
+  const secondsMatch = text.match(/×\s*(\d+)\s*s\b/);
+  if (secondsMatch) return Number(secondsMatch[1]);
+
+  const minutesMatch = text.match(/×\s*(\d+)\s*min\b/) || text.match(/^(\d+)\s*min\b/) || text.match(/\b(\d+)\s*min\b/);
+  if (minutesMatch) return Number(minutesMatch[1]) * 60;
+
+  return null;
+}
+
+function renderWorkoutTimer() {
+  if (!activeTimer) return;
+  const eyebrow = document.getElementById('timerEyebrow');
+  const title = document.getElementById('timerTitle');
+  const subtitle = document.getElementById('timerSubtitle');
+  const count = document.getElementById('timerCount');
+  const skipButton = document.getElementById('skipTimerBtn');
+
+  if (eyebrow) eyebrow.textContent = activeTimer.phase === 'prep' ? 'Get ready' : 'Timer';
+  if (title) title.textContent = activeTimer.title;
+  if (subtitle) subtitle.textContent = activeTimer.subtitle;
+  if (count) {
+    if (activeTimer.phase === 'prep') {
+      count.textContent = activeTimer.prepSeconds;
+    } else if (activeTimer.remainingSeconds <= 0) {
+      count.textContent = 'Done';
+    } else {
+      count.textContent = formatTimerDuration(activeTimer.remainingSeconds);
+    }
+  }
+  if (skipButton) skipButton.textContent = activeTimer.remainingSeconds <= 0 ? 'Close' : 'Skip timer';
+}
+
+function tickWorkoutTimer() {
+  if (!activeTimer) return;
+  if (activeTimer.phase === 'prep') {
+    activeTimer.prepSeconds -= 1;
+    if (activeTimer.prepSeconds <= 0) {
+      activeTimer.phase = 'active';
+    }
+    renderWorkoutTimer();
+    return;
+  }
+
+  activeTimer.remainingSeconds -= 1;
+  if (activeTimer.remainingSeconds <= 0) {
+    activeTimer.remainingSeconds = 0;
+    window.navigator?.vibrate?.(120);
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  renderWorkoutTimer();
+}
+
+function showWorkoutTimer({ title, subtitle, seconds, prepSeconds = 0 }) {
+  const panel = document.getElementById('timerPanel');
+  if (!panel || !seconds) return;
+
+  closeWorkoutTimer(false);
+  lastFocusedElement = document.activeElement;
+  activeTimer = {
+    title,
+    subtitle,
+    remainingSeconds: seconds,
+    prepSeconds,
+    phase: prepSeconds ? 'prep' : 'active'
+  };
+  panel.classList.remove('hidden');
+  renderWorkoutTimer();
+  renderModule.focusFirstInteractive(panel);
+  timerInterval = setInterval(tickWorkoutTimer, 1000);
+}
+
+function closeWorkoutTimer(restoreFocus = true) {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = null;
+  activeTimer = null;
+  document.getElementById('timerPanel')?.classList.add('hidden');
+  if (restoreFocus && lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+    lastFocusedElement.focus();
+  }
+  if (restoreFocus) lastFocusedElement = null;
+}
+
+function hasRemainingWorkoutSets() {
+  if (!state.current?.exercises || !state.current?.sets) return false;
+  return state.current.exercises.some(exercise => {
+    if (exercise.isAddOn) return false;
+    const sets = state.current.sets[exercise.trackKey] || [];
+    return sets.some(done => !done);
+  });
+}
+
+function findCurrentExercise(trackKey) {
+  return (state.current?.exercises || []).find(exercise => exercise.trackKey === trackKey) || null;
 }
 
 function completeWorkout(skipMissingRatingConfirm = false) {
@@ -1898,6 +2040,13 @@ document.addEventListener('touchend', event => {
 }, { passive: false });
 
 document.addEventListener('keydown', event => {
+  const timerPanel = document.getElementById('timerPanel');
+  if (timerPanel && !timerPanel.classList.contains('hidden')) {
+    if (event.key === 'Escape') closeWorkoutTimer();
+    renderModule.trapTabKey(event, timerPanel);
+    return;
+  }
+
   const confirmPanel = document.getElementById('confirmPanel');
   if (confirmPanel && !confirmPanel.classList.contains('hidden')) {
     if (event.key === 'Escape') closeConfirmPanel();
@@ -1938,9 +2087,22 @@ document.addEventListener('click', event => {
     closeConfirmPanel();
     if (typeof action === 'function') action();
   }
+  if (event.target.id === 'skipTimerBtn' || event.target.id === 'timerPanel') closeWorkoutTimer();
   if (event.target.id === 'closeExerciseHelpBtn' || event.target.id === 'exerciseHelpPanel') closeExerciseHelp();
   const exerciseHelpButton = event.target.closest('.exercise-help-btn');
   if (exerciseHelpButton) showExerciseHelp(exerciseHelpButton.dataset.exerciseName);
+  const exerciseTimerButton = event.target.closest('.set-timer-btn');
+  if (exerciseTimerButton) {
+    const seconds = Number(exerciseTimerButton.dataset.timerSeconds);
+    const exerciseName = exerciseTimerButton.dataset.exerciseName || 'Exercise';
+    const setLabel = exerciseTimerButton.dataset.setLabel || 'Set';
+    showWorkoutTimer({
+      title: exerciseName,
+      subtitle: `${setLabel} starts after a short countdown.`,
+      seconds,
+      prepSeconds: 3
+    });
+  }
 
   const feelButton = event.target.closest('.feel-btn');
   if (feelButton) selectEnergy(feelButton.dataset.feel);
@@ -1970,9 +2132,19 @@ document.addEventListener('click', event => {
     renderToday();
   }
 
-  if (event.target.id === 'includeWarmup' || event.target.id === 'includeStretch') {
+  if (['includeWarmup', 'includeStretch', 'includeExerciseTimer', 'includeRestTimer'].includes(event.target.id)) {
     state.includeWarmup = Boolean(document.getElementById('includeWarmup')?.checked);
     state.includeStretch = Boolean(document.getElementById('includeStretch')?.checked);
+    state.includeExerciseTimer = Boolean(document.getElementById('includeExerciseTimer')?.checked);
+    state.includeRestTimer = Boolean(document.getElementById('includeRestTimer')?.checked);
+    if (!state.includeRestTimer) state.restTimerSeconds = 60;
+    saveState();
+    renderSelectedEnergy();
+    updateAddOnSummary();
+  }
+
+  if (event.target.matches('input[name="restTimerSeconds"]')) {
+    state.restTimerSeconds = Number(event.target.value) === 30 ? 30 : 60;
     saveState();
     updateAddOnSummary();
   }
@@ -1983,6 +2155,9 @@ document.addEventListener('click', event => {
     state.selectedEnergy = null;
     state.includeWarmup = false;
     state.includeStretch = false;
+    state.includeExerciseTimer = false;
+    state.includeRestTimer = false;
+    state.restTimerSeconds = 60;
     saveState();
     renderToday();
   }
@@ -1996,6 +2171,15 @@ document.addEventListener('click', event => {
     if (!state.current.sets[trackKey]) state.current.sets[trackKey] = [false, false, false];
     state.current.sets[trackKey][setIndex] = event.target.checked;
     saveState();
+    const exercise = findCurrentExercise(trackKey);
+    if (event.target.checked && state.current.includeRestTimer && !exercise?.isAddOn && hasRemainingWorkoutSets()) {
+      const restSeconds = Number(state.current.restTimerSeconds) === 30 ? 30 : 60;
+      showWorkoutTimer({
+        title: 'Rest',
+        subtitle: `Take ${restSeconds}s before the next set.`,
+        seconds: restSeconds
+      });
+    }
   }
 
   if (event.target.matches('.rating-row button')) {

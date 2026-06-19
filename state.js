@@ -124,6 +124,9 @@
         profile: null,
         includeWarmup: false,
         includeStretch: false,
+        includeExerciseTimer: false,
+        includeRestTimer: false,
+        restTimerSeconds: 60,
         todayEmptyStateDismissed: false
       };
     }
@@ -147,12 +150,18 @@
       nextState.selectedEnergy = energyOptions[nextState.selectedEnergy] ? nextState.selectedEnergy : null;
       nextState.includeWarmup = Boolean(nextState.includeWarmup);
       nextState.includeStretch = Boolean(nextState.includeStretch);
+      nextState.includeExerciseTimer = Boolean(nextState.includeExerciseTimer);
+      nextState.includeRestTimer = Boolean(nextState.includeRestTimer);
+      nextState.restTimerSeconds = Number(nextState.restTimerSeconds) === 30 ? 30 : 60;
       nextState.todayEmptyStateDismissed = Boolean(nextState.todayEmptyStateDismissed);
       nextState.schemaVersion = STATE_SCHEMA_VERSION;
 
       if (!nextState.current && !nextState.generated && !nextState.selectedEnergy && !nextState.customChecklist) {
         nextState.includeWarmup = false;
         nextState.includeStretch = false;
+        nextState.includeExerciseTimer = false;
+        nextState.includeRestTimer = false;
+        nextState.restTimerSeconds = 60;
       }
 
       return nextState;
@@ -196,6 +205,9 @@
         profile: state.profile,
         includeWarmup: state.includeWarmup,
         includeStretch: state.includeStretch,
+        includeExerciseTimer: state.includeExerciseTimer,
+        includeRestTimer: state.includeRestTimer,
+        restTimerSeconds: state.restTimerSeconds,
         todayEmptyStateDismissed: state.todayEmptyStateDismissed
       };
     }

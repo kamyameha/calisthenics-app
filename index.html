@@ -30,11 +30,11 @@
     })();
   </script>
   <!-- Release rule: keep CSS/JS query versions aligned with service-worker.js CACHE_NAME. -->
-  <link rel="stylesheet" href="style.css?v=v8-36-checklist-input-cta" />
-  <link rel="stylesheet" href="welcome.css?v=v8-36-checklist-input-cta" />
-  <link rel="stylesheet" href="auth.css?v=v8-36-checklist-input-cta" />
-  <link rel="stylesheet" href="workout.css?v=v8-36-checklist-input-cta" />
-  <link rel="stylesheet" href="account.css?v=v8-36-checklist-input-cta" />
+  <link rel="stylesheet" href="style.css?v=v8-37-workout-timers" />
+  <link rel="stylesheet" href="welcome.css?v=v8-37-workout-timers" />
+  <link rel="stylesheet" href="auth.css?v=v8-37-workout-timers" />
+  <link rel="stylesheet" href="workout.css?v=v8-37-workout-timers" />
+  <link rel="stylesheet" href="account.css?v=v8-37-workout-timers" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -331,6 +331,12 @@
             <p class="add-on-title">Optional add-ons</p>
             <label class="add-on-row"><input id="includeWarmup" type="checkbox"> <span>Add 2-min warm-up before</span></label>
             <label class="add-on-row"><input id="includeStretch" type="checkbox"> <span>Add 2-min stretch after</span></label>
+            <label class="add-on-row"><input id="includeExerciseTimer" type="checkbox"> <span>Add timers for timed exercises</span></label>
+            <label class="add-on-row"><input id="includeRestTimer" type="checkbox"> <span>Add rest timer between sets</span></label>
+            <div id="restTimerOptions" class="rest-timer-options hidden" role="group" aria-label="Rest timer length">
+              <label><input type="radio" name="restTimerSeconds" value="30"> <span>30s</span></label>
+              <label><input type="radio" name="restTimerSeconds" value="60"> <span>60s</span></label>
+            </div>
             <p id="sessionTotalPreview" class="add-on-summary">Workout only</p>
           </div>
           <button class="hero-action" id="generateWorkoutBtn" type="button">Generate today's workout</button>
@@ -425,12 +431,22 @@
     </div>
   </div>
 
-  <script src="auth.js?v=v8-36-checklist-input-cta"></script>
-  <script src="workouts.js?v=v8-36-checklist-input-cta"></script>
-  <script src="state.js?v=v8-36-checklist-input-cta"></script>
-  <script src="account.js?v=v8-36-checklist-input-cta"></script>
-  <script src="admin.js?v=v8-36-checklist-input-cta"></script>
-  <script src="render.js?v=v8-36-checklist-input-cta"></script>
-  <script src="app.js?v=v8-36-checklist-input-cta"></script>
+  <div id="timerPanel" class="confirm-panel hidden" role="dialog" aria-modal="true" aria-labelledby="timerTitle">
+    <div class="confirm-card timer-card">
+      <p id="timerEyebrow" class="eyebrow">Timer</p>
+      <h2 id="timerTitle">Rest</h2>
+      <p id="timerSubtitle" class="timer-subtitle">Next set soon.</p>
+      <p id="timerCount" class="timer-count">0:30</p>
+      <button id="skipTimerBtn" class="primary-btn" type="button">Skip timer</button>
+    </div>
+  </div>
+
+  <script src="auth.js?v=v8-37-workout-timers"></script>
+  <script src="workouts.js?v=v8-37-workout-timers"></script>
+  <script src="state.js?v=v8-37-workout-timers"></script>
+  <script src="account.js?v=v8-37-workout-timers"></script>
+  <script src="admin.js?v=v8-37-workout-timers"></script>
+  <script src="render.js?v=v8-37-workout-timers"></script>
+  <script src="app.js?v=v8-37-workout-timers"></script>
 </body>
 </html>
