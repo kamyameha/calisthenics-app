@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-33-custom-checklist';
+const APP_VERSION = 'v8-34-custom-checklist-polish';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&

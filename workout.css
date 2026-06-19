@@ -127,6 +127,10 @@
   margin-bottom: var(--space-2);
 }
 
+.custom-checklist-card {
+  margin-top: var(--space-5);
+}
+
 .custom-type-row {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
