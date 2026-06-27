@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-39-rest-option-cleanup';
+const APP_VERSION = 'v8-49-google-password-support';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -39,7 +39,11 @@ let authSessionCheckInProgress = false;
 let pendingConfirmAction = null;
 let lastFocusedElement = null;
 let timerInterval = null;
+let timerAutoClose = null;
 let activeTimer = null;
+let openExerciseTrackKey = null;
+let onboardingStep = 1;
+let onboardingConfirmationReady = false;
 
 function clearLegacyPasswordSession() {
   try {
@@ -56,15 +60,7 @@ function clearRecoveryAuthSession() {
 }
 
 function hasRecoveryBootFlag() {
-  try {
-    return Boolean(
-      window.__SOMTHINGREAT_RECOVERY_BOOT ||
-      document.documentElement.classList.contains('recovery-boot') ||
-      sessionStorage.getItem('somthingreat-recovery-boot') === '1'
-    );
-  } catch (error) {
-    return Boolean(window.__SOMTHINGREAT_RECOVERY_BOOT || document.documentElement.classList.contains('recovery-boot'));
-  }
+  return Boolean(window.__SOMTHINGREAT_RECOVERY_BOOT || document.documentElement.classList.contains('recovery-boot'));
 }
 
 function clearRecoveryBootFlag() {
@@ -87,7 +83,8 @@ function isPasswordRecoveryUrl() {
   // A password-reset redirect can look like:
   //   ?reset-password=1#access_token=...&type=recovery
   //   ?reset-password=1&code=...
-  //   ?code=... (PKCE recovery links can temporarily look like this)
+  // Google OAuth also returns ?code=..., so code/access_token alone must not
+  // be treated as password recovery.
   const current = `${window.location.search.replace(/^\?/, '')}&${window.location.hash.replace(/^#/, '')}`;
   const initial = `${INITIAL_AUTH_SEARCH.replace(/^\?/, '')}&${INITIAL_AUTH_HASH.replace(/^#/, '')}`;
   const params = new URLSearchParams(`${initial}&${current}`);
@@ -96,9 +93,6 @@ function isPasswordRecoveryUrl() {
     params.get('reset-password') === '1' ||
     params.get('type') === 'recovery' ||
     params.get('event') === 'PASSWORD_RECOVERY' ||
-    params.has('code') ||
-    params.has('access_token') ||
-    params.has('refresh_token') ||
     window.location.pathname.includes('reset-password')
   );
 }
@@ -215,6 +209,7 @@ async function ensureRecoverySession() {
 
 let passwordRecoveryMode = isPasswordRecoveryUrl() || hasRecoveryBootFlag();
 let accountHistoryMonth = new Date();
+let accountHistorySelectedDay = null;
 const ADMIN_EMAILS = ['grascam@gmail.com'];
 const accountModule = window.SomthingreatAccount;
 const adminModule = window.SomthingreatAdmin;
@@ -369,6 +364,16 @@ function normaliseEmail(email = '') {
 }
 function isAdminUser() {
   return adminModule.isAdminUser(currentUser, ADMIN_EMAILS);
+}
+
+function canChangePassword() {
+  if (!currentUser) return false;
+  const identities = Array.isArray(currentUser.identities) ? currentUser.identities : [];
+  const identityProviders = identities.map(identity => identity?.provider).filter(Boolean);
+  const appProviders = Array.isArray(currentUser.app_metadata?.providers)
+    ? currentUser.app_metadata.providers
+    : [currentUser.app_metadata?.provider].filter(Boolean);
+  return [...identityProviders, ...appProviders].includes('email');
 }
 
 function getCompletedWorkoutCount(savedState) {
@@ -633,7 +638,9 @@ function clearAuthFields() {
   document.querySelectorAll('[data-toggle-password]').forEach(button => {
     const input = document.getElementById(button.dataset.togglePassword);
     if (input) input.type = 'password';
-    button.textContent = 'Show';
+    button.textContent = '';
+    button.classList.add('password-toggle-hidden');
+    button.classList.remove('password-toggle-visible');
     button.setAttribute('aria-label', 'Show password');
   });
 }
@@ -648,7 +655,9 @@ function togglePasswordVisibility(button) {
   const isHidden = input.type === 'password';
 
   input.type = isHidden ? 'text' : 'password';
-  button.textContent = isHidden ? 'Hide' : 'Show';
+  button.textContent = '';
+  button.classList.toggle('password-toggle-hidden', !isHidden);
+  button.classList.toggle('password-toggle-visible', isHidden);
   button.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
 
   // Mobile browsers often drop focus when the input type changes.
@@ -663,12 +672,16 @@ function togglePasswordVisibility(button) {
 
 
 function renderToday() {
+  document.body.classList.remove('workout-active');
+  document.querySelector('.topbar')?.classList.remove('hidden');
   document.getElementById('exerciseList').innerHTML = '';
   document.getElementById('completeBtn').classList.add('hidden');
   hideCustomChecklistViews();
 
   if (state.customChecklist) {
-    document.getElementById('energyCard').classList.add('hidden');
+    document.getElementById('energyCard').classList.remove('hidden');
+    document.getElementById('customChecklistCard')?.classList.remove('hidden');
+    document.getElementById('customChecklistForm')?.classList.remove('hidden');
     document.getElementById('selectedEnergyCard').classList.add('hidden');
     document.getElementById('generatedWorkoutCard').classList.add('hidden');
     document.getElementById('exercisePreview').classList.add('hidden');
@@ -687,9 +700,9 @@ function renderToday() {
 
   if (state.generated) {
     document.getElementById('energyCard').classList.add('hidden');
-    document.getElementById('selectedEnergyCard').classList.add('hidden');
+    document.getElementById('selectedEnergyCard').classList.remove('hidden');
     document.getElementById('generatedWorkoutCard').classList.remove('hidden');
-    document.getElementById('exercisePreview').classList.remove('hidden');
+    document.getElementById('exercisePreview').classList.add('hidden');
     renderGeneratedWorkout();
     return;
   }
@@ -701,6 +714,7 @@ function renderToday() {
 
   document.getElementById('energyCard').classList.remove('hidden');
   document.getElementById('customChecklistCard')?.classList.remove('hidden');
+  document.getElementById('customChecklistForm')?.classList.remove('hidden');
   document.getElementById('selectedEnergyCard').classList.add('hidden');
   document.getElementById('generatedWorkoutCard').classList.add('hidden');
   document.getElementById('exercisePreview').classList.add('hidden');
@@ -716,10 +730,18 @@ function hideCustomChecklistViews() {
   document.getElementById('customChecklistCard')?.classList.add('hidden');
   document.getElementById('customChecklistForm')?.classList.add('hidden');
   document.getElementById('customChecklistActive')?.classList.add('hidden');
+  document.getElementById('customChecklistEdit')?.classList.add('hidden');
 }
 
 function setCustomChecklistMessage(message = '', type = 'info') {
   const el = document.getElementById('customChecklistMessage');
+  if (!el) return;
+  el.textContent = message;
+  el.dataset.type = type;
+}
+
+function setEditCustomChecklistMessage(message = '', type = 'info') {
+  const el = document.getElementById('editCustomChecklistMessage');
   if (!el) return;
   el.textContent = message;
   el.dataset.type = type;
@@ -792,15 +814,65 @@ function renderCustomChecklist() {
   if (!active || !title || !meta || !items || !complete) return;
 
   active.classList.remove('hidden');
-  title.textContent = checklist.name;
+  title.textContent = `${checklist.name} - ${customChecklistUnitLabel(checklist.type, checklist.target)}`;
   meta.textContent = customChecklistUnitLabel(checklist.type, checklist.target);
   items.innerHTML = checklist.items.map((checked, index) => `
-    <label class="set-row custom-checklist-row">
+    <label class="set-row custom-checklist-row ${checked ? 'completed' : ''}">
       <span>${customChecklistItemLabel(checklist, index)}</span>
       <input type="checkbox" data-custom-check-index="${index}" ${checked ? 'checked' : ''}>
+      <i aria-hidden="true"></i>
     </label>
   `).join('');
-  complete.disabled = !checklist.items.every(Boolean);
+  complete.disabled = false;
+}
+
+function openCustomChecklistEdit() {
+  const checklist = state.customChecklist;
+  if (!checklist) return;
+  const name = document.getElementById('editCustomChecklistNameInput');
+  const target = document.getElementById('editCustomChecklistTargetInput');
+  const type = document.querySelector(`input[name="editCustomChecklistType"][value="${checklist.type}"]`);
+  if (name) name.value = checklist.name;
+  if (target) target.value = checklist.target;
+  if (type) type.checked = true;
+  setEditCustomChecklistMessage('');
+  document.getElementById('customChecklistActive')?.classList.add('hidden');
+  document.getElementById('customChecklistEdit')?.classList.remove('hidden');
+}
+
+function closeCustomChecklistEdit() {
+  document.getElementById('customChecklistEdit')?.classList.add('hidden');
+  if (state.customChecklist) {
+    document.getElementById('customChecklistActive')?.classList.remove('hidden');
+  }
+  setEditCustomChecklistMessage('');
+}
+
+function confirmCustomChecklistEdit() {
+  const checklist = state.customChecklist;
+  if (!checklist) return;
+  const name = document.getElementById('editCustomChecklistNameInput')?.value.trim() || 'Custom checklist';
+  const type = document.querySelector('input[name="editCustomChecklistType"]:checked')?.value || checklist.type;
+  const target = Math.round(Number(document.getElementById('editCustomChecklistTargetInput')?.value || 0));
+  const max = type === 'minutes' ? 240 : 120;
+  if (!target || target < 1) {
+    setEditCustomChecklistMessage(type === 'minutes' ? 'Enter how many minutes to track.' : 'Enter how many rounds to track.', 'error');
+    return;
+  }
+  if (target > max) {
+    setEditCustomChecklistMessage(type === 'minutes' ? 'Keep it to 240 minutes or less.' : 'Keep it to 120 rounds or less.', 'error');
+    return;
+  }
+  const itemCount = type === 'minutes' ? Math.ceil(target / 5) : target;
+  state.customChecklist = {
+    name: name.slice(0, 40),
+    type,
+    target,
+    items: Array.from({ length: itemCount }, (_, index) => Boolean(checklist.items[index]))
+  };
+  saveState();
+  document.getElementById('customChecklistEdit')?.classList.add('hidden');
+  renderCustomChecklist();
 }
 
 function cancelCustomChecklist() {
@@ -809,17 +881,33 @@ function cancelCustomChecklist() {
   renderToday();
 }
 
-function completeCustomChecklist() {
+function completeCustomChecklist(skipIncompleteConfirm = false) {
   const checklist = state.customChecklist;
-  if (!checklist || !checklist.items.every(Boolean)) return;
-  const prescription = customChecklistUnitLabel(checklist.type, checklist.target);
+  if (!checklist) return;
+  if (!skipIncompleteConfirm && !checklist.items.every(Boolean)) {
+    showCompletionScreen({
+      title: 'Almost there!',
+      message: 'Some items are unfinished and won’t be counted. Save this progress or go back to finish more.',
+      actionLabel: 'Save progress',
+      cancelLabel: 'Go back',
+      onConfirm: () => completeCustomChecklist(true)
+    });
+    return;
+  }
+  const completedCount = checklist.items.filter(Boolean).length;
+  const countedTarget = checklist.items.every(Boolean)
+    ? checklist.target
+    : checklist.type === 'minutes'
+      ? Math.min(checklist.target, completedCount * 5)
+      : completedCount;
+  const prescription = customChecklistUnitLabel(checklist.type, countedTarget);
   state.history.push({
     type: 'custom',
     date: new Date().toISOString(),
     workout: checklist.name,
     mode: 'custom',
     customType: checklist.type,
-    target: checklist.target,
+    target: countedTarget,
     exercises: [{ name: checklist.name, prescription, trackKey: 'custom', isAddOn: false }]
   });
   state.customChecklist = null;
@@ -859,6 +947,7 @@ function renderSelectedEnergy() {
   document.getElementById('selectedEnergyCard').classList.remove('hidden');
   document.getElementById('generatedWorkoutCard').classList.add('hidden');
   document.getElementById('exercisePreview').classList.add('hidden');
+  document.getElementById('selectedEnergyCard').dataset.energy = state.selectedEnergy || 'normal';
 
   const mascot = document.getElementById('selectedEnergyMascot');
   if (mascot) mascot.src = option.icon || 'Assets/Energy/normal-icon.png';
@@ -866,11 +955,32 @@ function renderSelectedEnergy() {
   const pill = document.getElementById('selectedEnergyPill');
   if (pill) pill.textContent = option.title;
 
+  const starMap = { exhausted: 1, tired: 3, normal: 4, great: 5 };
+  const stars = document.getElementById('selectedEnergyStars');
+  const fullStars = starMap[state.selectedEnergy || 'normal'] || 4;
+  if (stars) {
+    stars.innerHTML = Array.from({ length: 5 }, (_, index) => (
+      `<span class="energy-star ${index < fullStars ? 'filled' : ''}" aria-hidden="true">${index < fullStars ? '★' : '☆'}</span>`
+    )).join('');
+  }
+
   const workoutName = document.getElementById('selectedWorkoutName');
   if (workoutName) workoutName.textContent = previewWorkout.workoutName;
 
   const workoutMeta = document.getElementById('selectedWorkoutMeta');
-  if (workoutMeta) workoutMeta.textContent = modeLabel(previewWorkout.mode).replace(/^\w+ · /, '');
+  if (workoutMeta) {
+    const volumeMap = {
+      great: 'full volume',
+      normal: 'reduced volume',
+      tired: 'reduced volume',
+      reduced: 'reduced volume',
+      exhausted: 'minimum volume',
+      minimum: 'minimum volume'
+    };
+    const volume = volumeMap[previewWorkout.mode] || 'standard volume';
+    const count = (previewWorkout.exercises || []).filter(Boolean).length;
+    workoutMeta.innerHTML = `${escapeHTML(previewWorkout.workoutName)}: ${escapeHTML(volume)}<br>${count} exercises`;
+  }
 
   const warmupInput = document.getElementById('includeWarmup');
   const stretchInput = document.getElementById('includeStretch');
@@ -881,10 +991,7 @@ function renderSelectedEnergy() {
   if (stretchInput) stretchInput.checked = Boolean(state.includeStretch);
   if (exerciseTimerInput) exerciseTimerInput.checked = Boolean(state.includeExerciseTimer);
   if (restTimerInput) restTimerInput.checked = Boolean(state.includeRestTimer);
-  if (restTimerOptions) restTimerOptions.classList.toggle('hidden', !state.includeRestTimer);
-  document.querySelectorAll('input[name="restTimerSeconds"]').forEach(input => {
-    input.checked = Number(input.value) === Number(state.restTimerSeconds || 60);
-  });
+  if (restTimerOptions) restTimerOptions.classList.add('hidden');
   updateAddOnSummary();
 }
 
@@ -915,7 +1022,7 @@ function generateWorkout() {
   state.generated = applyWorkoutAddOns(baseWorkout);
   state.generated.includeExerciseTimer = Boolean(state.includeExerciseTimer);
   state.generated.includeRestTimer = Boolean(state.includeRestTimer);
-  state.generated.restTimerSeconds = state.restTimerSeconds || 60;
+  state.generated.restTimerSeconds = 60;
   saveState();
   renderGeneratedWorkout();
 }
@@ -924,11 +1031,11 @@ function renderGeneratedWorkout() {
   const generated = state.generated || getTodayWorkout('normal');
   hideCustomChecklistViews();
   document.getElementById('energyCard').classList.add('hidden');
-  document.getElementById('selectedEnergyCard').classList.add('hidden');
+  document.getElementById('selectedEnergyCard').classList.remove('hidden');
   document.getElementById('generatedWorkoutCard').classList.remove('hidden');
-  document.getElementById('exercisePreview').classList.remove('hidden');
+  document.getElementById('exercisePreview').classList.add('hidden');
   document.getElementById('workoutName').textContent = generated.workoutName;
-  document.getElementById('workoutMeta').textContent = `${modeLabel(generated.mode)} · ${workoutToolSummary(generated)}`;
+  document.getElementById('workoutMeta').textContent = generated.includeExerciseTimer ? 'Includes exercise timers' : 'Workout is ready';
 
   const preview = document.getElementById('previewList');
   preview.innerHTML = '';
@@ -953,16 +1060,65 @@ function startWorkout() {
     ...state.generated,
     includeExerciseTimer: Boolean(state.generated.includeExerciseTimer),
     includeRestTimer: Boolean(state.generated.includeRestTimer),
-    restTimerSeconds: state.generated.restTimerSeconds || 60,
+    restTimerSeconds: 60,
     ratings: {},
     sets: {}
   };
   state.current.exercises.forEach(exercise => {
     state.current.sets[exercise.trackKey] = Array.from({ length: exercise.setCount || 1 }, () => false);
   });
+  openExerciseTrackKey = state.current.exercises[0]?.trackKey || null;
   state.generated = null;
   saveState();
   renderExercises();
+}
+
+function areExerciseSetsComplete(exercise) {
+  if (!exercise || !state.current?.sets) return false;
+  const sets = state.current.sets[exercise.trackKey] || [];
+  return sets.length > 0 && sets.every(Boolean);
+}
+
+function isExerciseComplete(exercise) {
+  if (!areExerciseSetsComplete(exercise)) return false;
+  return Boolean(exercise.isAddOn || state.current?.ratings?.[exercise.trackKey]);
+}
+
+function firstIncompleteExerciseKey() {
+  const exercises = state.current?.exercises || [];
+  return exercises.find(exercise => !isExerciseComplete(exercise))?.trackKey || exercises[0]?.trackKey || null;
+}
+
+function openNextIncompleteExercise(afterTrackKey = null) {
+  const exercises = state.current?.exercises || [];
+  if (!exercises.length) {
+    openExerciseTrackKey = null;
+    return;
+  }
+  const startIndex = Math.max(0, exercises.findIndex(exercise => exercise.trackKey === afterTrackKey));
+  const next = exercises.slice(startIndex + 1).find(exercise => !isExerciseComplete(exercise)) ||
+    exercises.find(exercise => !isExerciseComplete(exercise));
+  openExerciseTrackKey = next?.trackKey || null;
+}
+
+function exerciseChipPrescription(exercise) {
+  const prescription = exercise?.prescription || '';
+  if (exercise?.isAddOn) return prescription.split('·')[0].trim();
+  return prescription.replace(/×/g, 'x');
+}
+
+function setControlMarkup(exercise, index, completed, timedSeconds) {
+  const label = exercise.setLabels?.[index] || `Round ${index + 1}`;
+  const iconClass = completed ? 'is-check' : timedSeconds ? 'is-timer' : 'is-square';
+  const timerData = timedSeconds
+    ? `data-timer-seconds="${timedSeconds}" data-exercise-name="${escapeHTML(exercise.name)}" data-track="${escapeHTML(exercise.trackKey)}" data-set-index="${index}" data-set-label="${escapeHTML(label)}"`
+    : '';
+  return `
+    <div class="set-row ${timedSeconds ? 'timed-set-row' : ''} ${completed ? 'completed' : ''}">
+      <span>${escapeHTML(label)}</span>
+      <button class="set-control ${iconClass}" type="button" data-track="${escapeHTML(exercise.trackKey)}" data-set-index="${index}" ${timerData} aria-label="${completed ? 'Completed' : timedSeconds ? `Start ${label} timer` : `Complete ${label}`}"></button>
+    </div>
+  `;
 }
 
 function renderExercises() {
@@ -971,34 +1127,39 @@ function renderExercises() {
   document.getElementById('selectedEnergyCard').classList.add('hidden');
   document.getElementById('generatedWorkoutCard').classList.add('hidden');
   document.getElementById('exercisePreview').classList.add('hidden');
+  document.body.classList.add('workout-active');
+  document.querySelector('.topbar')?.classList.add('hidden');
+  document.querySelector('.bottom-nav')?.classList.add('hidden');
 
   const list = document.getElementById('exerciseList');
   list.innerHTML = '';
 
   const titleCard = document.createElement('div');
-  titleCard.className = 'hero-card';
-  titleCard.innerHTML = `<p class="muted-light">Today's workout</p><h2>${state.current.workoutName}</h2><p>${modeLabel(state.current.mode)} · ${workoutToolSummary(state.current)}</p>`;
+  titleCard.className = 'workout-started-title';
+  titleCard.innerHTML = `<p>Today's workout</p>`;
   list.appendChild(titleCard);
 
   state.current = sanitizeWorkout(state.current);
   if (!state.current) { renderToday(); return; }
+  if (!openExerciseTrackKey || !state.current.exercises.some(exercise => exercise.trackKey === openExerciseTrackKey)) {
+    openExerciseTrackKey = firstIncompleteExerciseKey();
+  }
   state.current.exercises.forEach((exercise) => {
+    const isOpen = exercise.trackKey === openExerciseTrackKey;
+    const isComplete = isExerciseComplete(exercise);
     const card = document.createElement('div');
-    card.className = 'exercise-card';
+    card.className = `exercise-card workout-accordion-card ${isOpen ? 'open' : ''} ${isComplete ? 'completed' : ''}`;
+    card.dataset.track = exercise.trackKey;
     const selectedRating = state.current.ratings[exercise.trackKey];
     if (!state.current.sets) state.current.sets = {};
     if (!state.current.sets[exercise.trackKey]) state.current.sets[exercise.trackKey] = Array.from({ length: exercise.setCount || 1 }, () => false);
     const completedSets = state.current.sets[exercise.trackKey];
-    const timedSeconds = !exercise.isAddOn && state.current.includeExerciseTimer ? getTimedExerciseSeconds(exercise) : null;
+    const timedSeconds = state.current.includeExerciseTimer ? getTimedExerciseSeconds(exercise) : null;
     const setRows = Array.from({ length: exercise.setCount || completedSets.length || 1 }, (_, index) => {
-      const label = exercise.setLabels?.[index] || `Set ${index + 1}`;
-      const timerButton = timedSeconds
-        ? `<button class="set-timer-btn" type="button" data-timer-seconds="${timedSeconds}" data-exercise-name="${escapeHTML(exercise.name)}" data-set-label="${escapeHTML(label)}">Start ${formatTimerDuration(timedSeconds)}</button>`
-        : '';
-      return `<div class="set-row ${timerButton ? 'timed-set-row' : ''}"><span>${label}</span>${timerButton}<input type="checkbox" data-track="${exercise.trackKey}" data-set-index="${index}" ${completedSets[index] ? 'checked' : ''}></div>`;
+      return setControlMarkup(exercise, index, Boolean(completedSets[index]), timedSeconds);
     }).join('');
     const help = getExerciseHelp(exercise.name);
-    const helpButton = help ? `<button class="exercise-help-btn" type="button" data-exercise-name="${escapeHTML(exercise.name)}" aria-label="Help with ${escapeHTML(exercise.name)}">Help</button>` : '';
+    const helpButton = help ? `<button class="exercise-help-btn" type="button" data-exercise-name="${escapeHTML(exercise.name)}" aria-label="Help with ${escapeHTML(exercise.name)}">?</button>` : '';
     const ratingBlock = exercise.isAddOn ? '' : `
       <p class="rating-label">How was it?</p>
       <div class="rating-row" data-track="${exercise.trackKey}">
@@ -1008,10 +1169,19 @@ function renderExercises() {
         <button data-rating="failed" class="${selectedRating === 'failed' ? 'selected' : ''}">Failed</button>
       </div>`;
     card.innerHTML = `
-      <h3>${exercise.name}${helpButton}</h3>
-      <p class="prescription">${exercise.prescription}</p>
-      ${setRows}
-      ${ratingBlock}
+      <button class="exercise-chip-toggle" type="button" data-track="${escapeHTML(exercise.trackKey)}">
+        <span>${escapeHTML(exercise.name)}</span>
+        <em>${escapeHTML(exerciseChipPrescription(exercise))}</em>
+        <i aria-hidden="true"></i>
+      </button>
+      <div class="exercise-card-body">
+        <div class="exercise-card-header">
+          <h3>${escapeHTML(exercise.name)} - ${escapeHTML(exercise.prescription)}</h3>
+          ${helpButton}
+        </div>
+        <div class="set-list">${setRows}</div>
+        ${ratingBlock}
+      </div>
     `;
     list.appendChild(card);
   });
@@ -1036,7 +1206,12 @@ function showConfirmPanel({ title, message, actionLabel, onConfirm }) {
 
 function closeConfirmPanel() {
   const panel = document.getElementById('confirmPanel');
-  if (panel) panel.classList.add('hidden');
+  if (panel) {
+    panel.classList.add('hidden');
+    panel.classList.remove('workout-completion-panel', 'auto-complete');
+  }
+  document.getElementById('confirmActionBtn')?.classList.remove('hidden');
+  document.getElementById('confirmCancelBtn')?.classList.remove('hidden');
   pendingConfirmAction = null;
   if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
     lastFocusedElement.focus();
@@ -1096,27 +1271,40 @@ function getTimedExerciseSeconds(exercise) {
   return null;
 }
 
+function markWorkoutSetDone(trackKey, setIndex, done = true) {
+  if (!state.current || !trackKey || !Number.isFinite(Number(setIndex))) return;
+  if (!state.current.sets) state.current.sets = {};
+  if (!state.current.sets[trackKey]) {
+    const exercise = findCurrentExercise(trackKey);
+    state.current.sets[trackKey] = Array.from({ length: exercise?.setCount || 1 }, () => false);
+  }
+  const index = Number(setIndex);
+  state.current.sets[trackKey][index] = Boolean(done);
+  const exercise = findCurrentExercise(trackKey);
+  if (exercise && isExerciseComplete(exercise)) {
+    openNextIncompleteExercise(trackKey);
+  } else {
+    openExerciseTrackKey = trackKey;
+  }
+  saveState();
+  renderExercises();
+}
+
 function renderWorkoutTimer() {
   if (!activeTimer) return;
-  const eyebrow = document.getElementById('timerEyebrow');
   const title = document.getElementById('timerTitle');
-  const subtitle = document.getElementById('timerSubtitle');
   const count = document.getElementById('timerCount');
-  const skipButton = document.getElementById('skipTimerBtn');
 
-  if (eyebrow) eyebrow.textContent = activeTimer.phase === 'prep' ? 'Get ready' : 'Timer';
-  if (title) title.textContent = activeTimer.title;
-  if (subtitle) subtitle.textContent = activeTimer.subtitle;
+  if (title) title.textContent = activeTimer.title || 'Timer';
   if (count) {
     if (activeTimer.phase === 'prep') {
       count.textContent = activeTimer.prepSeconds;
     } else if (activeTimer.remainingSeconds <= 0) {
-      count.textContent = 'Done';
+      count.textContent = '0';
     } else {
-      count.textContent = formatTimerDuration(activeTimer.remainingSeconds);
+      count.textContent = String(activeTimer.remainingSeconds);
     }
   }
-  if (skipButton) skipButton.textContent = activeTimer.remainingSeconds <= 0 ? 'Close' : 'Skip timer';
 }
 
 function tickWorkoutTimer() {
@@ -1136,11 +1324,16 @@ function tickWorkoutTimer() {
     window.navigator?.vibrate?.(120);
     clearInterval(timerInterval);
     timerInterval = null;
+    if (activeTimer.completeOnFinish && activeTimer.trackKey) {
+      markWorkoutSetDone(activeTimer.trackKey, activeTimer.setIndex, true);
+    }
+    if (timerAutoClose) clearTimeout(timerAutoClose);
+    timerAutoClose = window.setTimeout(() => closeWorkoutTimer(false), 2500);
   }
   renderWorkoutTimer();
 }
 
-function showWorkoutTimer({ title, subtitle, seconds, prepSeconds = 0 }) {
+function showWorkoutTimer({ title, subtitle, seconds, prepSeconds = 0, trackKey = null, setIndex = null, completeOnFinish = false }) {
   const panel = document.getElementById('timerPanel');
   if (!panel || !seconds) return;
 
@@ -1151,7 +1344,10 @@ function showWorkoutTimer({ title, subtitle, seconds, prepSeconds = 0 }) {
     subtitle,
     remainingSeconds: seconds,
     prepSeconds,
-    phase: prepSeconds ? 'prep' : 'active'
+    phase: prepSeconds ? 'prep' : 'active',
+    trackKey,
+    setIndex,
+    completeOnFinish
   };
   panel.classList.remove('hidden');
   renderWorkoutTimer();
@@ -1161,7 +1357,9 @@ function showWorkoutTimer({ title, subtitle, seconds, prepSeconds = 0 }) {
 
 function closeWorkoutTimer(restoreFocus = true) {
   if (timerInterval) clearInterval(timerInterval);
+  if (timerAutoClose) clearTimeout(timerAutoClose);
   timerInterval = null;
+  timerAutoClose = null;
   activeTimer = null;
   document.getElementById('timerPanel')?.classList.add('hidden');
   if (restoreFocus && lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
@@ -1183,16 +1381,24 @@ function findCurrentExercise(trackKey) {
   return (state.current?.exercises || []).find(exercise => exercise.trackKey === trackKey) || null;
 }
 
+function isWorkoutFullyComplete() {
+  if (!state.current) return false;
+  const exercises = state.current.exercises || [];
+  const allSetsDone = exercises.every(exercise => areExerciseSetsComplete(exercise));
+  const rateableExercises = exercises.filter(exercise => !exercise.isAddOn);
+  const allRated = rateableExercises.every(exercise => state.current.ratings?.[exercise.trackKey]);
+  return allSetsDone && allRated;
+}
+
 function completeWorkout(skipMissingRatingConfirm = false) {
   if (!state.current) return;
-  const rateableExercises = state.current.exercises.filter(exercise => !exercise.isAddOn);
-  const ratedCount = Object.keys(state.current.ratings).length;
-  if (!skipMissingRatingConfirm && ratedCount < rateableExercises.length) {
-    showConfirmPanel({
-      title: 'Complete workout?',
-      message: 'Some exercises are not rated yet. You can go back and rate them, or complete anyway.',
-      actionLabel: 'Complete',
-      onConfirm: () => completeWorkout(true)
+  if (!skipMissingRatingConfirm && !isWorkoutFullyComplete()) {
+    showCompletionScreen({
+      title: 'Almost there!',
+      message: 'Some items are unfinished and won’t be counted. Save this progress or go back to finish more.',
+      actionLabel: 'Save progress',
+      cancelLabel: 'Go back',
+      onConfirm: () => completeWorkoutNow(false)
     });
     return;
   }
@@ -1200,7 +1406,37 @@ function completeWorkout(skipMissingRatingConfirm = false) {
   completeWorkoutNow();
 }
 
-function completeWorkoutNow() {
+function showCompletionScreen({ title, message, actionLabel = '', cancelLabel = '', onConfirm = null, autoClose = false }) {
+  const panel = document.getElementById('confirmPanel');
+  const titleEl = document.getElementById('confirmTitle');
+  const messageEl = document.getElementById('confirmMessage');
+  const actionBtn = document.getElementById('confirmActionBtn');
+  const cancelBtn = document.getElementById('confirmCancelBtn');
+  if (!panel || !titleEl || !messageEl || !actionBtn || !cancelBtn) return;
+
+  lastFocusedElement = document.activeElement;
+  pendingConfirmAction = onConfirm;
+  titleEl.textContent = title;
+  messageEl.textContent = message;
+  actionBtn.textContent = actionLabel;
+  cancelBtn.textContent = cancelLabel;
+  panel.classList.add('workout-completion-panel');
+  panel.classList.toggle('auto-complete', Boolean(autoClose));
+  actionBtn.classList.toggle('hidden', autoClose || !actionLabel);
+  cancelBtn.classList.toggle('hidden', autoClose || !cancelLabel);
+  panel.classList.remove('hidden');
+
+  if (autoClose) {
+    window.setTimeout(() => {
+      closeConfirmPanel();
+      renderToday();
+    }, 2500);
+  } else {
+    renderModule.focusFirstInteractive(panel);
+  }
+}
+
+function completeWorkoutNow(showFullConfirmation = true) {
   if (!state.current) return;
   Object.entries(state.current.ratings).forEach(([trackKey, rating]) => {
     if (state.levels[trackKey]) applyRating(trackKey, rating);
@@ -1210,12 +1446,19 @@ function completeWorkoutNow() {
   state.current = null;
   state.selectedEnergy = null;
   state.generated = null;
+  openExerciseTrackKey = null;
   saveState();
   renderToday();
   renderGoals();
   renderProgress();
   renderAccount();
-  showWorkoutStatus();
+  if (showFullConfirmation) {
+    showCompletionScreen({
+      title: 'Well done!',
+      message: 'You showed up and that counts. Your progress is saved.',
+      autoClose: true
+    });
+  }
   updateUpdateBanner();
 }
 
@@ -1259,9 +1502,8 @@ function renderGeneralGoalJourney(journey) {
   const progress = document.getElementById('pullupProgressBar');
   if (progress) progress.style.width = `${percent}%`;
   journey.innerHTML = `
-    <div class="journey-summary current-stage"><div><p class="eyebrow">Current focus</p><strong>Balanced training</strong><span>Workouts rotate push, pull, legs, core, and skill work so one area does not carry everything.</span></div><em>Now</em></div>
-    <div class="journey-summary"><div><p class="eyebrow">Builds next</p><strong>Stronger basics</strong><span>Rate each exercise honestly. The app uses that feedback to make future sessions easier or harder.</span></div><em>Next</em></div>
-    <div class="journey-summary"><div><p class="eyebrow">Progress so far</p><strong>${total} workout${total === 1 ? '' : 's'} completed</strong><span>${monthly} this month. Keep showing up to build a reliable base.</span></div><em>${Math.min(total, 12)}/12</em></div>
+    <div class="journey-summary current-stage"><strong>Current focus</strong><span>Balanced training</span><span>Rotating basics</span></div>
+    <div class="journey-summary"><strong>Unlock next</strong><span>Stronger basics</span><span>${monthly} this month</span></div>
   `;
 }
 
@@ -1290,20 +1532,9 @@ function renderGoals() {
   if (goal === 'general') {
     renderGeneralGoalJourney(journey);
   } else {
-  const completedNames = track.slice(0, level).map(step => step.name).join(' · ');
-  const hasCompletedWorkout = state.history.length > 0;
-  const progressLabel = hasCompletedWorkout ? 'Progress so far' : 'Starting point';
-  const progressTitle = hasCompletedWorkout
-    ? `Stage ${level + 1} of ${track.length}`
-    : `Starting at stage ${level + 1}`;
-  const progressDescription = hasCompletedWorkout
-    ? (level === 0 ? 'Your first milestone is in progress.' : completedNames)
-    : 'Based on your setup. Complete workouts to move through the path.';
-  const progressPill = hasCompletedWorkout ? `${level + 1}/${track.length}` : 'Start';
   journey.innerHTML = `
-    <div class="journey-summary current-stage"><div><p class="eyebrow">Current focus</p><strong>${current.name}</strong><span>Build consistency here: ${current.prescription}</span></div><em>Now</em></div>
-    <div class="journey-summary"><div><p class="eyebrow">Unlocks next</p><strong>${level >= track.length - 1 ? 'Goal unlocked' : next.name}</strong><span>${level >= track.length - 1 ? 'Keep training and consolidate the skill.' : `Next target: ${next.prescription}`}</span></div><em>Next</em></div>
-    <div class="journey-summary"><div><p class="eyebrow">${progressLabel}</p><strong>${progressTitle}</strong><span>${progressDescription}</span></div><em>${progressPill}</em></div>
+    <div class="journey-summary current-stage"><strong>Current focus</strong><span>${current.name}</span><span>${current.prescription}</span></div>
+    <div class="journey-summary"><strong>Unlock next</strong><span>${level >= track.length - 1 ? 'Goal unlocked' : next.name}</span><span>${level >= track.length - 1 ? 'Keep training' : next.prescription}</span></div>
   `;
   }
 
@@ -1312,7 +1543,7 @@ function renderGoals() {
     { key: 'handstand', label: 'Handstand' },
     { key: 'lsit', label: 'L-sit' },
     { key: 'muscleup', label: 'Muscle-up' }
-  ].filter(skill => goal === 'general' || skill.key !== goalTrackKey).slice(0, 3);
+  ];
   const skillList = document.getElementById('skillList');
   if (!skillList) return;
   skillList.innerHTML = '';
@@ -1324,7 +1555,7 @@ function renderGoals() {
     if (!currentSkill) return;
     const row = document.createElement('div');
     row.className = 'skill-row';
-    row.innerHTML = `<div><strong>${skill.label}</strong><p>${currentSkill.name} · ${currentSkill.prescription}</p></div><span>Level ${skillLevel + 1}/${skillTrack.length}</span>`;
+    row.innerHTML = `<strong>${skill.label}</strong><span>Level ${skillLevel + 1}/${skillTrack.length}</span>`;
     skillList.appendChild(row);
   });
 }
@@ -1332,21 +1563,17 @@ function renderGoals() {
 function renderProgress() {
   const now = new Date();
   const monthly = workoutCountForMonth(now);
-  document.getElementById('monthlyCount').textContent = monthly;
+  document.getElementById('monthlyCount').textContent = `${monthly} workout${monthly === 1 ? '' : 's'}`;
   renderConsistency(monthly, now);
 
   const levels = document.getElementById('levelsList');
   levels.innerHTML = '';
   const labels = {
     pushup: 'Push-up',
-    pullup: 'Pull-up',
     dip: 'Dip',
     legs: 'Legs',
     core: 'Core',
     crow: 'Crow pose',
-    lsit: 'L-sit',
-    handstand: 'Handstand',
-    muscleup: 'Muscle-up',
     rope: 'Jump rope'
   };
 
@@ -1359,7 +1586,7 @@ function renderProgress() {
     if (!exercise) return;
     const row = document.createElement('div');
     row.className = 'level-row';
-    row.innerHTML = `<div><strong>${labels[key]}</strong><p>${exercise.name} · ${exercise.prescription}</p></div><span>L${item.level + 1}</span>`;
+    row.innerHTML = `<strong>${labels[key]}</strong><span>Level ${item.level + 1}/${exerciseTrack.length}</span>`;
     levels.appendChild(row);
   });
 }
@@ -1376,6 +1603,13 @@ function workoutItemsForMonth(date = new Date()) {
 
 function workoutCountForMonth(date = new Date()) {
   return accountModule.workoutCountForMonth(state.history, date);
+}
+
+function workoutItemsForYear(date = new Date()) {
+  const year = date.getFullYear();
+  return state.history
+    .map(item => ({ ...item, parsedDate: new Date(item.date) }))
+    .filter(item => item.parsedDate.getFullYear() === year);
 }
 
 function elapsedWeeksInMonth(date = new Date()) {
@@ -1434,10 +1668,46 @@ function renderOnboarding() {
   // Do not show onboarding while the user is only here to set a new password.
   if (passwordRecoveryMode || !currentUser || hasCompletedProfile()) {
     onboarding.classList.add('hidden');
+    document.body.classList.remove('onboarding-active');
     return;
   }
 
   onboarding.classList.remove('hidden');
+  document.body.classList.add('onboarding-active');
+  renderOnboardingStep();
+}
+
+function renderOnboardingStep() {
+  const stepOne = document.getElementById('onboardingStepOne');
+  const stepTwo = document.getElementById('onboardingStepTwo');
+  const confirmation = document.getElementById('onboardingConfirmation');
+  if (!stepOne || !stepTwo || !confirmation) return;
+
+  stepOne.classList.toggle('hidden', onboardingStep !== 1 || onboardingConfirmationReady);
+  stepTwo.classList.toggle('hidden', onboardingStep !== 2 || onboardingConfirmationReady);
+  confirmation.classList.toggle('hidden', !onboardingConfirmationReady);
+}
+
+function showOnboardingStepTwo() {
+  const goal = document.querySelector('input[name="goal"]:checked')?.value;
+  const equipment = Array.from(document.querySelectorAll('input[name="equipment"]:checked')).map(input => input.value);
+
+  if (!goal || equipment.length === 0) {
+    setPanelMessage('onboardingMessage', 'Choose a focus and equipment to continue.', 'error');
+    return;
+  }
+
+  setPanelMessage('onboardingMessage', '');
+  onboardingStep = 2;
+  renderOnboardingStep();
+  document.getElementById('onboarding')?.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function finishOnboarding() {
+  onboardingConfirmationReady = false;
+  onboardingStep = 1;
+  document.body.classList.remove('onboarding-active');
+  renderAll();
 }
 
 function saveProfileFromOnboarding() {
@@ -1470,7 +1740,10 @@ function saveProfileFromOnboarding() {
   state.generated = null;
   state.selectedEnergy = null;
   saveState();
-  renderAll();
+  setPanelMessage('onboardingMessage', '');
+  onboardingConfirmationReady = true;
+  renderOnboardingStep();
+  document.getElementById('onboarding')?.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function initialLevelsFromProfile(profile, existingLevels) {
@@ -1692,39 +1965,37 @@ function openAccountModal() {
 function closeAccountModal() {
   const panel = document.getElementById('accountPanel');
   if (!panel) return;
-  panel.classList.remove('account-open');
+  panel.classList.remove('account-open', 'account-main-mode', 'account-submenu-mode');
   panel.classList.add('hidden');
   showAccountView('main');
   updateUpdateBanner();
 }
 
 function showAccountView(view) {
-  const titles = {
-    main: 'Account',
-    goal: 'Change goal',
-    equipment: 'Change equipment',
-    password: 'Change password',
-    history: 'Workout history',
-    admin: 'Admin dashboard'
-  };
+  if (view === 'password' && !canChangePassword()) view = 'main';
   document.querySelectorAll('#loggedInAccount .account-view').forEach(item => item.classList.add('hidden'));
   const target = document.getElementById(`account${view[0].toUpperCase()}${view.slice(1)}View`);
   if (target) target.classList.remove('hidden');
   const title = document.getElementById('accountModalTitle');
-  if (title) title.textContent = titles[view] || 'Account';
+  if (title) title.textContent = 'somthingreat';
   const closeBtn = document.getElementById('closeAccountModalBtn');
-  if (closeBtn) closeBtn.classList.toggle('hidden', view !== 'main');
+  if (closeBtn) closeBtn.classList.remove('hidden');
   const panel = document.getElementById('accountPanel');
   const content = document.getElementById('loggedInAccount');
-  if (panel) panel.classList.toggle('account-password-mode', view === 'password');
+  const submenuViews = ['goal', 'equipment', 'password', 'history', 'support', 'admin'];
+  if (panel) panel.classList.remove('account-password-mode');
+  if (panel) panel.classList.toggle('account-main-mode', view === 'main');
+  if (panel) panel.classList.toggle('account-submenu-mode', submenuViews.includes(view));
   if (panel) panel.scrollTop = 0;
   if (content) content.scrollTop = 0;
   if (view === 'goal') populateAccountGoal();
   if (view === 'equipment') populateAccountEquipment();
   if (view === 'history') renderAccountHistory();
+  if (view === 'support') resetSupportForm();
   if (view === 'admin') renderAdminDashboard();
   setPanelMessage('accountGoalMessage', '');
   setPanelMessage('accountEquipmentMessage', '');
+  setPanelMessage('supportMessage', '');
 }
 
 function renderAccountMainSummary() {
@@ -1733,7 +2004,9 @@ function renderAccountMainSummary() {
   const equipmentSummary = document.getElementById('accountEquipmentSummary');
   const historySummary = document.getElementById('accountHistorySummary');
   const adminSection = document.getElementById('adminAccountSection');
+  const passwordSection = document.getElementById('passwordAccountSection');
   if (adminSection) adminSection.classList.toggle('hidden', !isAdminUser());
+  if (passwordSection) passwordSection.classList.toggle('hidden', !canChangePassword());
   if (goalSummary) goalSummary.textContent = goalLabels[profile.goal] || 'Not set';
   if (equipmentSummary) {
     const equipment = profile.equipment || [];
@@ -1806,42 +2079,151 @@ async function changePasswordFromAccount() {
   });
 }
 
+function resetSupportForm() {
+  setPanelMessage('supportMessage', '');
+}
+
+async function sendSupportMessage() {
+  return withButtonLoading('sendSupportBtn', 'Submitting...', async () => {
+    const subjectInput = document.getElementById('supportSubjectInput');
+    const messageInput = document.getElementById('supportMessageInput');
+    const message = document.getElementById('supportMessage');
+    const subject = subjectInput?.value.trim() || '';
+    const body = messageInput?.value.trim() || '';
+
+    if (!subject || !body) {
+      renderModule.setMessage(message, 'Add a subject and message first.', 'error');
+      return;
+    }
+    if (!supabaseClient || !currentUser) {
+      renderModule.setMessage(message, 'Log in again before sending support.', 'error');
+      return;
+    }
+
+    renderModule.setMessage(message, 'Sending...', 'info');
+    const { error } = await supabaseClient.functions.invoke('support-email', {
+      body: {
+        subject,
+        message: body,
+        email: currentUser.email || ''
+      }
+    });
+
+    if (error) {
+      renderModule.setMessage(message, 'Could not send it yet. Try again in a moment.', 'error');
+      return;
+    }
+
+    if (subjectInput) subjectInput.value = '';
+    if (messageInput) messageInput.value = '';
+    renderModule.setMessage(message, 'Message sent. We’ll get back to you soon.', 'success');
+  });
+}
+
 function renderAccountHistory() {
+  const yearSummary = document.getElementById('historyYearSummary');
+  const yearTitle = document.getElementById('historyYearTitle');
   const title = document.getElementById('historyMonthTitle');
   const calendar = document.getElementById('historyCalendar');
   const list = document.getElementById('historyList');
-  if (!title || !calendar || !list) return;
+  if (!yearSummary || !yearTitle || !title || !calendar || !list) return;
 
   const month = accountHistoryMonth.getMonth();
   const year = accountHistoryMonth.getFullYear();
-  const label = accountHistoryMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-  title.textContent = label;
+  const now = new Date();
+  const yearItems = workoutItemsForYear(accountHistoryMonth);
+  const yearCount = yearItems.length;
+  yearSummary.textContent = `This year: ${yearCount} workout${yearCount === 1 ? '' : 's'}`;
+  yearTitle.textContent = String(year);
+  title.textContent = accountHistoryMonth.toLocaleDateString(undefined, { month: 'long' });
 
   const monthItems = workoutItemsForMonth(accountHistoryMonth).sort((a, b) => a.parsedDate - b.parsedDate);
+  const byDay = new Map();
+  monthItems.forEach(item => {
+    const day = item.parsedDate.getDate();
+    if (!byDay.has(day)) byDay.set(day, []);
+    byDay.get(day).push(item);
+  });
 
-  accountModule.renderHistoryCalendar(calendar, accountHistoryMonth, monthItems);
-  accountModule.renderHistoryList(list, monthItems, energyOptions);
+  const selectedWorkoutDay = accountHistorySelectedDay && byDay.has(accountHistorySelectedDay)
+    ? accountHistorySelectedDay
+    : monthItems[0]?.parsedDate.getDate() || null;
+  accountHistorySelectedDay = selectedWorkoutDay;
+
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const mondayOffset = (firstDay.getDay() + 6) % 7;
+  const isCurrentMonth = now.getFullYear() === year && now.getMonth() === month;
+  document.querySelectorAll('#accountHistoryView .history-weekdays span').forEach((item, index) => {
+    item.classList.toggle('is-today-weekday', isCurrentMonth && index === ((now.getDay() + 6) % 7));
+  });
+  calendar.innerHTML = '';
+  for (let i = 0; i < mondayOffset; i += 1) {
+    const empty = document.createElement('div');
+    empty.className = 'history-day history-empty';
+    calendar.appendChild(empty);
+  }
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = new Date(year, month, day);
+    const hasWorkout = byDay.has(day);
+    const isToday = date.toDateString() === now.toDateString();
+    const isSelected = selectedWorkoutDay === day;
+    const isPast = date < new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.historyDay = String(day);
+    button.className = [
+      'history-day',
+      hasWorkout ? 'has-workout' : '',
+      isPast && !hasWorkout ? 'past-empty' : '',
+      !isPast && !isToday && !hasWorkout ? 'future-empty' : '',
+      isToday ? 'is-today' : '',
+      isSelected ? 'is-selected' : ''
+    ].filter(Boolean).join(' ');
+    button.disabled = !hasWorkout && !isToday;
+    button.innerHTML = `<span>${day}</span>`;
+    calendar.appendChild(button);
+  }
+
+  const selectedItems = selectedWorkoutDay ? byDay.get(selectedWorkoutDay) || [] : [];
+  list.innerHTML = selectedItems.length
+    ? selectedItems.map(item => {
+      const dateLabel = item.parsedDate.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+      const label = item.type === 'custom'
+        ? `${item.workout || 'Custom checklist'} - Custom`
+        : `${item.workout || 'Workout'} - ${energyOptions[item.mode]?.title || item.mode || 'Done'}`;
+      return `<div class="history-item"><strong>${escapeHTML(dateLabel)}</strong><span>${escapeHTML(label)}</span></div>`;
+    }).join('')
+    : '';
 }
 
 async function renderAdminDashboard() {
+  const summary = document.getElementById('adminDashboardSummary');
   const message = document.getElementById('adminDashboardMessage');
   const list = document.getElementById('adminDashboardList');
-  if (!message || !list) return;
+  const toggle = document.getElementById('toggleAdminUsersBtn');
+  if (!summary || !message || !list) return;
 
   if (!isAdminUser()) {
+    summary.textContent = 'Admin access only.';
     message.textContent = 'Admin access only.';
     list.innerHTML = '';
     return;
   }
 
   if (!supabaseClient) {
+    summary.textContent = 'Supabase is not configured.';
     message.textContent = 'Supabase is not configured.';
     list.innerHTML = '';
     return;
   }
 
+  summary.textContent = 'Loading dashboard...';
   message.textContent = 'Loading users...';
   list.innerHTML = '';
+  if (toggle) toggle.classList.remove('is-open');
+  if (toggle) toggle.setAttribute('aria-expanded', 'false');
+  list.classList.add('hidden');
 
   const [{ data: profiles, error: profileError }, { data: savedStates, error: stateError }] = await Promise.all([
     supabaseClient
@@ -1854,6 +2236,7 @@ async function renderAdminDashboard() {
   ]);
 
   if (profileError || stateError) {
+    summary.textContent = 'Could not load dashboard.';
     message.textContent = 'Could not load admin dashboard. Check Supabase admin policies.';
     return;
   }
@@ -1871,15 +2254,23 @@ async function renderAdminDashboard() {
     };
   });
 
-  message.textContent = `${rows.length} active profile${rows.length === 1 ? '' : 's'}`;
+  const activeCount = rows.filter(row => row.active === 'Y').length;
+  const goalCounts = rows.reduce((counts, row) => {
+    counts[row.goal] = (counts[row.goal] || 0) + 1;
+    return counts;
+  }, {});
+  const topGoal = Object.entries(goalCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Not set';
+  summary.innerHTML = [
+    `Total users: ${rows.length}`,
+    `Active users: ${activeCount}`,
+    `Most selected focus: ${escapeHTML(topGoal)}`
+  ].join('<br>');
+  message.textContent = '';
   list.innerHTML = rows.length
     ? rows.map(row => `
-      <div class="admin-user-row compact-admin-row">
-        <strong>${escapeHTML(row.active)}</strong>
-        <div class="admin-user-stats">
-          <span>${row.completed} workout${row.completed === 1 ? '' : 's'}</span>
-          <span>${escapeHTML(row.goal)}</span>
-        </div>
+      <div class="admin-user-row">
+        <span>${escapeHTML(row.email)}</span>
+        <strong>${row.completed}</strong>
       </div>
     `).join('')
     : '<p class="muted">No active profiles found yet.</p>';
@@ -1984,6 +2375,20 @@ async function login() {
   });
 }
 
+async function loginWithGoogle() {
+  passwordRecoveryMode = false;
+  clearRecoveryBootFlag();
+  if (!supabaseClient) return setAuthMessage('Google connection is not configured yet.', 'error');
+
+  setAuthMessage('Opening Google...', 'info');
+  const redirectTo = `${window.location.origin}${window.location.pathname}`;
+  const { error } = await supabaseClient.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo }
+  });
+  if (error) setAuthMessage(friendlyAuthError(error.message), 'error');
+}
+
 async function sendPasswordReset() {
   return withButtonLoading('forgotPasswordBtn', 'Sending...', async () => {
     if (!supabaseClient) return setAuthMessage('Account connection is not configured yet.', 'error');
@@ -2040,13 +2445,14 @@ async function logout() {
 
 
 document.addEventListener('mousedown', event => {
-  if (event.target.matches('[data-toggle-password]')) event.preventDefault();
+  if (event.target.closest('[data-toggle-password]')) event.preventDefault();
 });
 
 document.addEventListener('touchend', event => {
-  if (!event.target.matches('[data-toggle-password]')) return;
+  const toggle = event.target.closest('[data-toggle-password]');
+  if (!toggle) return;
   event.preventDefault();
-  togglePasswordVisibility(event.target);
+  togglePasswordVisibility(toggle);
 }, { passive: false });
 
 document.addEventListener('keydown', event => {
@@ -2090,6 +2496,15 @@ document.addEventListener('click', event => {
     return;
   }
 
+  if (event.target.id === 'welcomeLoginBtn') {
+    welcomeDismissed = true;
+    setAuthMode('login');
+    updateWelcomeGate();
+    renderAccount();
+    renderOnboarding();
+    return;
+  }
+
   if (event.target.id === 'applyUpdateBtn') applyWaitingUpdate();
   if (event.target.id === 'confirmCancelBtn') closeConfirmPanel();
   if (event.target.id === 'confirmActionBtn') {
@@ -2101,6 +2516,50 @@ document.addEventListener('click', event => {
   if (event.target.id === 'closeExerciseHelpBtn' || event.target.id === 'exerciseHelpPanel') closeExerciseHelp();
   const exerciseHelpButton = event.target.closest('.exercise-help-btn');
   if (exerciseHelpButton) showExerciseHelp(exerciseHelpButton.dataset.exerciseName);
+
+  const exerciseToggle = event.target.closest('.exercise-chip-toggle');
+  if (exerciseToggle) {
+    const trackKey = exerciseToggle.dataset.track;
+    openExerciseTrackKey = openExerciseTrackKey === trackKey ? null : trackKey;
+    renderExercises();
+    return;
+  }
+
+  const setControl = event.target.closest('.set-control');
+  if (setControl) {
+    const trackKey = setControl.dataset.track;
+    const setIndex = Number(setControl.dataset.setIndex);
+    const currentDone = Boolean(state.current?.sets?.[trackKey]?.[setIndex]);
+    if (setControl.dataset.timerSeconds && !currentDone) {
+      const seconds = Number(setControl.dataset.timerSeconds);
+      const exerciseName = setControl.dataset.exerciseName || 'Exercise';
+      const setLabel = setControl.dataset.setLabel || 'Round';
+      openExerciseTrackKey = trackKey;
+      saveState();
+      renderExercises();
+      showWorkoutTimer({
+        title: exerciseName,
+        subtitle: setLabel,
+        seconds,
+        prepSeconds: 3,
+        trackKey,
+        setIndex,
+        completeOnFinish: true
+      });
+      return;
+    }
+    const exercise = findCurrentExercise(trackKey);
+    markWorkoutSetDone(trackKey, setIndex, !currentDone);
+    if (!currentDone && state.current?.includeRestTimer && !exercise?.isAddOn && hasRemainingWorkoutSets()) {
+      showWorkoutTimer({
+        title: 'Rest',
+        subtitle: 'Rest',
+        seconds: 60
+      });
+    }
+    return;
+  }
+
   const exerciseTimerButton = event.target.closest('.set-timer-btn');
   if (exerciseTimerButton) {
     const seconds = Number(exerciseTimerButton.dataset.timerSeconds);
@@ -2126,6 +2585,9 @@ document.addEventListener('click', event => {
   if (event.target.id === 'createCustomChecklistBtn') createCustomChecklist();
   if (event.target.id === 'cancelCustomChecklistBtn') cancelCustomChecklist();
   if (event.target.id === 'completeCustomChecklistBtn') completeCustomChecklist();
+  if (event.target.id === 'editCustomChecklistBtn') openCustomChecklistEdit();
+  if (event.target.id === 'closeCustomChecklistEditBtn' || event.target.id === 'cancelEditCustomChecklistBtn') closeCustomChecklistEdit();
+  if (event.target.id === 'confirmEditCustomChecklistBtn') confirmCustomChecklistEdit();
 
   if (event.target.matches('input[type="checkbox"][data-custom-check-index]')) {
     if (!state.customChecklist) return;
@@ -2147,14 +2609,14 @@ document.addEventListener('click', event => {
     state.includeStretch = Boolean(document.getElementById('includeStretch')?.checked);
     state.includeExerciseTimer = Boolean(document.getElementById('includeExerciseTimer')?.checked);
     state.includeRestTimer = Boolean(document.getElementById('includeRestTimer')?.checked);
-    if (!state.includeRestTimer) state.restTimerSeconds = 60;
+    state.restTimerSeconds = 60;
     saveState();
     renderSelectedEnergy();
     updateAddOnSummary();
   }
 
   if (event.target.matches('input[name="restTimerSeconds"]')) {
-    state.restTimerSeconds = Number(event.target.value) === 30 ? 30 : 60;
+    state.restTimerSeconds = 60;
     saveState();
     updateAddOnSummary();
   }
@@ -2162,14 +2624,8 @@ document.addEventListener('click', event => {
   if (event.target.id === 'generateWorkoutBtn') generateWorkout();
   if (event.target.id === 'regenerateWorkoutBtn') {
     state.generated = null;
-    state.selectedEnergy = null;
-    state.includeWarmup = false;
-    state.includeStretch = false;
-    state.includeExerciseTimer = false;
-    state.includeRestTimer = false;
-    state.restTimerSeconds = 60;
     saveState();
-    renderToday();
+    renderSelectedEnergy();
   }
   if (event.target.id === 'startWorkoutBtn') startWorkout();
 
@@ -2183,7 +2639,7 @@ document.addEventListener('click', event => {
     saveState();
     const exercise = findCurrentExercise(trackKey);
     if (event.target.checked && state.current.includeRestTimer && !exercise?.isAddOn && hasRemainingWorkoutSets()) {
-      const restSeconds = Number(state.current.restTimerSeconds) === 30 ? 30 : 60;
+      const restSeconds = 60;
       showWorkoutTimer({
         title: 'Rest',
         subtitle: `Take ${restSeconds}s before the next set.`,
@@ -2197,7 +2653,12 @@ document.addEventListener('click', event => {
     row.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
     event.target.classList.add('selected');
     state.current.ratings[row.dataset.track] = event.target.dataset.rating;
+    const exercise = findCurrentExercise(row.dataset.track);
+    if (exercise && isExerciseComplete(exercise)) {
+      openNextIncompleteExercise(row.dataset.track);
+    }
     saveState();
+    renderExercises();
   }
 
   if (event.target.id === 'completeBtn') completeWorkout();
@@ -2210,21 +2671,47 @@ document.addEventListener('click', event => {
   if (event.target.id === 'saveAccountGoalBtn') saveAccountGoal();
   if (event.target.id === 'saveAccountEquipmentBtn') saveAccountEquipment();
   if (event.target.id === 'saveAccountPasswordBtn') changePasswordFromAccount();
-  if (event.target.id === 'historyPrevMonthBtn') { accountHistoryMonth = new Date(accountHistoryMonth.getFullYear(), accountHistoryMonth.getMonth() - 1, 1); renderAccountHistory(); }
-  if (event.target.id === 'historyNextMonthBtn') { accountHistoryMonth = new Date(accountHistoryMonth.getFullYear(), accountHistoryMonth.getMonth() + 1, 1); renderAccountHistory(); }
+  if (event.target.id === 'sendSupportBtn') sendSupportMessage();
+  if (event.target.id === 'historyPrevMonthBtn') {
+    accountHistoryMonth = new Date(accountHistoryMonth.getFullYear(), accountHistoryMonth.getMonth() - 1, 1);
+    accountHistorySelectedDay = null;
+    renderAccountHistory();
+  }
+  if (event.target.id === 'historyNextMonthBtn') {
+    accountHistoryMonth = new Date(accountHistoryMonth.getFullYear(), accountHistoryMonth.getMonth() + 1, 1);
+    accountHistorySelectedDay = null;
+    renderAccountHistory();
+  }
+  if (event.target.id === 'toggleAdminUsersBtn') {
+    const list = document.getElementById('adminDashboardList');
+    const isOpen = !list?.classList.contains('hidden');
+    list?.classList.toggle('hidden', isOpen);
+    event.target.classList.toggle('is-open', !isOpen);
+    event.target.setAttribute('aria-expanded', String(!isOpen));
+  }
+  const historyDayButton = event.target.closest('[data-history-day]');
+  if (historyDayButton && !historyDayButton.disabled) {
+    accountHistorySelectedDay = Number(historyDayButton.dataset.historyDay);
+    renderAccountHistory();
+  }
   if (event.target.id === 'refreshAdminDashboardBtn') renderAdminDashboard();
+  const googleAuthButton = event.target.closest('[data-google-auth]');
   if (event.target.id === 'showLoginBtn') setAuthMode('login');
   if (event.target.id === 'backToAuthWelcomeFromLogin') setAuthMode('welcome');
-  if (['signupBtn', 'loginBtn', 'forgotPasswordBtn', 'resetPasswordBtn'].includes(event.target.id)) {
+  if (['signupBtn', 'loginBtn', 'forgotPasswordBtn', 'resetPasswordBtn'].includes(event.target.id) || googleAuthButton) {
     blurActiveAuthField();
   }
   if (event.target.id === 'signupBtn') signUp();
   if (event.target.id === 'loginBtn') login();
+  if (googleAuthButton) loginWithGoogle();
   if (event.target.id === 'forgotPasswordBtn') sendPasswordReset();
   if (event.target.id === 'resetPasswordBtn') updatePasswordFromRecovery();
   if (event.target.id === 'logoutBtn') logout();
-  if (event.target.matches('[data-toggle-password]')) togglePasswordVisibility(event.target);
+  const passwordToggle = event.target.closest('[data-toggle-password]');
+  if (passwordToggle) togglePasswordVisibility(passwordToggle);
+  if (event.target.id === 'onboardingNextBtn') showOnboardingStepTwo();
   if (event.target.id === 'saveProfileBtn') saveProfileFromOnboarding();
+  if (event.target.id === 'startOnboardingPlanBtn') finishOnboarding();
 
   if (event.target.matches('.nav-btn')) {
     document.querySelectorAll('.nav-btn').forEach(b => {
@@ -2235,6 +2722,13 @@ document.addEventListener('click', event => {
     event.target.setAttribute('aria-current', 'page');
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(event.target.dataset.screen).classList.add('active');
+    if (event.target.dataset.screen === 'today') {
+      renderToday();
+    } else {
+      document.body.classList.remove('workout-active');
+      document.querySelector('.topbar')?.classList.remove('hidden');
+      document.querySelector('.bottom-nav')?.classList.remove('hidden');
+    }
     const title = document.getElementById('screenTitle');
     if (title) title.textContent = event.target.textContent;
     renderGoals();

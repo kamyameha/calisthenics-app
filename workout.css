@@ -496,40 +496,918 @@
 }
 
 .timer-card {
+  position: relative;
+  width: min(353px, 100%);
+  height: 321px;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  border: 0;
+  border-radius: 20px;
+  background: #f7f7f7;
+  box-shadow: none;
   text-align: center;
 }
 
-.timer-card .eyebrow {
-  margin-bottom: var(--space-2);
-}
-
-.timer-subtitle {
-  max-width: 290px;
-  margin: 0 auto var(--space-3);
+#timerPanel {
+  background: rgba(178, 180, 184, 0.7);
 }
 
 .timer-count {
-  margin: var(--space-4) 0;
-  color: var(--main);
-  font-size: clamp(4rem, 18vw, 6.5rem);
-  font-weight: 900;
-  line-height: 0.95;
+  margin: 0;
+  color: #000000;
+  font-size: 128px;
+  font-weight: 500;
+  line-height: 1;
 }
 
-.timer-card .primary-btn {
+.timer-close-btn {
+  top: 20px;
+  right: 20px;
+}
+
+body.workout-active {
+  background: #ffffff;
+}
+
+body.workout-active .app {
+  width: min(393px, 100%);
+  padding: 0 20px 44px;
+  background: #ffffff;
+}
+
+body.workout-active .topbar,
+body.workout-active .bottom-nav {
+  display: none !important;
+}
+
+.workout-started-title p {
+  margin: 0 0 19px;
+  padding-top: 100px;
+  color: var(--main);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+#exerciseList {
+  display: grid;
+  gap: 19px;
+}
+
+.workout-accordion-card {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 20px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.exercise-chip-toggle {
+  width: 100%;
+  height: 46px;
+  min-height: 46px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 0 21px;
+  border: 1px solid var(--main);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--main);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1;
+  text-align: left;
+}
+
+.exercise-chip-toggle span,
+.exercise-chip-toggle em {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+.exercise-chip-toggle i {
+  display: none;
+  width: 18px;
+  height: 18px;
+  background: currentColor;
+  -webkit-mask: url("check.svg") center / contain no-repeat;
+  mask: url("check.svg") center / contain no-repeat;
+}
+
+.workout-accordion-card.completed .exercise-chip-toggle {
+  border-color: var(--main);
+  background: var(--main);
+  color: #ffffff;
+}
+
+.workout-accordion-card.completed .exercise-chip-toggle i {
+  display: block;
+}
+
+.workout-accordion-card.open .exercise-chip-toggle {
+  display: none;
+}
+
+.exercise-card-body {
+  display: none;
+}
+
+.workout-accordion-card.open .exercise-card-body {
+  display: block;
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--main);
+  color: #ffffff;
+}
+
+.exercise-card-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 26px;
+  align-items: start;
+  gap: 12px;
+  margin-bottom: 33px;
+}
+
+.exercise-card-header h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.workout-accordion-card .exercise-help-btn {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--main);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.set-list {
+  display: grid;
+  gap: 19px;
+}
+
+.workout-accordion-card .set-row {
+  width: min(309px, 100%);
+  height: 46px;
+  min-height: 46px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 26px;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 0 21px;
+  border: 1px solid #ffffff;
+  border-radius: 20px;
+  background: transparent;
+  color: #ffffff;
+}
+
+.workout-accordion-card .set-row.completed {
+  background: #ffffff;
+  color: var(--main);
+}
+
+.workout-accordion-card .set-row span {
+  min-width: 0;
+  color: currentColor;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.set-control {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: currentColor;
+  color: currentColor;
+}
+
+.set-control.is-square {
+  -webkit-mask: url("square.svg") center / contain no-repeat;
+  mask: url("square.svg") center / contain no-repeat;
+}
+
+.set-control.is-timer {
+  -webkit-mask: url("clock.svg") center / contain no-repeat;
+  mask: url("clock.svg") center / contain no-repeat;
+}
+
+.set-control.is-check {
+  -webkit-mask: url("check.svg") center / contain no-repeat;
+  mask: url("check.svg") center / contain no-repeat;
+}
+
+.workout-accordion-card .rating-label {
+  margin: 0;
+  padding-top: 44px;
+  padding-bottom: 19px;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.workout-accordion-card .rating-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.workout-accordion-card .rating-row button {
+  height: 46px;
+  min-height: 46px;
+  padding: 0 10px;
+  border: 1px solid #ffffff;
+  border-radius: 20px;
+  background: transparent;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.workout-accordion-card .rating-row button.selected {
+  background: #ffffff;
+  color: var(--main);
+}
+
+#completeBtn {
+  width: 100%;
+  height: 46px;
+  min-height: 46px;
+  margin-top: 44px;
+  padding: 0;
+  border-radius: 20px;
+  background: var(--main);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* Updated Today flow */
+.energy-check-screen {
+  margin: 0;
+  padding: 0;
+}
+
+.energy-check-screen h1 {
+  margin: 0 0 28px;
+  padding-top: 44px;
+  color: var(--main);
+  font-size: 40px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.energy-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 19px 14px;
+  justify-content: stretch;
+  margin: 0;
+}
+
+.energy-option,
+.energy-option[data-feel] {
+  width: 100%;
+  height: 65px;
+  min-height: 65px;
+  padding: 0;
+  border: 1px solid var(--main);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--main);
+}
+
+.energy-option span {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.energy-option:active,
+.energy-option.selected {
+  background: var(--main);
+  color: #ffffff;
+  transform: none;
+}
+
+.custom-checklist-card {
+  margin: 71px 0 0;
+  padding: 0;
+}
+
+.custom-checklist-card h2 {
+  margin: 0 0 44px;
+  color: var(--main);
+  font-size: 24px;
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.custom-checklist-card .muted {
+  display: none;
+}
+
+.custom-checklist-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 19px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.custom-checklist-form.hidden {
+  display: none !important;
+}
+
+.custom-checklist-form .text-input {
+  width: 100%;
+  height: 46px;
+  min-height: 46px;
+  padding: 0 20px;
+  border: 1px solid rgba(1, 45, 237, 0.35);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--main);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 46px;
+}
+
+.custom-checklist-form .text-input::placeholder {
+  color: rgba(1, 45, 237, 0.35);
+}
+
+.custom-checklist-name-input {
+  min-height: 46px;
+  height: 46px;
+  resize: none;
+  overflow: hidden;
+}
+
+.custom-type-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 19px;
+  margin: 0 0 25px;
+}
+
+.custom-type-row label {
+  width: 100%;
+  height: 46px;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border: 1px solid var(--main);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--main);
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.custom-type-row input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.custom-type-row label:has(input:checked) {
+  background: var(--main);
+  color: #ffffff;
+}
+
+.custom-checklist-form .panel-message {
+  grid-column: 1 / -1;
+  margin: -19px 0 0;
+}
+
+.custom-checklist-form #createCustomChecklistBtn {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 46px;
+  min-height: 46px;
   margin-top: 0;
+  padding: 0;
+  border-radius: 20px;
+  background: var(--main);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.selected-energy-stack {
+  display: block;
+  margin: 0;
+}
+
+.selected-energy-stack.hidden {
+  display: none !important;
+}
+
+.selected-energy-mascot-card {
+  width: 353px;
+  max-width: 100%;
+  height: 353px;
+  min-height: 353px;
+  margin: 0 auto;
+  padding: 20px 0 10px;
+  display: grid;
+  place-items: center;
+  border-radius: 20px;
+  background: #f7f7f7;
+}
+
+.selected-energy-mascot {
+  width: 282px;
+  height: 302px;
+  object-fit: contain;
+}
+
+.selected-energy-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  gap: 19px;
+  margin-top: 14px;
+  color: var(--main);
+}
+
+.energy-stars {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 2px;
+}
+
+.energy-star {
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  color: var(--main);
+  border-radius: 1px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.energy-pill {
+  position: static;
+  display: block;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--main);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.selected-workout-meta {
+  margin: 0;
+  color: var(--main);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.1;
+  text-align: right;
+}
+
+.selected-workout-preview {
+  display: block;
+}
+
+.add-on-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 19px;
+  margin: 56px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.add-on-row {
+  width: 100%;
+  height: 46px;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding: 0 15px;
+  border: 1px solid var(--main);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--main);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.add-on-row input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.add-on-row span {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.add-on-row i {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  background: currentColor;
+  -webkit-mask: url("plus.svg") center / contain no-repeat;
+  mask: url("plus.svg") center / contain no-repeat;
+}
+
+.add-on-row:has(input:checked) {
+  background: var(--main);
+  color: #ffffff;
+}
+
+.add-on-row:has(input:checked) i {
+  -webkit-mask-image: url("x.svg");
+  mask-image: url("x.svg");
+}
+
+.selected-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 19px;
+  margin-top: 44px;
+}
+
+.selected-actions .primary-btn,
+.selected-actions .secondary-btn {
+  width: 100%;
+  height: 46px;
+  min-height: 46px;
+  padding: 0;
+  border-radius: 20px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.selected-actions .secondary-btn {
+  border: 0;
+  background: rgba(1, 45, 237, 0.15);
+  color: var(--main);
+}
+
+.generated-workout-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(178, 180, 184, 0.7);
+}
+
+.generated-workout-overlay.hidden {
+  display: none !important;
+}
+
+.generated-workout-modal {
+  position: relative;
+  width: min(353px, 100%);
+  min-height: 382px;
+  padding: 20px;
+  border-radius: 20px;
+  background: #f7f7f7;
+  color: #000000;
+}
+
+.generated-close-btn {
+  position: absolute;
+  top: 40px;
+  right: 20px;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #000000;
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
+  display: grid;
+  place-items: center;
+}
+
+.generated-close-btn::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  -webkit-mask: url("x.svg") center / contain no-repeat;
+  mask: url("x.svg") center / contain no-repeat;
+}
+
+.generated-workout-modal h2 {
+  margin: 20px 48px 8px 0;
+  color: #000000;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.generated-workout-modal > p {
+  margin: 0 0 50px;
+  color: #989898;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.generated-preview-list {
+  display: grid;
+  gap: 33px;
+}
+
+.generated-preview-list .preview-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  padding: 0;
+  border: 0;
+}
+
+.generated-preview-list .preview-row strong,
+.generated-preview-list .preview-row span {
+  color: #000000;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.generated-preview-list .preview-row span {
+  color: #989898;
+  text-align: right;
+}
+
+.generated-workout-modal #startWorkoutBtn {
+  width: 100%;
+  height: 46px;
+  min-height: 46px;
+  margin-top: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 20px;
+  background: #000000;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+#timerPanel .timer-close-btn {
+  top: 20px;
+  right: 20px;
+}
+
+.custom-checklist-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(178, 180, 184, 0.7);
+}
+
+.custom-checklist-overlay.hidden {
+  display: none !important;
+}
+
+.custom-checklist-modal {
+  position: relative;
+  width: min(353px, 100%);
+  padding: 20px;
+  border-radius: 20px;
+  background: #f7f7f7;
+  color: #000000;
+}
+
+.custom-checklist-close {
+  top: 20px;
+  right: 20px;
+}
+
+.custom-checklist-modal h2 {
+  margin: 6px 42px 44px 0;
+  color: #000000;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.custom-checklist-items {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 19px;
+  margin: 0;
+}
+
+.custom-checklist-row {
+  width: 100%;
+  height: 46px;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin: 0;
+  padding: 0 21px;
+  border: 1px solid #000000;
+  border-radius: 20px;
+  background: transparent;
+  color: #000000;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.custom-checklist-row input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.custom-checklist-row span {
+  min-width: 0;
+  color: currentColor;
+  white-space: nowrap;
+}
+
+.custom-checklist-row i {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  background: currentColor;
+  -webkit-mask: url("square.svg") center / contain no-repeat;
+  mask: url("square.svg") center / contain no-repeat;
+}
+
+.custom-checklist-row.completed {
+  border-color: #000000;
+  background: #000000;
+  color: #ffffff;
+}
+
+.custom-checklist-row.completed i {
+  -webkit-mask-image: url("check.svg");
+  mask-image: url("check.svg");
+}
+
+.custom-checklist-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 19px;
+  margin-top: 44px;
+}
+
+.custom-checklist-actions .primary-btn,
+.custom-checklist-actions .secondary-btn {
+  width: 100%;
+  height: 46px;
+  min-height: 46px;
+  padding: 0;
+  border: 0;
+  border-radius: 20px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.custom-checklist-actions .primary-btn {
+  background: #000000;
+  color: #ffffff;
+}
+
+.custom-checklist-actions .secondary-btn {
+  background: rgba(0, 0, 0, 0.15);
+  color: #000000;
+}
+
+.custom-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 19px;
+}
+
+.custom-edit-grid .text-input {
+  width: 100%;
+  height: 46px;
+  min-height: 46px;
+  padding: 0 21px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 20px;
+  background: transparent;
+  color: #b2b4b8;
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.custom-edit-grid .text-input::placeholder {
+  color: #b2b4b8;
+}
+
+.edit-custom-type-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 19px;
+  margin: 9px 0 21px;
+}
+
+.edit-custom-type-row label {
+  width: 100%;
+  height: 46px;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 21px;
+  border: 1px solid #000000;
+  border-radius: 20px;
+  background: transparent;
+  color: #000000;
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.edit-custom-type-row input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.edit-custom-type-row label:has(input:checked) {
+  background: #000000;
+  color: #ffffff;
+}
+
+.custom-edit-grid .panel-message {
+  grid-column: 1 / -1;
+  margin: -19px 0 0;
+}
+
+.custom-edit-grid .custom-checklist-actions {
+  grid-column: 1 / -1;
+  margin-top: 25px;
 }
 
 @media (min-width: 700px) {
   .energy-grid {
-    grid-template-columns: repeat(2, 212px);
-    gap: 16px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 19px 14px;
   }
 
   .energy-option {
-    width: 212px;
-    height: 212px;
-    min-height: 212px;
+    width: 100%;
+    height: 65px;
+    min-height: 65px;
   }
 
   .selected-energy-mascot-card {

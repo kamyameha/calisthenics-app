@@ -152,7 +152,7 @@
       nextState.includeStretch = Boolean(nextState.includeStretch);
       nextState.includeExerciseTimer = Boolean(nextState.includeExerciseTimer);
       nextState.includeRestTimer = Boolean(nextState.includeRestTimer);
-      nextState.restTimerSeconds = Number(nextState.restTimerSeconds) === 30 ? 30 : 60;
+      nextState.restTimerSeconds = 60;
       nextState.todayEmptyStateDismissed = Boolean(nextState.todayEmptyStateDismissed);
       nextState.schemaVersion = STATE_SCHEMA_VERSION;
 

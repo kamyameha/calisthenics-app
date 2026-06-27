@@ -132,6 +132,329 @@
   border-color: var(--main);
 }
 
+.account-panel.account-modal.account-main-mode {
+  align-items: stretch;
+  padding: 0;
+  background: var(--main);
+  overflow: hidden;
+}
+
+.account-panel.account-modal.account-main-mode .account-modal-content {
+  width: min(100vw, var(--app-width));
+  max-height: none;
+  min-height: 100dvh;
+  margin: 0 auto;
+  overflow: hidden;
+  padding: calc(59px + env(safe-area-inset-top)) var(--screen-x) calc(50px + env(safe-area-inset-bottom));
+  border: 0;
+  border-radius: 0;
+  background: var(--main);
+  box-shadow: none;
+}
+
+.account-panel.account-modal.account-main-mode .account-modal-header {
+  align-items: center;
+  margin-bottom: 80px;
+}
+
+.account-panel.account-modal.account-main-mode #accountModalTitle {
+  width: 134px;
+  height: 18px;
+  margin: 0;
+  background: #ffffff;
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
+  mask: url("./somthingreat.svg") left center / 134px 18px no-repeat;
+  -webkit-mask: url("./somthingreat.svg") left center / 134px 18px no-repeat;
+}
+
+.account-panel.account-modal.account-main-mode #closeAccountModalBtn {
+  min-width: 26px;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: transparent;
+  padding: 0;
+  margin: 0;
+  font-size: 0;
+  line-height: 0;
+}
+
+.account-panel.account-modal.account-main-mode #closeAccountModalBtn::before {
+  content: "";
+  display: block;
+  width: 26px;
+  height: 26px;
+  background: #ffffff;
+  mask: url("./x.svg") center / 26px 26px no-repeat;
+  -webkit-mask: url("./x.svg") center / 26px 26px no-repeat;
+}
+
+.account-panel.account-modal.account-main-mode #accountMainView {
+  position: relative;
+  min-height: calc(100dvh - 59px - 50px - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 18px - 80px);
+  padding-bottom: 88px;
+}
+
+.account-panel.account-modal.account-main-mode #syncStatus,
+.account-panel.account-modal.account-main-mode .account-list-btn span {
+  display: none;
+}
+
+.account-panel.account-modal.account-main-mode .account-section {
+  padding: 0;
+  border: 0;
+}
+
+.account-panel.account-modal.account-main-mode .account-section + .account-section {
+  margin-top: 44px;
+}
+
+.account-panel.account-modal.account-main-mode .account-section h3 {
+  margin: 0 0 3px;
+  color: #b2b4b8;
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 7px;
+  text-transform: uppercase;
+}
+
+.account-panel.account-modal.account-main-mode .account-list-btn,
+.account-panel.account-modal.account-main-mode .support-email {
+  width: auto;
+  min-height: auto;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #ffffff;
+  font-size: 32px;
+  line-height: 1.12;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+}
+
+.account-panel.account-modal.account-main-mode .account-list-btn + .account-list-btn {
+  margin-top: 10px;
+}
+
+.account-panel.account-modal.account-main-mode #accountEmail,
+.account-panel.account-modal.account-main-mode #logoutBtn {
+  position: absolute;
+  bottom: 0;
+  margin: 0;
+  color: #ffffff;
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 400;
+}
+
+.account-panel.account-modal.account-main-mode #accountEmail {
+  left: 0;
+  max-width: 62%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-panel.account-modal.account-main-mode #logoutBtn {
+  right: 0;
+  width: auto;
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  text-align: right;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.account-panel.account-modal.account-submenu-mode {
+  align-items: stretch;
+  padding: 0;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.account-panel.account-modal.account-submenu-mode .account-modal-content {
+  width: min(100vw, var(--app-width));
+  max-height: none;
+  min-height: 100dvh;
+  margin: 0 auto;
+  overflow: hidden;
+  padding: calc(59px + env(safe-area-inset-top)) var(--screen-x) calc(50px + env(safe-area-inset-bottom));
+  border: 0;
+  border-radius: 0;
+  background: #ffffff;
+  box-shadow: none;
+}
+
+.account-panel.account-modal.account-submenu-mode .account-modal-header {
+  align-items: center;
+  margin-bottom: 44px;
+}
+
+.account-panel.account-modal.account-submenu-mode #accountModalTitle {
+  width: 134px;
+  height: 18px;
+  margin: 0;
+  background: var(--main);
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
+  mask: url("./somthingreat.svg") left center / 134px 18px no-repeat;
+  -webkit-mask: url("./somthingreat.svg") left center / 134px 18px no-repeat;
+}
+
+.account-panel.account-modal.account-submenu-mode #closeAccountModalBtn {
+  min-width: 26px;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: transparent;
+  padding: 0;
+  margin: 0;
+  font-size: 0;
+  line-height: 0;
+}
+
+.account-panel.account-modal.account-submenu-mode #closeAccountModalBtn::before {
+  content: "";
+  display: block;
+  width: 26px;
+  height: 26px;
+  background: var(--main);
+  mask: url("./x.svg") center / 26px 26px no-repeat;
+  -webkit-mask: url("./x.svg") center / 26px 26px no-repeat;
+}
+
+.account-panel.account-modal.account-submenu-mode #accountGoalView,
+.account-panel.account-modal.account-submenu-mode #accountEquipmentView,
+.account-panel.account-modal.account-submenu-mode #accountPasswordView {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 19px;
+  color: var(--main);
+}
+
+.account-panel.account-modal.account-submenu-mode .account-view.hidden {
+  display: none !important;
+}
+
+.account-panel.account-modal.account-submenu-mode .account-view > .text-btn {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  margin: 0 0 -9px;
+  padding: 0;
+  border: 0;
+  background: var(--main);
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
+  mask: url("./arrow-left.svg") center / 26px 26px no-repeat;
+  -webkit-mask: url("./arrow-left.svg") center / 26px 26px no-repeat;
+}
+
+.account-panel.account-modal.account-submenu-mode .account-view h2 {
+  width: 100%;
+  margin: 0;
+  color: var(--main);
+  font-size: 32px;
+  line-height: 1.1;
+  font-weight: 500;
+}
+
+.account-panel.account-modal.account-submenu-mode .account-view > .muted {
+  width: 100%;
+  margin: 1px 0 25px;
+  color: var(--main);
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 400;
+}
+
+.account-panel.account-modal.account-submenu-mode .option-row {
+  width: auto;
+  min-width: 0;
+  height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin: 0;
+  padding: 0 21px;
+  border: 1px solid var(--main);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--main);
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 400;
+}
+
+.account-panel.account-modal.account-submenu-mode .option-row input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.account-panel.account-modal.account-submenu-mode .option-row:has(input:checked) {
+  background: var(--main);
+  color: #ffffff;
+}
+
+.account-panel.account-modal.account-submenu-mode #accountEquipmentView .option-row::after {
+  content: "";
+  display: block;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  background: currentColor;
+  mask: url("./plus.svg") center / 24px 24px no-repeat;
+  -webkit-mask: url("./plus.svg") center / 24px 24px no-repeat;
+}
+
+.account-panel.account-modal.account-submenu-mode #accountEquipmentView .option-row:has(input:checked)::after {
+  mask-image: url("./x.svg");
+  -webkit-mask-image: url("./x.svg");
+}
+
+.account-panel.account-modal.account-submenu-mode .account-full-btn {
+  width: 100%;
+  min-height: 46px;
+  margin: 52px 0 0;
+  border-radius: 20px;
+  background: var(--main);
+  border-color: var(--main);
+  color: #ffffff;
+  font-size: 16px;
+  line-height: 1;
+  font-weight: 500;
+}
+
+.account-panel.account-modal.account-submenu-mode #accountPasswordView .account-full-btn {
+  margin-top: 52px;
+}
+
+.account-panel.account-modal.account-submenu-mode .auth-message {
+  width: 100%;
+  margin: 0;
+}
+
 .account-view > .text-btn {
   margin-bottom: 18px;
 }
@@ -220,30 +543,273 @@
   margin: 0;
 }
 
+.account-panel.account-modal.account-submenu-mode #accountHistoryView {
+  display: block;
+  color: var(--main);
+}
+
+.account-panel.account-modal.account-submenu-mode #accountSupportView,
+.account-panel.account-modal.account-submenu-mode #accountAdminView {
+  display: grid;
+  align-content: flex-start;
+  gap: 0;
+  color: var(--main);
+}
+
+.account-panel.account-modal.account-submenu-mode #accountHistoryView.hidden,
+.account-panel.account-modal.account-submenu-mode #accountSupportView.hidden,
+.account-panel.account-modal.account-submenu-mode #accountAdminView.hidden {
+  display: none !important;
+}
+
+.account-panel.account-modal.account-submenu-mode #accountHistoryView > .muted {
+  margin: 20px 0 44px;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.account-panel.account-modal.account-submenu-mode #accountSupportView > .muted {
+  margin-bottom: 44px;
+}
+
+.account-panel.account-modal.account-submenu-mode #accountAdminView > .muted {
+  margin-bottom: 44px;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.account-panel.account-modal.account-submenu-mode #accountSupportView .support-input {
+  width: 100%;
+  height: 46px;
+  margin: 0 0 19px;
+  border: 1px solid rgba(1, 45, 237, 0.35);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--main);
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.account-panel.account-modal.account-submenu-mode #accountSupportView .support-message-input {
+  height: 170px;
+  min-height: 170px;
+  resize: none;
+  padding-top: 16px;
+}
+
+.account-panel.account-modal.account-submenu-mode #accountSupportView .support-input::placeholder {
+  color: rgba(1, 45, 237, 0.35);
+}
+
+.account-panel.account-modal.account-submenu-mode #accountSupportView .account-full-btn {
+  margin-top: 52px;
+}
+
+.account-panel.account-modal.account-submenu-mode .admin-users-toggle {
+  width: 100%;
+  height: 46px;
+  min-height: 46px;
+  margin: 0;
+  padding: 0 21px;
+  border: 1px solid var(--main);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--main);
+  font-size: 16px;
+  line-height: 1;
+  font-weight: 400;
+  text-align: left;
+}
+
+.account-panel.account-modal.account-submenu-mode .admin-users-toggle.is-open {
+  height: auto;
+  min-height: 46px;
+  padding: 20px;
+  border: 0;
+  border-radius: 20px 20px 0 0;
+  background: var(--main);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.account-panel.account-modal.account-submenu-mode #adminDashboardMessage:empty {
+  display: none;
+}
+
+.account-panel.account-modal.account-submenu-mode .history-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 16px;
+  margin: 0 0 20px;
+}
+
+.account-panel.account-modal.account-submenu-mode #historyYearTitle {
+  margin: 0 0 5px;
+  color: var(--main);
+  font-size: 20px;
+  line-height: 1.1;
+  font-weight: 400;
+}
+
+.account-panel.account-modal.account-submenu-mode .history-header h3 {
+  margin: 0;
+  color: var(--main);
+  font-size: 32px;
+  line-height: 1;
+  font-weight: 700;
+  text-align: left;
+}
+
+.account-panel.account-modal.account-submenu-mode .history-month-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 2px;
+}
+
+.account-panel.account-modal.account-submenu-mode .history-month-controls button {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--main);
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 400;
+}
+
+.account-panel.account-modal.account-submenu-mode .history-weekdays,
+.account-panel.account-modal.account-submenu-mode .history-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 49px);
+  justify-content: center;
+  gap: 4px;
+}
+
+.account-panel.account-modal.account-submenu-mode .history-weekdays {
+  margin: 0 0 8px;
+  color: #000000;
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.account-panel.account-modal.account-submenu-mode .history-weekdays .is-today-weekday {
+  color: var(--main);
+}
+
+.account-panel.account-modal.account-submenu-mode .history-day {
+  width: 49px;
+  height: 49px;
+  min-height: 49px;
+  padding: 0;
+  border: 1px solid rgba(1, 45, 237, 0.15);
+  border-radius: 50%;
+  background: transparent;
+  color: transparent;
+  appearance: none;
+}
+
+.account-panel.account-modal.account-submenu-mode .history-day:disabled {
+  opacity: 1;
+}
+
+.account-panel.account-modal.account-submenu-mode .history-day span {
+  display: none;
+}
+
+.account-panel.account-modal.account-submenu-mode .history-day.past-empty {
+  border-color: transparent;
+  background: rgba(1, 45, 237, 0.15);
+}
+
+.account-panel.account-modal.account-submenu-mode .history-day.has-workout {
+  border-color: #000000;
+  background: #000000;
+}
+
+.account-panel.account-modal.account-submenu-mode .history-day.is-today,
+.account-panel.account-modal.account-submenu-mode .history-day.is-selected {
+  border-color: var(--main);
+  background: var(--main);
+}
+
+.account-panel.account-modal.account-submenu-mode .history-day.history-empty {
+  visibility: hidden;
+}
+
+.account-panel.account-modal.account-submenu-mode .history-list {
+  margin-top: 44px;
+  padding: 0;
+  border: 0;
+}
+
+.account-panel.account-modal.account-submenu-mode .history-list:empty {
+  display: none;
+}
+
+.account-panel.account-modal.account-submenu-mode .history-item {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--main);
+  color: #ffffff;
+}
+
+.account-panel.account-modal.account-submenu-mode .history-item + .history-item {
+  margin-top: 12px;
+  padding-top: 20px;
+  border-top: 0;
+}
+
+.account-panel.account-modal.account-submenu-mode .history-item strong {
+  font-size: 18px;
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.account-panel.account-modal.account-submenu-mode .history-item span {
+  color: #ffffff;
+  font-size: 18px;
+  line-height: 1.1;
+  font-weight: 400;
+}
+
 /* Admin dashboard */
 .admin-dashboard-list {
   display: grid;
-  gap: 10px;
-  margin-top: 12px;
+  gap: 19px;
+  min-height: 438px;
+  padding: 12px 20px 20px;
+  border-radius: 0 0 20px 20px;
+  background: var(--main);
+  color: #ffffff;
 }
 
 .admin-user-row {
   display: grid;
-  gap: 10px;
-  padding: 14px;
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  background: #ffffff;
+  grid-template-columns: 1fr auto;
+  gap: 20px;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #ffffff;
 }
 
 .admin-user-row strong,
 .admin-user-row span {
   display: block;
-}
-
-.admin-user-row span {
-  color: var(--muted-text);
-  font-size: 13px;
+  color: #ffffff;
+  font-size: 16px;
+  line-height: 1.2;
+  font-weight: 400;
 }
 
 .admin-user-stats {

@@ -17,24 +17,21 @@
       var path = window.location.pathname || '';
       var combined = search + '&' + hash;
       var isRecovery = search.indexOf('reset-password') !== -1 ||
-        search.indexOf('code=') !== -1 ||
         hash.indexOf('type=recovery') !== -1 ||
-        hash.indexOf('access_token') !== -1 ||
-        hash.indexOf('refresh_token') !== -1 ||
+        combined.indexOf('event=PASSWORD_RECOVERY') !== -1 ||
         path.indexOf('reset-password') !== -1;
       if (isRecovery) {
         window.__SOMTHINGREAT_RECOVERY_BOOT = true;
-        try { sessionStorage.setItem('somthingreat-recovery-boot', '1'); } catch (error) {}
         document.documentElement.classList.add('recovery-boot');
       }
     })();
   </script>
   <!-- Release rule: keep CSS/JS query versions aligned with service-worker.js CACHE_NAME. -->
-  <link rel="stylesheet" href="style.css?v=v8-39-rest-option-cleanup" />
-  <link rel="stylesheet" href="welcome.css?v=v8-39-rest-option-cleanup" />
-  <link rel="stylesheet" href="auth.css?v=v8-39-rest-option-cleanup" />
-  <link rel="stylesheet" href="workout.css?v=v8-39-rest-option-cleanup" />
-  <link rel="stylesheet" href="account.css?v=v8-39-rest-option-cleanup" />
+  <link rel="stylesheet" href="style.css?v=v8-49-google-password-support" />
+  <link rel="stylesheet" href="welcome.css?v=v8-49-google-password-support" />
+  <link rel="stylesheet" href="auth.css?v=v8-49-google-password-support" />
+  <link rel="stylesheet" href="workout.css?v=v8-49-google-password-support" />
+  <link rel="stylesheet" href="account.css?v=v8-49-google-password-support" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -46,11 +43,15 @@
       <img id="welcomeStar" class="welcome-star" src="Assets/Animations/start1.png" alt="Somthingreat star" />
 
       <div class="welcome-copy">
-        <h1>Just show up.<br>We'll handle the rest.</h1>
-        <p>Somthingreat removes the decision fatigue from calisthenics. Open the app, follow today's workout, and keep making progress.</p>
+        <h1>Just show up.</h1>
+        <p>Somthingreat removes the decision fatigue from bodyweight training. Open the app, follow today's workout, and keep making progress.</p>
+        <p>Just show up, we will handle the rest.</p>
       </div>
 
-      <button id="welcomeNextBtn" class="primary-btn welcome-next" type="button">Next</button>
+      <div class="welcome-actions" aria-label="Welcome actions">
+        <button id="welcomeNextBtn" class="primary-btn welcome-next" type="button">Let's start</button>
+        <button id="welcomeLoginBtn" class="secondary-btn welcome-login" type="button">Log in</button>
+      </div>
     </div>
   </section>
 
@@ -66,48 +67,51 @@
       <div id="loggedOutAccount">
         <div id="authWelcome">
           <div class="auth-content">
-            <h2>Welcome!</h2>
-            <p class="muted">Create an account so your progress can be saved.</p>
+            <h2>Hi there.</h2>
             <input id="signupEmailInput" class="text-input" type="email" name="email" placeholder="Email" autocomplete="email" inputmode="email" />
             <div class="password-field">
               <input id="signupPasswordInput" class="text-input" type="password" name="new-password" placeholder="Password" autocomplete="new-password" />
-              <button class="password-toggle" type="button" data-toggle-password="signupPasswordInput" aria-label="Show password">Show</button>
+              <button class="password-toggle password-toggle-hidden" type="button" data-toggle-password="signupPasswordInput" aria-label="Show password"></button>
             </div>
             <div class="password-field">
               <input id="signupConfirmPasswordInput" class="text-input" type="password" name="confirm-password" placeholder="Confirm password" autocomplete="new-password" />
-              <button class="password-toggle" type="button" data-toggle-password="signupConfirmPasswordInput" aria-label="Show password">Show</button>
+              <button class="password-toggle password-toggle-hidden" type="button" data-toggle-password="signupConfirmPasswordInput" aria-label="Show password"></button>
             </div>
           </div>
           <button id="signupBtn" class="primary-btn account-submit" type="button">Create account</button>
+          <button class="google-auth-btn" type="button" data-google-auth>
+            <img src="google-signin.svg" alt="Continue with Google" />
+          </button>
           <p class="auth-switch">Already have an account ? <button id="showLoginBtn" class="inline-link" type="button">Log in</button></p>
         </div>
 
         <div id="authLoginForm" class="hidden">
           <div class="auth-content">
-            <button id="backToAuthWelcomeFromLogin" class="text-btn" type="button">← Back</button>
-            <h2>Welcome back!</h2>
-            <p class="muted">Your progress will load after login.</p>
+            <h2>Welcome back.</h2>
             <input id="loginEmailInput" class="text-input" type="email" name="username" placeholder="Email" autocomplete="username" inputmode="email" />
             <div class="password-field">
               <input id="loginPasswordInput" class="text-input" type="password" name="current-password" placeholder="Password" autocomplete="current-password" />
-              <button class="password-toggle" type="button" data-toggle-password="loginPasswordInput" aria-label="Show password">Show</button>
+              <button class="password-toggle password-toggle-hidden" type="button" data-toggle-password="loginPasswordInput" aria-label="Show password"></button>
             </div>
           </div>
           <button id="loginBtn" class="primary-btn account-submit" type="button">Log in</button>
+          <button class="google-auth-btn" type="button" data-google-auth>
+            <img src="google-signin.svg" alt="Continue with Google" />
+          </button>
           <p class="auth-switch">Forgot your password? <button id="forgotPasswordBtn" class="inline-link" type="button">Click here</button></p>
         </div>
 
         <div id="authResetForm" class="hidden">
           <div class="auth-content">
-            <h2>Reset password</h2>
-            <p class="muted">Choose a new password for your account.</p>
+            <h2>Create new password.</h2>
+            <p class="muted">Choose a new password, then log in again.</p>
             <div class="password-field">
               <input id="resetPasswordInput" class="text-input" type="password" name="reset-new-password" placeholder="New password" autocomplete="new-password" />
-              <button class="password-toggle" type="button" data-toggle-password="resetPasswordInput" aria-label="Show password">Show</button>
+              <button class="password-toggle password-toggle-hidden" type="button" data-toggle-password="resetPasswordInput" aria-label="Show password"></button>
             </div>
             <div class="password-field">
               <input id="resetConfirmPasswordInput" class="text-input" type="password" name="reset-confirm-password" placeholder="Confirm new password" autocomplete="new-password" />
-              <button class="password-toggle" type="button" data-toggle-password="resetConfirmPasswordInput" aria-label="Show password">Show</button>
+              <button class="password-toggle password-toggle-hidden" type="button" data-toggle-password="resetConfirmPasswordInput" aria-label="Show password"></button>
             </div>
           </div>
           <button id="resetPasswordBtn" class="primary-btn account-submit" type="button">Update password</button>
@@ -129,18 +133,23 @@
 
           <div class="account-section">
             <h3>Plan settings</h3>
-            <button class="account-list-btn" type="button" data-account-view="goal">Change goal <span id="accountGoalSummary"></span></button>
-            <button class="account-list-btn" type="button" data-account-view="equipment">Change equipment <span id="accountEquipmentSummary"></span></button>
+            <button class="account-list-btn" type="button" data-account-view="goal">Focus <span id="accountGoalSummary"></span></button>
+            <button class="account-list-btn" type="button" data-account-view="equipment">Equipment <span id="accountEquipmentSummary"></span></button>
           </div>
 
-          <div class="account-section">
+          <div id="passwordAccountSection" class="account-section">
             <h3>Security</h3>
-            <button class="account-list-btn" type="button" data-account-view="password">Change password</button>
+            <button class="account-list-btn" type="button" data-account-view="password">Password</button>
           </div>
 
           <div class="account-section">
-            <h3>Workout history</h3>
-            <button class="account-list-btn" type="button" data-account-view="history">Monthly view <span id="accountHistorySummary"></span></button>
+            <h3>Monthly view</h3>
+            <button class="account-list-btn" type="button" data-account-view="history">Activity <span id="accountHistorySummary"></span></button>
+          </div>
+
+          <div class="account-section">
+            <h3>Assistance</h3>
+            <button class="account-list-btn" type="button" data-account-view="support">Support</button>
           </div>
 
           <div id="adminAccountSection" class="account-section hidden">
@@ -148,127 +157,175 @@
             <button class="account-list-btn" type="button" data-account-view="admin">Dashboard <span id="accountAdminSummary">Users</span></button>
           </div>
 
-          <div class="account-section">
-            <h3>Support</h3>
-            <a class="support-email" href="mailto:somthingreat@kamyameha.com?subject=Somthingreat%20support">somthingreat@kamyameha.com</a>
-          </div>
-
           <button id="logoutBtn" class="ghost-btn account-full-btn" type="button">Log out</button>
         </div>
 
         <div id="accountGoalView" class="account-view hidden">
           <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
+          <h2>Focus</h2>
           <p class="muted">Choose the main goal your workouts should prioritize.</p>
-          <label class="option-row"><input type="radio" name="accountGoal" value="pullup"> <span>First pull-up</span></label>
-          <label class="option-row"><input type="radio" name="accountGoal" value="handstand"> <span>First handstand</span></label>
-          <label class="option-row"><input type="radio" name="accountGoal" value="lsit"> <span>First L-sit</span></label>
-          <label class="option-row"><input type="radio" name="accountGoal" value="muscleup"> <span>First muscle-up</span></label>
+          <label class="option-row"><input type="radio" name="accountGoal" value="pullup"> <span>Pull-up</span></label>
+          <label class="option-row"><input type="radio" name="accountGoal" value="muscleup"> <span>Muscle-up</span></label>
+          <label class="option-row"><input type="radio" name="accountGoal" value="lsit"> <span>L-Sit</span></label>
+          <label class="option-row"><input type="radio" name="accountGoal" value="handstand"> <span>Handstand</span></label>
           <label class="option-row"><input type="radio" name="accountGoal" value="general"> <span>General fitness</span></label>
-          <button id="saveAccountGoalBtn" class="primary-btn account-full-btn" type="button">Save goal</button>
+          <button id="saveAccountGoalBtn" class="primary-btn account-full-btn" type="button">Update goal</button>
           <p id="accountGoalMessage" class="auth-message" aria-live="polite"></p>
         </div>
 
         <div id="accountEquipmentView" class="account-view hidden">
           <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
+          <h2>Equipment</h2>
           <p class="muted">Update the equipment you can use right now.</p>
           <label class="option-row"><input type="checkbox" name="accountEquipment" value="none"> <span>No equipment</span></label>
           <label class="option-row"><input type="checkbox" name="accountEquipment" value="pullupBar"> <span>Pull-up bar</span></label>
           <label class="option-row"><input type="checkbox" name="accountEquipment" value="dipBars"> <span>Dip bars</span></label>
           <label class="option-row"><input type="checkbox" name="accountEquipment" value="bands"> <span>Resistance bands</span></label>
           <label class="option-row"><input type="checkbox" name="accountEquipment" value="jumpRope"> <span>Jump rope</span></label>
-          <button id="saveAccountEquipmentBtn" class="primary-btn account-full-btn" type="button">Save equipment</button>
+          <button id="saveAccountEquipmentBtn" class="primary-btn account-full-btn" type="button">Update equipment</button>
           <p id="accountEquipmentMessage" class="auth-message" aria-live="polite"></p>
         </div>
 
         <div id="accountPasswordView" class="account-view hidden">
           <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
-          <p class="muted">We will email you a secure reset link. After choosing a new password, log in again with the new password.</p>
-          <button id="saveAccountPasswordBtn" class="primary-btn account-full-btn" type="button">Email reset link</button>
+          <h2>Password</h2>
+          <p class="muted">We will email you a secure reset link so you can choose a new password.</p>
+          <button id="saveAccountPasswordBtn" class="primary-btn account-full-btn" type="button">Send reset link</button>
           <p id="accountPasswordMessage" class="auth-message" aria-live="polite"></p>
         </div>
 
         <div id="accountHistoryView" class="account-view hidden">
           <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
+          <h2>Activity</h2>
+          <p id="historyYearSummary" class="muted">This year: 0 workouts</p>
           <div class="history-header">
-            <button id="historyPrevMonthBtn" class="ghost-btn compact" type="button" aria-label="Previous month">←</button>
-            <h3 id="historyMonthTitle">This month</h3>
-            <button id="historyNextMonthBtn" class="ghost-btn compact" type="button" aria-label="Next month">→</button>
+            <div>
+              <p id="historyYearTitle">2026</p>
+              <h3 id="historyMonthTitle">June</h3>
+            </div>
+            <div class="history-month-controls">
+              <button id="historyPrevMonthBtn" class="ghost-btn compact" type="button" aria-label="Previous month">←</button>
+              <button id="historyNextMonthBtn" class="ghost-btn compact" type="button" aria-label="Next month">→</button>
+            </div>
           </div>
           <div class="history-weekdays"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
           <div id="historyCalendar" class="history-calendar"></div>
           <div id="historyList" class="history-list"></div>
         </div>
 
+        <div id="accountSupportView" class="account-view hidden">
+          <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
+          <h2>Support</h2>
+          <p class="muted">Send us a message and we’ll get back to you as soon as possible.</p>
+          <input id="supportSubjectInput" class="text-input support-input" type="text" maxlength="120" placeholder="Subject *" autocomplete="off" />
+          <textarea id="supportMessageInput" class="text-input support-input support-message-input" maxlength="1500" placeholder="Tell us what happened *"></textarea>
+          <button id="sendSupportBtn" class="primary-btn account-full-btn" type="button">Submit</button>
+          <p id="supportMessage" class="auth-message" aria-live="polite"></p>
+        </div>
+
         <div id="accountAdminView" class="account-view hidden">
           <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
-          <p class="muted">Admin-only view for grascam@gmail.com.</p>
-          <button id="refreshAdminDashboardBtn" class="ghost-btn account-full-btn" type="button">Refresh dashboard</button>
+          <h2>Dashboard</h2>
+          <p id="adminDashboardSummary" class="muted">Loading dashboard...</p>
+          <button id="toggleAdminUsersBtn" class="admin-users-toggle" type="button" aria-expanded="false">Users list</button>
           <p id="adminDashboardMessage" class="sync-status">Loading users...</p>
-          <div id="adminDashboardList" class="admin-dashboard-list"></div>
+          <div id="adminDashboardList" class="admin-dashboard-list hidden"></div>
         </div>
       </div>
     </section>
 
-    <section id="onboarding" class="card onboarding-panel hidden">
-      <p class="eyebrow">Setup</p>
-      <h2>Build your plan</h2>
-      <p class="muted">Choose one main calisthenics goal, your equipment, and your current level. The app will adapt the progression from there.</p>
+    <section id="onboarding" class="onboarding-panel hidden">
+      <div id="onboardingStepOne" class="onboarding-step">
+        <div class="onboarding-step-head">
+          <p>Build your workout plan</p>
+          <p>1/2</p>
+        </div>
 
-      <div class="setup-block">
-        <h3>1 · Main goal</h3>
-        <label class="option-row"><input type="radio" name="goal" value="pullup"> <span>First pull-up</span></label>
-        <label class="option-row"><input type="radio" name="goal" value="handstand"> <span>First handstand</span></label>
-        <label class="option-row"><input type="radio" name="goal" value="lsit"> <span>First L-sit</span></label>
-        <label class="option-row"><input type="radio" name="goal" value="muscleup"> <span>First muscle-up</span></label>
-        <label class="option-row"><input type="radio" name="goal" value="general"> <span>General fitness</span></label>
+        <div class="setup-block focus-block">
+          <h2>Focus</h2>
+          <div class="onboarding-chip-grid focus-chip-grid">
+            <label class="onboarding-chip"><input type="radio" name="goal" value="pullup"> <span>Pull-up</span></label>
+            <label class="onboarding-chip"><input type="radio" name="goal" value="muscleup"> <span>Muscle-up</span></label>
+            <label class="onboarding-chip"><input type="radio" name="goal" value="lsit"> <span>L-Sit</span></label>
+            <label class="onboarding-chip"><input type="radio" name="goal" value="handstand"> <span>Handstand</span></label>
+            <label class="onboarding-chip wide-chip"><input type="radio" name="goal" value="general"> <span>General fitness</span></label>
+          </div>
+        </div>
+
+        <div class="setup-block equipment-block">
+          <h2>Equipment</h2>
+          <div class="onboarding-chip-grid equipment-chip-grid">
+            <label class="onboarding-chip equipment-chip"><input type="checkbox" name="equipment" value="none"> <span>No equipment</span></label>
+            <label class="onboarding-chip equipment-chip"><input type="checkbox" name="equipment" value="pullupBar"> <span>Pull-up bar</span></label>
+            <label class="onboarding-chip equipment-chip"><input type="checkbox" name="equipment" value="dipBars"> <span>Dip bars</span></label>
+            <label class="onboarding-chip equipment-chip wide-chip"><input type="checkbox" name="equipment" value="bands"> <span>Resistance bands</span></label>
+            <label class="onboarding-chip equipment-chip"><input type="checkbox" name="equipment" value="jumpRope"> <span>Jump rope</span></label>
+          </div>
+        </div>
+
+        <button id="onboardingNextBtn" class="primary-btn onboarding-primary" type="button">Next</button>
       </div>
 
-      <div class="setup-block">
-        <h3>2 · Equipment</h3>
-        <label class="option-row"><input type="checkbox" name="equipment" value="none"> <span>No equipment</span></label>
-        <label class="option-row"><input type="checkbox" name="equipment" value="pullupBar"> <span>Pull-up bar</span></label>
-        <label class="option-row"><input type="checkbox" name="equipment" value="dipBars"> <span>Dip bars</span></label>
-        <label class="option-row"><input type="checkbox" name="equipment" value="bands"> <span>Resistance bands</span></label>
-        <label class="option-row"><input type="checkbox" name="equipment" value="jumpRope"> <span>Jump rope</span></label>
+      <div id="onboardingStepTwo" class="onboarding-step hidden">
+        <div class="onboarding-step-head">
+          <p>Build your workout plan</p>
+          <p>2/2</p>
+        </div>
+
+        <div class="setup-block level-block">
+          <h2>Current level</h2>
+          <p class="field-label">How many clean push-ups can you do?</p>
+          <div class="onboarding-chip-grid level-chip-grid">
+            <label class="onboarding-chip"><input type="radio" name="pushups" value="oneFive"> <span>0-5</span></label>
+            <label class="onboarding-chip"><input type="radio" name="pushups" value="sixTen"> <span>6-10</span></label>
+            <label class="onboarding-chip"><input type="radio" name="pushups" value="tenPlus"> <span>10 +</span></label>
+          </div>
+
+          <p class="field-label">How many bodyweight squats can you do?</p>
+          <div class="onboarding-chip-grid level-chip-grid">
+            <label class="onboarding-chip"><input type="radio" name="squats" value="zeroFive"> <span>0-5</span></label>
+            <label class="onboarding-chip"><input type="radio" name="squats" value="sixTen"> <span>6-10</span></label>
+            <label class="onboarding-chip"><input type="radio" name="squats" value="tenPlus"> <span>10 +</span></label>
+          </div>
+        </div>
+
+        <div id="pullupAssessment" class="setup-block conditional-block hidden">
+          <p class="field-label">Can you dead hang for 10 seconds?</p>
+          <div class="onboarding-chip-grid yes-no-chip-grid">
+            <label class="onboarding-chip"><input type="radio" name="deadHang" value="yes"> <span>Yes</span></label>
+            <label class="onboarding-chip"><input type="radio" name="deadHang" value="no"> <span>No</span></label>
+          </div>
+          <p class="field-label">Can you do one negative pull-up?</p>
+          <div class="onboarding-chip-grid yes-no-chip-grid">
+            <label class="onboarding-chip"><input type="radio" name="negativePullup" value="yes"> <span>Yes</span></label>
+            <label class="onboarding-chip"><input type="radio" name="negativePullup" value="no"> <span>No</span></label>
+          </div>
+        </div>
+
+        <div id="dipAssessment" class="setup-block conditional-block hidden">
+          <p class="field-label">Can you do one dip?</p>
+          <div class="onboarding-chip-grid yes-no-chip-grid">
+            <label class="onboarding-chip"><input type="radio" name="dip" value="yes"> <span>Yes</span></label>
+            <label class="onboarding-chip"><input type="radio" name="dip" value="no"> <span>No</span></label>
+          </div>
+        </div>
+
+        <button id="saveProfileBtn" class="primary-btn onboarding-primary" type="button">Create plan</button>
       </div>
 
-      <div class="setup-block">
-        <h3>3 · Current level</h3>
-        <p class="field-label">How many clean push-ups can you do?</p>
-        <label class="option-row"><input type="radio" name="pushups" value="zero"> <span>0</span></label>
-        <label class="option-row"><input type="radio" name="pushups" value="oneFive"> <span>1–5</span></label>
-        <label class="option-row"><input type="radio" name="pushups" value="sixTen"> <span>6–10</span></label>
-        <label class="option-row"><input type="radio" name="pushups" value="tenPlus"> <span>10+</span></label>
-
-        <p class="field-label">How many bodyweight squats can you do?</p>
-        <label class="option-row"><input type="radio" name="squats" value="zeroFive"> <span>0–5</span></label>
-        <label class="option-row"><input type="radio" name="squats" value="sixTen"> <span>6–10</span></label>
-        <label class="option-row"><input type="radio" name="squats" value="tenPlus"> <span>10+</span></label>
+      <div id="onboardingConfirmation" class="onboarding-confirmation hidden">
+        <div class="onboarding-confirmation-content">
+          <h2>Just show up.</h2>
+          <p>Your workout plan is ready. You can update your focus and equipment anytime in the menu.</p>
+          <p>Just show up, we will handle the rest.</p>
+          <button id="startOnboardingPlanBtn" class="primary-btn onboarding-primary" type="button">Start</button>
+        </div>
       </div>
-
-      <div id="pullupAssessment" class="setup-block hidden">
-        <h3>Pull-up bar questions</h3>
-        <p class="field-label">Can you dead hang for 10 seconds?</p>
-        <label class="option-row"><input type="radio" name="deadHang" value="yes"> <span>Yes</span></label>
-        <label class="option-row"><input type="radio" name="deadHang" value="no"> <span>No</span></label>
-        <p class="field-label">Can you do one negative pull-up?</p>
-        <label class="option-row"><input type="radio" name="negativePullup" value="yes"> <span>Yes</span></label>
-        <label class="option-row"><input type="radio" name="negativePullup" value="no"> <span>No</span></label>
-      </div>
-
-      <div id="dipAssessment" class="setup-block hidden">
-        <h3>Dip bars question</h3>
-        <p class="field-label">Can you do one dip?</p>
-        <label class="option-row"><input type="radio" name="dip" value="yes"> <span>Yes</span></label>
-        <label class="option-row"><input type="radio" name="dip" value="no"> <span>No</span></label>
-      </div>
-
-      <button id="saveProfileBtn" class="primary-btn">Create My Plan</button>
       <p id="onboardingMessage" class="auth-message panel-message" aria-live="polite"></p>
     </section>
 
     <section id="today" class="screen active">
-      <section id="energyCard" class="card step-card">
+      <section id="energyCard" class="energy-check-screen">
         <div id="todayEmptyState" class="today-empty-state hidden">
           <button id="dismissTodayEmptyState" class="today-empty-close" type="button" aria-label="Close">×</button>
           <h2>You’re set.</h2>
@@ -279,8 +336,7 @@
           <h2>Well done for today.</h2>
           <p>You showed up, and that counts. Your progress is saved.</p>
         </div>
-        <h2>Energy check</h2>
-        <p class="muted">How's your energy today? We'll adjust today's workout intensity.</p>
+        <h1>How are you feeling today?</h1>
         <div class="energy-grid" role="group" aria-label="Choose your energy level">
           <button class="feel-btn energy-option" type="button" data-feel="great"><span>Great</span></button>
           <button class="feel-btn energy-option" type="button" data-feel="normal"><span>Normal</span></button>
@@ -289,78 +345,102 @@
         </div>
       </section>
 
-      <section id="customChecklistCard" class="card custom-checklist-card">
-        <p class="eyebrow">Custom checklist</p>
-        <h3>Track anything simple.</h3>
+      <section id="customChecklistCard" class="custom-checklist-card">
+        <h2>Custom checklist</h2>
         <p class="muted">Use rounds or minutes for stairs, walks, circuits, mobility, or whatever you want to count.</p>
-        <button id="openCustomChecklistBtn" class="primary-btn" type="button">Create checklist</button>
       </section>
 
-      <section id="customChecklistForm" class="card custom-checklist-form hidden">
-        <button id="cancelCustomChecklistFormBtn" class="text-btn" type="button">← Back</button>
-        <h3>Create checklist</h3>
+      <section id="customChecklistForm" class="custom-checklist-form">
         <textarea id="customChecklistNameInput" class="text-input custom-checklist-name-input" placeholder="Activity, e.g. Stairs" maxlength="40" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" rows="1" name="sg-activity-label"></textarea>
+        <input id="customChecklistTargetInput" class="text-input" type="number" inputmode="numeric" min="1" max="240" placeholder="How many?" autocomplete="new-password" enterkeyhint="done" name="sg-activity-count">
         <div class="custom-type-row" role="group" aria-label="Checklist type">
           <label><input type="radio" name="customChecklistType" value="rounds" checked> <span>Rounds</span></label>
           <label><input type="radio" name="customChecklistType" value="minutes"> <span>Minutes</span></label>
         </div>
-        <input id="customChecklistTargetInput" class="text-input" type="number" inputmode="numeric" min="1" max="240" placeholder="How many?" autocomplete="new-password" enterkeyhint="done" name="sg-activity-count">
         <p id="customChecklistMessage" class="auth-message panel-message" aria-live="polite"></p>
-        <button id="createCustomChecklistBtn" class="primary-btn" type="button">Start checklist</button>
+        <button id="createCustomChecklistBtn" class="primary-btn" type="button">Create checklist</button>
       </section>
 
-      <section id="customChecklistActive" class="card custom-checklist-active hidden">
-        <button id="cancelCustomChecklistBtn" class="text-btn" type="button">← Cancel checklist</button>
-        <p class="eyebrow">Custom checklist</p>
-        <h3 id="customChecklistTitle">Stairs</h3>
-        <p id="customChecklistMeta" class="muted">8 rounds</p>
-        <div id="customChecklistItems" class="custom-checklist-items"></div>
-        <button id="completeCustomChecklistBtn" class="primary-btn" type="button">Complete checklist</button>
+      <section id="customChecklistActive" class="custom-checklist-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="customChecklistTitle">
+        <div class="custom-checklist-modal">
+          <button id="cancelCustomChecklistBtn" class="generated-close-btn custom-checklist-close" type="button" aria-label="Close checklist">×</button>
+          <h2 id="customChecklistTitle">Stairs - 10 rounds</h2>
+          <p id="customChecklistMeta" class="muted hidden">8 rounds</p>
+          <div id="customChecklistItems" class="custom-checklist-items"></div>
+          <div class="custom-checklist-actions">
+            <button id="completeCustomChecklistBtn" class="primary-btn" type="button">Complete</button>
+            <button id="editCustomChecklistBtn" class="secondary-btn" type="button">Edit</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="customChecklistEdit" class="custom-checklist-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="customChecklistEditTitle">
+        <div class="custom-checklist-modal custom-checklist-edit-modal">
+          <button id="closeCustomChecklistEditBtn" class="generated-close-btn custom-checklist-close" type="button" aria-label="Close edit">×</button>
+          <h2 id="customChecklistEditTitle">Custom checklist</h2>
+          <div class="custom-edit-grid">
+            <input id="editCustomChecklistNameInput" class="text-input" type="text" maxlength="40" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" placeholder="Activity" />
+            <input id="editCustomChecklistTargetInput" class="text-input" type="number" inputmode="numeric" min="1" max="240" placeholder="How many?" />
+            <div class="custom-type-row edit-custom-type-row" role="group" aria-label="Checklist type">
+              <label><input type="radio" name="editCustomChecklistType" value="rounds"> <span>Rounds</span></label>
+              <label><input type="radio" name="editCustomChecklistType" value="minutes"> <span>Minutes</span></label>
+            </div>
+            <p id="editCustomChecklistMessage" class="auth-message panel-message" aria-live="polite"></p>
+            <div class="custom-checklist-actions">
+              <button id="confirmEditCustomChecklistBtn" class="primary-btn" type="button">Confirm</button>
+              <button id="cancelEditCustomChecklistBtn" class="secondary-btn" type="button">Cancel</button>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section id="selectedEnergyCard" class="selected-energy-stack hidden">
-        <div class="card selected-energy-mascot-card">
-          <span id="selectedEnergyPill" class="energy-pill">Normal</span>
+        <div class="selected-energy-mascot-card">
           <img id="selectedEnergyMascot" class="selected-energy-mascot" src="Assets/Energy/normal-icon.png" alt="" aria-hidden="true" />
         </div>
-        <div class="hero-card selected-workout-preview">
-          <button class="text-btn selected-back-btn" id="changeEnergyBtn" type="button" aria-label="Back to energy check">← Back</button>
-          <h2 id="selectedWorkoutName">Push</h2>
-          <p id="selectedWorkoutMeta">4 exercises · Full volume</p>
-          <div class="add-on-panel" aria-label="Optional workout add-ons">
-            <p class="add-on-title">Optional add-ons</p>
-            <label class="add-on-row"><input id="includeWarmup" type="checkbox"> <span>Add 2-min warm-up before</span></label>
-            <label class="add-on-row"><input id="includeStretch" type="checkbox"> <span>Add 2-min stretch after</span></label>
-            <label class="add-on-row"><input id="includeExerciseTimer" type="checkbox"> <span>Add timers for timed exercises</span></label>
-            <label class="add-on-row"><input id="includeRestTimer" type="checkbox"> <span>Add rest timer between sets</span></label>
-            <div id="restTimerOptions" class="rest-timer-options hidden" role="group" aria-label="Rest timer length">
-              <label><input type="radio" name="restTimerSeconds" value="30"> <span>30s</span></label>
-              <label><input type="radio" name="restTimerSeconds" value="60"> <span>60s</span></label>
-            </div>
-            <p id="sessionTotalPreview" class="add-on-summary">Workout only</p>
+        <div class="selected-energy-meta">
+          <div>
+            <div id="selectedEnergyStars" class="energy-stars" aria-hidden="true"></div>
+            <p id="selectedEnergyPill" class="energy-pill">Normal</p>
           </div>
-          <button class="hero-action" id="generateWorkoutBtn" type="button">Generate today's workout</button>
+          <p id="selectedWorkoutMeta" class="selected-workout-meta">Pull: reduced volume<br>4 exercises</p>
+        </div>
+        <div class="selected-workout-preview">
+          <h2 id="selectedWorkoutName" class="hidden">Push</h2>
+          <div class="add-on-panel" aria-label="Workout add-ons">
+            <label class="add-on-row"><input id="includeWarmup" type="checkbox"> <span>2 min warm-up</span><i aria-hidden="true"></i></label>
+            <label class="add-on-row"><input id="includeStretch" type="checkbox"> <span>2 min stretch</span><i aria-hidden="true"></i></label>
+            <label class="add-on-row"><input id="includeExerciseTimer" type="checkbox"> <span>Exercise timer</span><i aria-hidden="true"></i></label>
+            <label class="add-on-row"><input id="includeRestTimer" type="checkbox"> <span>Rest timer</span><i aria-hidden="true"></i></label>
+            <p id="sessionTotalPreview" class="add-on-summary hidden">Workout only</p>
+          </div>
+          <div class="selected-actions">
+            <button class="primary-btn" id="generateWorkoutBtn" type="button">Generate</button>
+            <button class="secondary-btn" id="changeEnergyBtn" type="button">Go back</button>
+          </div>
         </div>
       </section>
 
-      <section id="generatedWorkoutCard" class="hero-card generated-workout-hero hidden">
-        <button class="text-btn workout-regenerate-btn" id="regenerateWorkoutBtn" type="button">↻ Generate new workout</button>
-        <p class="muted-light">Today's workout</p>
-        <h2 id="workoutName">Push</h2>
-        <p id="workoutMeta">20 min · Standard Mode</p>
-        <button class="hero-action" id="startWorkoutBtn">Start Workout</button>
+      <section id="generatedWorkoutCard" class="generated-workout-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="workoutName">
+        <div class="generated-workout-modal">
+          <button class="generated-close-btn" id="regenerateWorkoutBtn" type="button" aria-label="Close">×</button>
+          <h2 id="workoutName">Legs + core</h2>
+          <p id="workoutMeta">Includes exercise timers</p>
+          <div id="previewList" class="generated-preview-list"></div>
+          <button class="primary-btn" id="startWorkoutBtn" type="button">Start</button>
+        </div>
       </section>
 
       <section id="exercisePreview" class="card hidden">
         <h3>Checklist</h3>
-        <div id="previewList"></div>
+        <div id="legacyPreviewList"></div>
       </section>
 
       <section id="exerciseList"></section>
       <button id="completeBtn" class="primary-btn hidden">Complete Workout</button>
     </section>
 
-    <section id="goals" class="screen">
+    <section id="goals" class="screen focus-screen">
       <section class="hero-card goal-hero">
         <p class="muted-light">Main goal</p>
         <h2 id="goalHeroTitle">First pull-up</h2>
@@ -378,17 +458,17 @@
       </section>
     </section>
 
-    <section id="progress" class="screen">
-      <section id="consistencyCard" class="hero-card consistency-card">
-        <p class="muted-light">Consistency</p>
-        <h2 id="consistencyTitle">Your rhythm starts here.</h2>
-        <p id="consistencyMessage">Complete your first workout to start building consistency.</p>
-      </section>
-
+    <section id="progress" class="screen progress-screen">
       <section class="card stat-card">
         <p class="eyebrow">This month</p>
         <p class="big-number"><span id="monthlyCount">0</span></p>
         <p class="muted">Workouts completed</p>
+      </section>
+
+      <section id="consistencyCard" class="hero-card consistency-card">
+        <p class="muted-light">Consistency</p>
+        <h2 id="consistencyTitle">Your rhythm starts here.</h2>
+        <p id="consistencyMessage">Complete your first workout to start building consistency.</p>
       </section>
 
       <section class="card">
@@ -400,7 +480,7 @@
 
   <nav class="bottom-nav hidden">
     <button class="nav-btn active" data-screen="today" aria-current="page">Today</button>
-    <button class="nav-btn" data-screen="goals">Goal</button>
+    <button class="nav-btn" data-screen="goals">Focus</button>
     <button class="nav-btn" data-screen="progress">Progress</button>
   </nav>
 
@@ -433,20 +513,18 @@
 
   <div id="timerPanel" class="confirm-panel hidden" role="dialog" aria-modal="true" aria-labelledby="timerTitle">
     <div class="confirm-card timer-card">
-      <p id="timerEyebrow" class="eyebrow">Timer</p>
-      <h2 id="timerTitle">Rest</h2>
-      <p id="timerSubtitle" class="timer-subtitle">Next set soon.</p>
+      <button id="skipTimerBtn" class="generated-close-btn timer-close-btn" type="button" aria-label="Close timer">×</button>
+      <h2 id="timerTitle" class="sr-only">Timer</h2>
       <p id="timerCount" class="timer-count">0:30</p>
-      <button id="skipTimerBtn" class="primary-btn" type="button">Skip timer</button>
     </div>
   </div>
 
-  <script src="auth.js?v=v8-39-rest-option-cleanup"></script>
-  <script src="workouts.js?v=v8-39-rest-option-cleanup"></script>
-  <script src="state.js?v=v8-39-rest-option-cleanup"></script>
-  <script src="account.js?v=v8-39-rest-option-cleanup"></script>
-  <script src="admin.js?v=v8-39-rest-option-cleanup"></script>
-  <script src="render.js?v=v8-39-rest-option-cleanup"></script>
-  <script src="app.js?v=v8-39-rest-option-cleanup"></script>
+  <script src="auth.js?v=v8-49-google-password-support"></script>
+  <script src="workouts.js?v=v8-49-google-password-support"></script>
+  <script src="state.js?v=v8-49-google-password-support"></script>
+  <script src="account.js?v=v8-49-google-password-support"></script>
+  <script src="admin.js?v=v8-49-google-password-support"></script>
+  <script src="render.js?v=v8-49-google-password-support"></script>
+  <script src="app.js?v=v8-49-google-password-support"></script>
 </body>
 </html>
