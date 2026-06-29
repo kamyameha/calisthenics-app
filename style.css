@@ -265,6 +265,9 @@ button:disabled {
   width: 100%;
   min-height: 46px;
   height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0 var(--space-4);
   border-radius: var(--radius);
   line-height: 1.1;
@@ -275,6 +278,9 @@ button:disabled {
 .secondary-btn {
   min-height: 46px;
   height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0 var(--space-4);
   border: 0;
   border-radius: var(--radius);
@@ -506,11 +512,24 @@ button:disabled {
 
 .confirm-actions .primary-btn,
 .confirm-actions .ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 48px;
   height: 48px;
   margin: 0;
   padding: 8px 10px;
   line-height: 1.1;
+}
+
+.selected-actions .primary-btn,
+.selected-actions .secondary-btn,
+.custom-checklist-actions .primary-btn,
+.custom-checklist-actions .secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
 }
 
 /* welcome styles moved to welcome.css. */
@@ -614,11 +633,11 @@ body.onboarding-active .app {
 }
 
 .level-chip-grid {
-  margin-bottom: 20px;
+  margin-bottom: 33px;
 }
 
 .conditional-block .yes-no-chip-grid {
-  margin-bottom: 20px;
+  margin-bottom: 33px;
 }
 
 .conditional-block .yes-no-chip-grid:last-child {
@@ -900,7 +919,7 @@ body.onboarding-active .app {
 .skill-list,
 #levelsList {
   display: grid;
-  gap: 20px;
+  gap: 33px;
 }
 
 .skill-row,
@@ -1017,16 +1036,32 @@ body.onboarding-active .app {
 
 .nav-btn {
   min-height: 74px;
-  padding: 9px 0 0;
+  padding: 3px 0 0;
   border: 0;
   border-radius: 0;
   background: transparent;
   color: #b2b4b8;
   font-size: 16px;
   font-weight: 500;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .nav-btn.active {
+  background: transparent;
+  color: var(--main);
+}
+
+.nav-btn:hover,
+.nav-btn:focus,
+.nav-btn:active {
+  background: transparent;
+  color: #b2b4b8;
+  outline: none;
+}
+
+.nav-btn.active:hover,
+.nav-btn.active:focus,
+.nav-btn.active:active {
   background: transparent;
   color: var(--main);
 }
