@@ -11,15 +11,30 @@
     return Array.isArray(savedState?.history) ? savedState.history.length : 0;
   }
 
+  function getLastWorkoutDate(savedState) {
+    if (!Array.isArray(savedState?.history)) return null;
+    return savedState.history.reduce((latest, item) => {
+      const date = new Date(item?.date);
+      if (Number.isNaN(date.getTime())) return latest;
+      return !latest || date > latest ? date : latest;
+    }, null);
+  }
+
+  function isRecentlyActive(savedState, now = new Date(), activeWindowDays = 14) {
+    const lastWorkoutDate = getLastWorkoutDate(savedState);
+    if (!lastWorkoutDate) return false;
+    const activeWindowMs = activeWindowDays * 24 * 60 * 60 * 1000;
+    return now.getTime() - lastWorkoutDate.getTime() <= activeWindowMs;
+  }
+
   function formatAdminGoal(savedState, goalLabels = {}) {
     const goal = savedState?.profile?.goal;
     return goalLabels[goal] || goal || 'Not set';
   }
 
-  function formatAdminActive(profile, savedState) {
+  function formatAdminActive(profile, savedState, now = new Date()) {
     if (profile?.deleted_at) return 'N';
-    if (profile?.current_auth_user_id) return 'Y';
-    return savedState ? 'Y' : 'N';
+    return isRecentlyActive(savedState, now) ? 'Y' : 'N';
   }
 
   function escapeHTML(value = '') {
@@ -35,6 +50,8 @@
     normaliseEmail,
     isAdminUser,
     getCompletedWorkoutCount,
+    getLastWorkoutDate,
+    isRecentlyActive,
     formatAdminGoal,
     formatAdminActive,
     escapeHTML
