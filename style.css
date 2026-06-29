@@ -370,7 +370,7 @@ button:disabled {
   line-height: 1;
 }
 
-auth-message {
+.auth-message {
   min-height: 20px;
   margin: 4px 0 0;
   font-size: 14px;
