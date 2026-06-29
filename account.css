@@ -73,13 +73,28 @@
 }
 
 #closeAccountModalBtn {
-  min-width: 44px;
-  width: 44px;
-  height: 44px;
+  min-width: 26px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 0;
   border-radius: 50%;
+  background: #000000;
+  color: transparent;
   padding: 0;
-  font-size: 22px;
-  line-height: 1;
+  font-size: 0;
+  line-height: 0;
+}
+
+#closeAccountModalBtn::before {
+  content: "";
+  display: block;
+  width: 24px;
+  height: 24px;
+  background: #ffffff;
+  mask: url("./x.svg") center / 24px 24px no-repeat;
+  -webkit-mask: url("./x.svg") center / 24px 24px no-repeat;
 }
 
 .account-section {
@@ -186,11 +201,11 @@
 .account-panel.account-modal.account-main-mode #closeAccountModalBtn::before {
   content: "";
   display: block;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   background: #ffffff;
-  mask: url("./x.svg") center / 26px 26px no-repeat;
-  -webkit-mask: url("./x.svg") center / 26px 26px no-repeat;
+  mask: url("./x.svg") center / 24px 24px no-repeat;
+  -webkit-mask: url("./x.svg") center / 24px 24px no-repeat;
 }
 
 .account-panel.account-modal.account-main-mode #accountMainView {
@@ -331,11 +346,11 @@
 .account-panel.account-modal.account-submenu-mode #closeAccountModalBtn::before {
   content: "";
   display: block;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   background: var(--main);
-  mask: url("./x.svg") center / 26px 26px no-repeat;
-  -webkit-mask: url("./x.svg") center / 26px 26px no-repeat;
+  mask: url("./x.svg") center / 24px 24px no-repeat;
+  -webkit-mask: url("./x.svg") center / 24px 24px no-repeat;
 }
 
 .account-panel.account-modal.account-submenu-mode #accountGoalView,
