@@ -499,9 +499,9 @@
 }
 
 .help-close {
-  border-color: var(--border);
-  background: #ffffff;
-  color: var(--main);
+  border: 0;
+  background: #000000;
+  color: transparent;
 }
 
 .timer-card {
