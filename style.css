@@ -614,11 +614,11 @@ body.onboarding-active .app {
 }
 
 .level-chip-grid {
-  margin-bottom: 33px;
+  margin-bottom: 20px;
 }
 
 .conditional-block .yes-no-chip-grid {
-  margin-bottom: 33px;
+  margin-bottom: 20px;
 }
 
 .conditional-block .yes-no-chip-grid:last-child {
@@ -900,7 +900,7 @@ body.onboarding-active .app {
 .skill-list,
 #levelsList {
   display: grid;
-  gap: 33px;
+  gap: 20px;
 }
 
 .skill-row,
