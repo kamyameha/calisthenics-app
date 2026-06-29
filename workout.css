@@ -791,7 +791,7 @@ body.workout-active .bottom-nav {
 
 .energy-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 19px 14px;
+  gap: 9px;
   justify-content: stretch;
   margin: 0;
 }
@@ -822,12 +822,12 @@ body.workout-active .bottom-nav {
 }
 
 .custom-checklist-card {
-  margin: 71px 0 0;
+  margin: 51px 0 0;
   padding: 0;
 }
 
 .custom-checklist-card h2 {
-  margin: 0 0 44px;
+  margin: 0 0 28px;
   color: var(--main);
   font-size: 24px;
   line-height: 1.1;
@@ -1401,7 +1401,7 @@ body.workout-active .bottom-nav {
 @media (min-width: 700px) {
   .energy-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 19px 14px;
+    gap: 9px;
   }
 
   .energy-option {
