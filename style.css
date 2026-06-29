@@ -999,6 +999,7 @@ body.onboarding-active .app {
   height: calc(74px + env(safe-area-inset-bottom));
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  align-items: start;
   gap: 0;
   padding: 0 22px env(safe-area-inset-bottom);
   border: 0;
@@ -1035,7 +1036,11 @@ body.onboarding-active .app {
 }
 
 .nav-btn {
-  min-height: 74px;
+  height: 74px;
+  min-height: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
   padding: 3px 0 0;
   border: 0;
   border-radius: 0;
@@ -1043,7 +1048,9 @@ body.onboarding-active .app {
   color: #b2b4b8;
   font-size: 16px;
   font-weight: 500;
+  line-height: 1.2;
   -webkit-tap-highlight-color: transparent;
+  appearance: none;
 }
 
 .nav-btn.active {
