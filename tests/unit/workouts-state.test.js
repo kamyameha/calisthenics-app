@@ -102,4 +102,13 @@ const stateStore = window.SomthingreatState.create({
   assert(escaped.includes('&lt;script&gt;'));
 }
 
+{
+  const now = new Date('2026-06-29T12:00:00.000Z');
+  const recentWorkout = { history: [{ date: '2026-06-20T12:00:00.000Z' }] };
+  const oldWorkout = { history: [{ date: '2026-06-01T12:00:00.000Z' }] };
+  assert.strictEqual(window.SomthingreatAdmin.formatAdminActive({}, recentWorkout, now), 'Y');
+  assert.strictEqual(window.SomthingreatAdmin.formatAdminActive({ current_auth_user_id: 'auth-1' }, oldWorkout, now), 'N');
+  assert.strictEqual(window.SomthingreatAdmin.formatAdminActive({}, { history: [] }, now), 'N');
+}
+
 console.log('Unit tests passed.');
