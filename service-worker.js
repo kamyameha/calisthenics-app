@@ -1,21 +1,21 @@
 // Release rule: when deploying, keep this cache name aligned with the
 // CSS/JS query versions in index.html.
-const CACHE_NAME = 'somthingreat-v8-52-recovery-activity-single-app';
+const CACHE_NAME = 'somthingreat-v8-54-recovery-menu-polish';
 const APP_SHELL = [
   './',
   './index.html',
-  './style.css?v=v8-52-recovery-activity-single-app',
-  './welcome.css?v=v8-52-recovery-activity-single-app',
-  './auth.css?v=v8-52-recovery-activity-single-app',
-  './workout.css?v=v8-52-recovery-activity-single-app',
-  './account.css?v=v8-52-recovery-activity-single-app',
-  './auth.js?v=v8-52-recovery-activity-single-app',
-  './workouts.js?v=v8-52-recovery-activity-single-app',
-  './state.js?v=v8-52-recovery-activity-single-app',
-  './account.js?v=v8-52-recovery-activity-single-app',
-  './admin.js?v=v8-52-recovery-activity-single-app',
-  './render.js?v=v8-52-recovery-activity-single-app',
-  './app.js?v=v8-52-recovery-activity-single-app',
+  './style.css?v=v8-54-recovery-menu-polish',
+  './welcome.css?v=v8-54-recovery-menu-polish',
+  './auth.css?v=v8-54-recovery-menu-polish',
+  './workout.css?v=v8-54-recovery-menu-polish',
+  './account.css?v=v8-54-recovery-menu-polish',
+  './auth.js?v=v8-54-recovery-menu-polish',
+  './workouts.js?v=v8-54-recovery-menu-polish',
+  './state.js?v=v8-54-recovery-menu-polish',
+  './account.js?v=v8-54-recovery-menu-polish',
+  './admin.js?v=v8-54-recovery-menu-polish',
+  './render.js?v=v8-54-recovery-menu-polish',
+  './app.js?v=v8-54-recovery-menu-polish',
   './version.json',
   './manifest.json',
   './supabase-config.js',
@@ -48,6 +48,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cacheAppShell(cache))
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -59,6 +60,7 @@ self.addEventListener('activate', event => {
           .filter(key => key !== CACHE_NAME)
           .map(key => caches.delete(key))
       ))
+      .then(() => self.clients.claim())
   );
 });
 

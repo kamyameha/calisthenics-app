@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-52-recovery-activity-single-app';
+const APP_VERSION = 'v8-54-recovery-menu-polish';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -389,6 +389,12 @@ function queueCloudSave() {
 function normaliseEmail(email = '') {
   return adminModule.normaliseEmail(email);
 }
+
+function setThemeColor(color = '#ffffff') {
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', color);
+}
+
 function isAdminUser() {
   return adminModule.isAdminUser(currentUser, ADMIN_EMAILS);
 }
@@ -1761,11 +1767,7 @@ function isSafeToShowUpdateBanner() {
     updateBannerReady &&
     !passwordRecoveryMode &&
     !state.current &&
-    !state.selectedEnergy &&
-    !state.generated &&
-    !document.body.classList.contains('logged-out') &&
-    !accountPanel?.classList.contains('account-open') &&
-    onboarding?.classList.contains('hidden')
+    !accountPanel?.classList.contains('account-open')
   );
 }
 
@@ -1950,6 +1952,7 @@ function closeAccountModal() {
   panel.classList.remove('account-open', 'account-main-mode', 'account-submenu-mode');
   panel.classList.add('hidden');
   showAccountView('main');
+  setThemeColor('#ffffff');
   updateUpdateBanner();
 }
 
@@ -1968,6 +1971,11 @@ function showAccountView(view) {
   if (panel) panel.classList.remove('account-password-mode');
   if (panel) panel.classList.toggle('account-main-mode', view === 'main');
   if (panel) panel.classList.toggle('account-submenu-mode', submenuViews.includes(view));
+  if (view === 'main') {
+    setThemeColor('#012ded');
+  } else if (submenuViews.includes(view)) {
+    setThemeColor('#ffffff');
+  }
   if (panel) panel.scrollTop = 0;
   if (content) content.scrollTop = 0;
   if (view === 'goal') populateAccountGoal();

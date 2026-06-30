@@ -145,7 +145,7 @@
   min-height: 100dvh;
   margin: 0 auto;
   overflow: hidden;
-  padding: calc(59px + env(safe-area-inset-top)) var(--screen-x) calc(50px + env(safe-area-inset-bottom));
+  padding: calc(var(--space-5) + env(safe-area-inset-top)) var(--screen-x) calc(50px + env(safe-area-inset-bottom));
   border: 0;
   border-radius: 0;
   background: var(--main);
@@ -195,7 +195,7 @@
 
 .account-panel.account-modal.account-main-mode #accountMainView {
   position: relative;
-  min-height: calc(100dvh - 59px - 50px - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 18px - 80px);
+  min-height: calc(100dvh - var(--space-5) - 50px - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 18px - 80px);
   padding-bottom: 88px;
 }
 
@@ -289,8 +289,9 @@
   max-height: none;
   min-height: 100dvh;
   margin: 0 auto;
-  overflow: hidden;
-  padding: calc(59px + env(safe-area-inset-top)) var(--screen-x) calc(50px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: calc(var(--space-5) + env(safe-area-inset-top)) var(--screen-x) calc(80px + env(safe-area-inset-bottom));
   border: 0;
   border-radius: 0;
   background: #ffffff;
@@ -439,7 +440,9 @@
 }
 
 .account-panel.account-modal.account-submenu-mode .recovery-select {
-  width: 100%;
+  width: 353px;
+  max-width: 100%;
+  flex: 0 0 min(353px, 100%);
   height: 46px;
   padding: 0 21px;
   border: 1px solid var(--main);
@@ -447,7 +450,7 @@
   background: transparent;
   color: var(--main);
   font: inherit;
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1;
   appearance: none;
 }
@@ -461,13 +464,14 @@
 
 .account-panel.account-modal.account-submenu-mode .recovery-mode-row .option-row {
   width: 100%;
+  font-size: 16px;
 }
 
 .account-panel.account-modal.account-submenu-mode .active-recovery-card {
   width: 100%;
   display: grid;
   gap: 15px;
-  margin-top: 20px;
+  margin-top: 38px;
   padding: 20px;
   border-radius: 20px;
   background: var(--main);
