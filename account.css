@@ -73,28 +73,13 @@
 }
 
 #closeAccountModalBtn {
-  min-width: 26px;
-  width: 26px;
-  height: 26px;
-  display: grid;
-  place-items: center;
-  border: 0;
+  min-width: 44px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: #000000;
-  color: transparent;
   padding: 0;
-  font-size: 0;
-  line-height: 0;
-}
-
-#closeAccountModalBtn::before {
-  content: "";
-  display: block;
-  width: 24px;
-  height: 24px;
-  background: #ffffff;
-  mask: url("./x.svg") center / 24px 24px no-repeat;
-  -webkit-mask: url("./x.svg") center / 24px 24px no-repeat;
+  font-size: 22px;
+  line-height: 1;
 }
 
 .account-section {
@@ -189,8 +174,8 @@
   width: 26px;
   height: 26px;
   border: 0;
-  border-radius: 50%;
-  background: #000000;
+  border-radius: 0;
+  background: transparent;
   color: transparent;
   padding: 0;
   margin: 0;
@@ -201,11 +186,11 @@
 .account-panel.account-modal.account-main-mode #closeAccountModalBtn::before {
   content: "";
   display: block;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   background: #ffffff;
-  mask: url("./x.svg") center / 24px 24px no-repeat;
-  -webkit-mask: url("./x.svg") center / 24px 24px no-repeat;
+  mask: url("./x.svg") center / 26px 26px no-repeat;
+  -webkit-mask: url("./x.svg") center / 26px 26px no-repeat;
 }
 
 .account-panel.account-modal.account-main-mode #accountMainView {
@@ -334,8 +319,8 @@
   width: 26px;
   height: 26px;
   border: 0;
-  border-radius: 50%;
-  background: #000000;
+  border-radius: 0;
+  background: transparent;
   color: transparent;
   padding: 0;
   margin: 0;
@@ -346,11 +331,11 @@
 .account-panel.account-modal.account-submenu-mode #closeAccountModalBtn::before {
   content: "";
   display: block;
-  width: 24px;
-  height: 24px;
-  background: #ffffff;
-  mask: url("./x.svg") center / 24px 24px no-repeat;
-  -webkit-mask: url("./x.svg") center / 24px 24px no-repeat;
+  width: 26px;
+  height: 26px;
+  background: var(--main);
+  mask: url("./x.svg") center / 26px 26px no-repeat;
+  -webkit-mask: url("./x.svg") center / 26px 26px no-repeat;
 }
 
 .account-panel.account-modal.account-submenu-mode #accountGoalView,
@@ -792,6 +777,179 @@
   color: #ffffff;
   font-size: 18px;
   line-height: 1.1;
+  font-weight: 400;
+}
+
+.activity-screen .activity-summary-card,
+.activity-screen .activity-calendar-card {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.activity-screen .activity-summary-card {
+  padding-top: 44px;
+  margin-bottom: 44px;
+}
+
+.activity-screen .activity-summary-card h3 {
+  margin: 0 0 20px;
+  color: var(--main);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.activity-screen .activity-summary-card h3:last-child {
+  margin-bottom: 0;
+}
+
+.activity-screen .history-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 16px;
+  margin: 0 0 20px;
+}
+
+.activity-screen #historyYearTitle {
+  margin: 0 0 5px;
+  color: var(--main);
+  font-size: 20px;
+  line-height: 1.1;
+  font-weight: 400;
+}
+
+.activity-screen .history-header h3 {
+  margin: 0;
+  color: var(--main);
+  font-size: 32px;
+  line-height: 1;
+  font-weight: 700;
+  text-align: left;
+}
+
+.activity-screen .history-month-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 2px;
+}
+
+.activity-screen .history-month-controls button {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--main);
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 400;
+}
+
+.activity-screen .history-weekdays,
+.activity-screen .history-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 49px);
+  justify-content: center;
+  gap: 4px;
+}
+
+.activity-screen .history-weekdays {
+  margin: 0 0 8px;
+  color: #000000;
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.activity-screen .history-weekdays .is-today-weekday {
+  color: var(--main);
+}
+
+.activity-screen .history-day {
+  width: 49px;
+  height: 49px;
+  min-height: 49px;
+  padding: 0;
+  border: 1px solid rgba(1, 45, 237, 0.15);
+  border-radius: 50%;
+  background: transparent;
+  color: transparent;
+  appearance: none;
+}
+
+.activity-screen .history-day:disabled {
+  opacity: 1;
+}
+
+.activity-screen .history-day span {
+  display: none;
+}
+
+.activity-screen .history-day.past-empty {
+  border-color: transparent;
+  background: rgba(1, 45, 237, 0.15);
+}
+
+.activity-screen .history-day.has-workout {
+  border-color: #000000;
+  background: #000000;
+}
+
+.activity-screen .history-day.is-today,
+.activity-screen .history-day.is-selected {
+  border-color: var(--main);
+  background: var(--main);
+}
+
+.activity-screen .history-day.history-empty {
+  visibility: hidden;
+}
+
+.activity-screen .history-list {
+  margin-top: 44px;
+  padding: 0;
+  border: 0;
+}
+
+.activity-screen .history-list:empty {
+  display: none;
+}
+
+.activity-screen .history-item {
+  display: grid;
+  gap: 15px;
+  min-height: 144px;
+  align-content: center;
+  padding: 20px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--main);
+  color: #ffffff;
+}
+
+.activity-screen .history-item + .history-item {
+  margin-top: 19px;
+  padding-top: 20px;
+  border-top: 0;
+}
+
+.activity-screen .history-item strong {
+  color: #ffffff;
+  font-size: 24px;
+  line-height: 1.15;
+  font-weight: 500;
+}
+
+.activity-screen .history-item span {
+  color: #ffffff;
+  font-size: 18px;
+  line-height: 1.2;
   font-weight: 400;
 }
 
