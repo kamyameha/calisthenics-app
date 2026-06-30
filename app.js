@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-55-menu-spacing-safearea';
+const APP_VERSION = 'v8-57-workout-polish-fixes';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -1076,7 +1076,7 @@ function renderGeneratedWorkout() {
   (generated.exercises || []).filter(Boolean).forEach(exercise => {
     const row = document.createElement('div');
     row.className = 'preview-row';
-    row.innerHTML = `<strong>${exercise.name}</strong><span>${exercise.prescription}</span>`;
+    row.innerHTML = `<strong>${escapeHTML(exerciseDisplayName(exercise))}</strong><span>${escapeHTML(exercise.prescription)}</span>`;
     preview.appendChild(row);
   });
 }
@@ -1120,7 +1120,7 @@ function isExerciseComplete(exercise) {
 
 function firstIncompleteExerciseKey() {
   const exercises = state.current?.exercises || [];
-  return exercises.find(exercise => !isExerciseComplete(exercise))?.trackKey || exercises[0]?.trackKey || null;
+  return exercises.find(exercise => !isExerciseComplete(exercise))?.trackKey || null;
 }
 
 function openNextIncompleteExercise(afterTrackKey = null) {
@@ -1141,11 +1141,18 @@ function exerciseChipPrescription(exercise) {
   return prescription.replace(/×/g, 'x');
 }
 
+function exerciseDisplayName(exerciseOrName) {
+  const name = typeof exerciseOrName === 'string' ? exerciseOrName : exerciseOrName?.name;
+  if (name === '2-min full-body warm-up') return 'Warm-up';
+  return name || '';
+}
+
 function setControlMarkup(exercise, index, completed, timedSeconds) {
   const label = exercise.setLabels?.[index] || `Round ${index + 1}`;
   const iconClass = completed ? 'is-check' : timedSeconds ? 'is-timer' : 'is-square';
+  const exerciseName = exerciseDisplayName(exercise);
   const timerData = timedSeconds
-    ? `data-timer-seconds="${timedSeconds}" data-exercise-name="${escapeHTML(exercise.name)}" data-track="${escapeHTML(exercise.trackKey)}" data-set-index="${index}" data-set-label="${escapeHTML(label)}"`
+    ? `data-timer-seconds="${timedSeconds}" data-exercise-name="${escapeHTML(exerciseName)}" data-track="${escapeHTML(exercise.trackKey)}" data-set-index="${index}" data-set-label="${escapeHTML(label)}"`
     : '';
   return `
     <div class="set-row ${timedSeconds ? 'timed-set-row' : ''} ${completed ? 'completed' : ''}">
@@ -1153,6 +1160,11 @@ function setControlMarkup(exercise, index, completed, timedSeconds) {
       <button class="set-control ${iconClass}" type="button" data-track="${escapeHTML(exercise.trackKey)}" data-set-index="${index}" ${timerData} aria-label="${completed ? 'Completed' : timedSeconds ? `Start ${label} timer` : `Complete ${label}`}"></button>
     </div>
   `;
+}
+
+function shouldStartRestTimerAfterSet(trackKey) {
+  const exercise = findCurrentExercise(trackKey);
+  return Boolean(state.current?.includeRestTimer && !exercise?.isAddOn && hasRemainingWorkoutSets());
 }
 
 function renderExercises() {
@@ -1181,6 +1193,7 @@ function renderExercises() {
   state.current.exercises.forEach((exercise) => {
     const isOpen = exercise.trackKey === openExerciseTrackKey;
     const isComplete = isExerciseComplete(exercise);
+    const chipPrescription = isComplete ? '' : `<em>${escapeHTML(exerciseChipPrescription(exercise))}</em>`;
     const card = document.createElement('div');
     card.className = `exercise-card workout-accordion-card ${isOpen ? 'open' : ''} ${isComplete ? 'completed' : ''}`;
     card.dataset.track = exercise.trackKey;
@@ -1189,11 +1202,12 @@ function renderExercises() {
     if (!state.current.sets[exercise.trackKey]) state.current.sets[exercise.trackKey] = Array.from({ length: exercise.setCount || 1 }, () => false);
     const completedSets = state.current.sets[exercise.trackKey];
     const timedSeconds = state.current.includeExerciseTimer ? getTimedExerciseSeconds(exercise) : null;
+    const exerciseName = exerciseDisplayName(exercise);
     const setRows = Array.from({ length: exercise.setCount || completedSets.length || 1 }, (_, index) => {
       return setControlMarkup(exercise, index, Boolean(completedSets[index]), timedSeconds);
     }).join('');
-    const help = getExerciseHelp(exercise.name);
-    const helpButton = help ? `<button class="exercise-help-btn" type="button" data-exercise-name="${escapeHTML(exercise.name)}" aria-label="Help with ${escapeHTML(exercise.name)}">?</button>` : '';
+    const help = getExerciseHelp(exerciseName);
+    const helpButton = help ? `<button class="exercise-help-btn" type="button" data-exercise-name="${escapeHTML(exerciseName)}" aria-label="Help with ${escapeHTML(exerciseName)}">?</button>` : '';
     const ratingBlock = exercise.isAddOn ? '' : `
       <p class="rating-label">How was it?</p>
       <div class="rating-row" data-track="${exercise.trackKey}">
@@ -1204,13 +1218,13 @@ function renderExercises() {
       </div>`;
     card.innerHTML = `
       <button class="exercise-chip-toggle" type="button" data-track="${escapeHTML(exercise.trackKey)}">
-        <span>${escapeHTML(exercise.name)}</span>
-        <em>${escapeHTML(exerciseChipPrescription(exercise))}</em>
+        <span>${escapeHTML(exerciseName)}</span>
+        ${chipPrescription}
         <i aria-hidden="true"></i>
       </button>
       <div class="exercise-card-body">
         <div class="exercise-card-header">
-          <h3>${escapeHTML(exercise.name)} - ${escapeHTML(exercise.prescription)}</h3>
+          <h3>${escapeHTML(exerciseName)} - ${escapeHTML(exercise.prescription)}</h3>
           ${helpButton}
         </div>
         <div class="set-list">${setRows}</div>
@@ -1253,12 +1267,13 @@ function closeConfirmPanel() {
 }
 
 function showExerciseHelp(exerciseName) {
-  const help = getExerciseHelp(exerciseName);
+  const displayName = exerciseDisplayName(exerciseName);
+  const help = getExerciseHelp(displayName);
   const panel = document.getElementById('exerciseHelpPanel');
   if (!help || !panel) return;
 
   lastFocusedElement = document.activeElement;
-  document.getElementById('exerciseHelpTitle').textContent = exerciseName;
+  document.getElementById('exerciseHelpTitle').textContent = displayName;
   document.getElementById('exerciseHelpPurpose').textContent = help.purpose || '';
   const cues = document.getElementById('exerciseHelpCues');
   if (cues) {
@@ -1358,7 +1373,9 @@ function tickWorkoutTimer() {
     clearInterval(timerInterval);
     timerInterval = null;
     if (activeTimer.completeOnFinish && activeTimer.trackKey) {
-      markWorkoutSetDone(activeTimer.trackKey, activeTimer.setIndex, true);
+      const completedTrackKey = activeTimer.trackKey;
+      markWorkoutSetDone(completedTrackKey, activeTimer.setIndex, true);
+      activeTimer.pendingRestTimer = shouldStartRestTimerAfterSet(completedTrackKey);
     }
     if (timerAutoClose) clearTimeout(timerAutoClose);
     timerAutoClose = window.setTimeout(() => closeWorkoutTimer(false), 2500);
@@ -1389,6 +1406,7 @@ function showWorkoutTimer({ title, subtitle, seconds, prepSeconds = 0, trackKey 
 }
 
 function closeWorkoutTimer(restoreFocus = true) {
+  const shouldStartRestTimer = Boolean(activeTimer?.pendingRestTimer);
   if (timerInterval) clearInterval(timerInterval);
   if (timerAutoClose) clearTimeout(timerAutoClose);
   timerInterval = null;
@@ -1399,6 +1417,15 @@ function closeWorkoutTimer(restoreFocus = true) {
     lastFocusedElement.focus();
   }
   if (restoreFocus) lastFocusedElement = null;
+  if (shouldStartRestTimer) {
+    window.setTimeout(() => {
+      showWorkoutTimer({
+        title: 'Rest',
+        subtitle: 'Rest',
+        seconds: 60
+      });
+    }, 0);
+  }
 }
 
 function hasRemainingWorkoutSets() {
@@ -1954,6 +1981,7 @@ function closeAccountModal() {
   panel.classList.remove('account-open', 'account-main-mode', 'account-submenu-mode');
   panel.classList.add('hidden');
   showAccountView('main');
+  document.body.classList.remove('account-main-active', 'account-submenu-active');
   setThemeColor('#ffffff');
   updateUpdateBanner();
 }
@@ -1971,8 +1999,12 @@ function showAccountView(view) {
   const content = document.getElementById('loggedInAccount');
   const submenuViews = ['goal', 'equipment', 'recovery', 'password', 'support', 'admin'];
   if (panel) panel.classList.remove('account-password-mode');
-  if (panel) panel.classList.toggle('account-main-mode', view === 'main');
-  if (panel) panel.classList.toggle('account-submenu-mode', submenuViews.includes(view));
+  const isMainView = view === 'main';
+  const isSubmenuView = submenuViews.includes(view);
+  if (panel) panel.classList.toggle('account-main-mode', isMainView);
+  if (panel) panel.classList.toggle('account-submenu-mode', isSubmenuView);
+  document.body.classList.toggle('account-main-active', isMainView);
+  document.body.classList.toggle('account-submenu-active', isSubmenuView);
   setThemeColor('#ffffff');
   if (panel) panel.scrollTop = 0;
   if (content) content.scrollTop = 0;
@@ -2629,9 +2661,8 @@ document.addEventListener('click', event => {
       });
       return;
     }
-    const exercise = findCurrentExercise(trackKey);
     markWorkoutSetDone(trackKey, setIndex, !currentDone);
-    if (!currentDone && state.current?.includeRestTimer && !exercise?.isAddOn && hasRemainingWorkoutSets()) {
+    if (!currentDone && shouldStartRestTimerAfterSet(trackKey)) {
       showWorkoutTimer({
         title: 'Rest',
         subtitle: 'Rest',
@@ -2718,8 +2749,7 @@ document.addEventListener('click', event => {
     if (!state.current.sets[trackKey]) state.current.sets[trackKey] = [false, false, false];
     state.current.sets[trackKey][setIndex] = event.target.checked;
     saveState();
-    const exercise = findCurrentExercise(trackKey);
-    if (event.target.checked && state.current.includeRestTimer && !exercise?.isAddOn && hasRemainingWorkoutSets()) {
+    if (event.target.checked && shouldStartRestTimerAfterSet(trackKey)) {
       const restSeconds = 60;
       showWorkoutTimer({
         title: 'Rest',

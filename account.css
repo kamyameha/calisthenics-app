@@ -279,13 +279,41 @@
 
 .account-panel.account-modal.account-submenu-mode {
   align-items: stretch;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
   padding: 0;
-  background: #ffffff;
+  background: #ffffff !important;
   overflow: hidden;
 }
 
+body.account-submenu-active,
+body.account-submenu-active .app,
+body.account-submenu-active #accountPanel {
+  background: #ffffff !important;
+}
+
+.account-panel.account-modal.account-submenu-mode::before {
+  content: "";
+  position: fixed;
+  top: -160px;
+  left: 0;
+  right: 0;
+  height: 180px;
+  background: #ffffff;
+  pointer-events: none;
+  z-index: 0;
+}
+
 .account-panel.account-modal.account-submenu-mode .account-modal-content {
+  position: relative;
+  z-index: 1;
   width: min(100vw, var(--app-width));
+  height: 100vh;
+  height: 100dvh;
   max-height: none;
   min-height: 100dvh;
   margin: 0 auto;
@@ -471,7 +499,7 @@
   width: 100%;
   display: grid;
   gap: 15px;
-  margin-top: 38px;
+  margin-top: 33px;
   padding: 20px;
   border-radius: 20px;
   background: var(--main);

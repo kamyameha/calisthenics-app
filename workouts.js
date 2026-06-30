@@ -134,7 +134,7 @@
   const workoutAddOns = {
     warmup: {
       trackKey: 'warmup',
-      name: '2-min full-body warm-up',
+      name: 'Warm-up',
       prescription: '2 min · 30s each',
       setCount: 4,
       isAddOn: true,
@@ -383,7 +383,7 @@
       cues: ['Lie under a very stable table and hold the edge with both hands.', 'Keep your body straight and feet on the floor.', 'Pull your chest toward the table edge, then lower slowly.'],
       safety: 'Only use furniture that cannot tip or slide.'
     },
-    '2-min full-body warm-up': {
+    'Warm-up': {
       purpose: 'Raises temperature and prepares joints before training.',
       cues: ['Do each listed movement for about 30 seconds.', 'Move lightly and breathe steadily.', 'Treat it as preparation, not a test.'],
       safety: 'Keep it easy and pain-free.'
@@ -598,58 +598,6 @@
     ];
   }
 
-  function getActiveRecovery(state = {}) {
-    const recovery = state?.recovery;
-    if (!recovery || typeof recovery !== 'object') return null;
-    if (recovery.until && !Number.isNaN(new Date(recovery.until).getTime()) && new Date(recovery.until).getTime() < Date.now()) return null;
-    return recovery.area ? recovery : null;
-  }
-
-  function getRecoveryGroup(area = '') {
-    const lower = String(area).toLowerCase();
-    if (lower.includes('shoulder')) return 'shoulder';
-    if (lower.includes('knee')) return 'knee';
-    if (lower.includes('wrist')) return 'wrist';
-    if (lower.includes('ankle')) return 'ankle';
-    if (lower.includes('elbow')) return 'elbow';
-    return '';
-  }
-
-  function getRecoveryBlockedTracks(recovery) {
-    const group = getRecoveryGroup(recovery?.area);
-    if (group === 'shoulder') return new Set(['pullup', 'pushup', 'dip', 'handstand', 'muscleup', 'crow']);
-    if (group === 'wrist') return new Set(['pushup']);
-    if (group === 'knee' || group === 'ankle') return new Set(['rope']);
-    return new Set();
-  }
-
-  function getRecoverySwapTrack(trackKey, recovery) {
-    const group = getRecoveryGroup(recovery?.area);
-    if (group === 'wrist' && trackKey === 'pushup') return 'core';
-    if ((group === 'knee' || group === 'ankle') && trackKey === 'rope') return 'core';
-    return trackKey;
-  }
-
-  function applyRecoveryToTracks(tracks, workout, desiredCount, profile, recovery) {
-    if (!recovery) return tracks;
-    const availableTracks = getTracks(profile);
-    const blocked = getRecoveryBlockedTracks(recovery);
-    const fallbackOrder = ['core', 'legs', 'rope', 'lsit', 'pushup', 'dip', 'pullup', 'handstand', 'crow', 'muscleup'];
-    const nextTracks = [];
-    const addTrack = trackKey => {
-      const swapped = getRecoverySwapTrack(trackKey, recovery);
-      if (blocked.has(swapped) || !isTrackAvailable(swapped, availableTracks) || nextTracks.includes(swapped)) return;
-      nextTracks.push(swapped);
-    };
-
-    tracks.forEach(addTrack);
-    fallbackOrder.forEach(trackKey => {
-      if (nextTracks.length < desiredCount) addTrack(trackKey);
-    });
-
-    return nextTracks.slice(0, desiredCount);
-  }
-
   function buildWorkoutTracks(workout, desiredCount, profile = null) {
     const availableTracks = getTracks(profile);
     const fillByWorkout = {
@@ -673,14 +621,7 @@
     const rotation = getRotation(profile);
     const workout = rotation[(state.rotationIndex || 0) % rotation.length];
     const config = getEnergyConfig(mode);
-    const recovery = getActiveRecovery(state);
-    const tracks = applyRecoveryToTracks(
-      buildWorkoutTracks(workout, config.exerciseCount, profile),
-      workout,
-      config.exerciseCount,
-      profile,
-      recovery
-    );
+    const tracks = buildWorkoutTracks(workout, config.exerciseCount, profile);
 
     return {
       mode: config.mode,
