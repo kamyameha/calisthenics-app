@@ -1,21 +1,21 @@
 // Release rule: when deploying, keep this cache name aligned with the
 // CSS/JS query versions in index.html.
-const CACHE_NAME = 'somthingreat-v8-57-workout-polish-fixes';
+const CACHE_NAME = 'somthingreat-v8-58-refresh-button-fix';
 const APP_SHELL = [
   './',
   './index.html',
-  './style.css?v=v8-57-workout-polish-fixes',
-  './welcome.css?v=v8-57-workout-polish-fixes',
-  './auth.css?v=v8-57-workout-polish-fixes',
-  './workout.css?v=v8-57-workout-polish-fixes',
-  './account.css?v=v8-57-workout-polish-fixes',
-  './auth.js?v=v8-57-workout-polish-fixes',
-  './workouts.js?v=v8-57-workout-polish-fixes',
-  './state.js?v=v8-57-workout-polish-fixes',
-  './account.js?v=v8-57-workout-polish-fixes',
-  './admin.js?v=v8-57-workout-polish-fixes',
-  './render.js?v=v8-57-workout-polish-fixes',
-  './app.js?v=v8-57-workout-polish-fixes',
+  './style.css?v=v8-58-refresh-button-fix',
+  './welcome.css?v=v8-58-refresh-button-fix',
+  './auth.css?v=v8-58-refresh-button-fix',
+  './workout.css?v=v8-58-refresh-button-fix',
+  './account.css?v=v8-58-refresh-button-fix',
+  './auth.js?v=v8-58-refresh-button-fix',
+  './workouts.js?v=v8-58-refresh-button-fix',
+  './state.js?v=v8-58-refresh-button-fix',
+  './account.js?v=v8-58-refresh-button-fix',
+  './admin.js?v=v8-58-refresh-button-fix',
+  './render.js?v=v8-58-refresh-button-fix',
+  './app.js?v=v8-58-refresh-button-fix',
   './version.json',
   './manifest.json',
   './supabase-config.js',
@@ -48,7 +48,6 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cacheAppShell(cache))
-      .then(() => self.skipWaiting())
   );
 });
 

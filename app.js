@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-57-workout-polish-fixes';
+const APP_VERSION = 'v8-58-refresh-button-fix';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -1823,6 +1823,9 @@ function applyWaitingUpdate() {
   applyingUpdate = true;
   if (waitingServiceWorker) {
     waitingServiceWorker.postMessage({ type: 'SKIP_WAITING' });
+    window.setTimeout(() => {
+      window.location.reload();
+    }, 1200);
     return;
   }
   window.location.reload();
