@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-54-recovery-menu-polish';
+const APP_VERSION = 'v8-55-menu-spacing-safearea';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -393,6 +393,8 @@ function normaliseEmail(email = '') {
 function setThemeColor(color = '#ffffff') {
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', color);
+  document.documentElement.style.backgroundColor = color;
+  document.body.style.backgroundColor = color;
 }
 
 function isAdminUser() {
@@ -1971,11 +1973,7 @@ function showAccountView(view) {
   if (panel) panel.classList.remove('account-password-mode');
   if (panel) panel.classList.toggle('account-main-mode', view === 'main');
   if (panel) panel.classList.toggle('account-submenu-mode', submenuViews.includes(view));
-  if (view === 'main') {
-    setThemeColor('#012ded');
-  } else if (submenuViews.includes(view)) {
-    setThemeColor('#ffffff');
-  }
+  setThemeColor('#ffffff');
   if (panel) panel.scrollTop = 0;
   if (content) content.scrollTop = 0;
   if (view === 'goal') populateAccountGoal();

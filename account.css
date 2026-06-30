@@ -531,7 +531,7 @@
 .account-panel.account-modal.account-submenu-mode .account-full-btn {
   width: 100%;
   min-height: 46px;
-  margin: 52px 0 0;
+  margin: 33px 0 0;
   border-radius: 20px;
   background: var(--main);
   border-color: var(--main);
@@ -542,7 +542,7 @@
 }
 
 .account-panel.account-modal.account-submenu-mode #accountPasswordView .account-full-btn {
-  margin-top: 52px;
+  margin-top: 33px;
 }
 
 .account-panel.account-modal.account-submenu-mode .auth-message {
