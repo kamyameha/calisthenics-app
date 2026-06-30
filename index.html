@@ -27,11 +27,11 @@
     })();
   </script>
   <!-- Release rule: keep CSS/JS query versions aligned with service-worker.js CACHE_NAME. -->
-  <link rel="stylesheet" href="style.css?v=v8-51-nav-close-spacing" />
-  <link rel="stylesheet" href="welcome.css?v=v8-51-nav-close-spacing" />
-  <link rel="stylesheet" href="auth.css?v=v8-51-nav-close-spacing" />
-  <link rel="stylesheet" href="workout.css?v=v8-51-nav-close-spacing" />
-  <link rel="stylesheet" href="account.css?v=v8-51-nav-close-spacing" />
+  <link rel="stylesheet" href="style.css?v=v8-51-progress-activity-split-pull" />
+  <link rel="stylesheet" href="welcome.css?v=v8-51-progress-activity-split-pull" />
+  <link rel="stylesheet" href="auth.css?v=v8-51-progress-activity-split-pull" />
+  <link rel="stylesheet" href="workout.css?v=v8-51-progress-activity-split-pull" />
+  <link rel="stylesheet" href="account.css?v=v8-51-progress-activity-split-pull" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -143,11 +143,6 @@
           </div>
 
           <div class="account-section">
-            <h3>Monthly view</h3>
-            <button class="account-list-btn" type="button" data-account-view="history">Activity <span id="accountHistorySummary"></span></button>
-          </div>
-
-          <div class="account-section">
             <h3>Assistance</h3>
             <button class="account-list-btn" type="button" data-account-view="support">Support</button>
           </div>
@@ -192,25 +187,6 @@
           <p class="muted">We will email you a secure reset link so you can choose a new password.</p>
           <button id="saveAccountPasswordBtn" class="primary-btn account-full-btn" type="button">Send reset link</button>
           <p id="accountPasswordMessage" class="auth-message" aria-live="polite"></p>
-        </div>
-
-        <div id="accountHistoryView" class="account-view hidden">
-          <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
-          <h2>Activity</h2>
-          <p id="historyYearSummary" class="muted">This year: 0 workouts</p>
-          <div class="history-header">
-            <div>
-              <p id="historyYearTitle">2026</p>
-              <h3 id="historyMonthTitle">June</h3>
-            </div>
-            <div class="history-month-controls">
-              <button id="historyPrevMonthBtn" class="ghost-btn compact" type="button" aria-label="Previous month">←</button>
-              <button id="historyNextMonthBtn" class="ghost-btn compact" type="button" aria-label="Next month">→</button>
-            </div>
-          </div>
-          <div class="history-weekdays"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
-          <div id="historyCalendar" class="history-calendar"></div>
-          <div id="historyList" class="history-list"></div>
         </div>
 
         <div id="accountSupportView" class="account-view hidden">
@@ -440,35 +416,11 @@
       <button id="completeBtn" class="primary-btn hidden">Complete Workout</button>
     </section>
 
-    <section id="goals" class="screen focus-screen">
+    <section id="progress" class="screen progress-screen">
       <section class="hero-card goal-hero">
-        <p class="muted-light">Main goal</p>
+        <p class="muted-light">Main focus</p>
         <h2 id="goalHeroTitle">First pull-up</h2>
         <div class="progress-bar"><span id="pullupProgressBar"></span></div>
-      </section>
-
-      <section class="card">
-        <p id="goalJourneyTitle" class="eyebrow">Pull-up journey</p>
-        <div id="pullupJourney" class="journey-list"></div>
-      </section>
-
-      <section class="card">
-        <p class="eyebrow">Skills</p>
-        <div id="skillList" class="skill-list"></div>
-      </section>
-    </section>
-
-    <section id="progress" class="screen progress-screen">
-      <section class="card stat-card">
-        <p class="eyebrow">This month</p>
-        <p class="big-number"><span id="monthlyCount">0</span></p>
-        <p class="muted">Workouts completed</p>
-      </section>
-
-      <section id="consistencyCard" class="hero-card consistency-card">
-        <p class="muted-light">Consistency</p>
-        <h2 id="consistencyTitle">Your rhythm starts here.</h2>
-        <p id="consistencyMessage">Complete your first workout to start building consistency.</p>
       </section>
 
       <section class="card">
@@ -476,12 +428,35 @@
         <div id="levelsList"></div>
       </section>
     </section>
+
+    <section id="activity" class="screen activity-screen">
+      <section class="card activity-summary-card">
+        <h3 id="historyYearSummary">This year: 0 workouts</h3>
+        <h3 id="historyMonthSummary">This month: 0 workouts</h3>
+      </section>
+
+      <section class="card activity-calendar-card">
+        <div class="history-header">
+          <div>
+            <p id="historyYearTitle">2026</p>
+            <h3 id="historyMonthTitle">June</h3>
+          </div>
+          <div class="history-month-controls">
+            <button id="historyPrevMonthBtn" class="ghost-btn compact" type="button" aria-label="Previous month">←</button>
+            <button id="historyNextMonthBtn" class="ghost-btn compact" type="button" aria-label="Next month">→</button>
+          </div>
+        </div>
+        <div class="history-weekdays"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+        <div id="historyCalendar" class="history-calendar"></div>
+        <div id="historyList" class="history-list"></div>
+      </section>
+    </section>
   </main>
 
   <nav class="bottom-nav hidden">
     <button class="nav-btn active" data-screen="today" aria-current="page">Today</button>
-    <button class="nav-btn" data-screen="goals">Focus</button>
     <button class="nav-btn" data-screen="progress">Progress</button>
+    <button class="nav-btn" data-screen="activity">Activity</button>
   </nav>
 
   <div id="updateBanner" class="update-banner hidden" role="status" aria-live="polite">
@@ -519,12 +494,12 @@
     </div>
   </div>
 
-  <script src="auth.js?v=v8-51-nav-close-spacing"></script>
-  <script src="workouts.js?v=v8-51-nav-close-spacing"></script>
-  <script src="state.js?v=v8-51-nav-close-spacing"></script>
-  <script src="account.js?v=v8-51-nav-close-spacing"></script>
-  <script src="admin.js?v=v8-51-nav-close-spacing"></script>
-  <script src="render.js?v=v8-51-nav-close-spacing"></script>
-  <script src="app.js?v=v8-51-nav-close-spacing"></script>
+  <script src="auth.js?v=v8-51-progress-activity-split-pull"></script>
+  <script src="workouts.js?v=v8-51-progress-activity-split-pull"></script>
+  <script src="state.js?v=v8-51-progress-activity-split-pull"></script>
+  <script src="account.js?v=v8-51-progress-activity-split-pull"></script>
+  <script src="admin.js?v=v8-51-progress-activity-split-pull"></script>
+  <script src="render.js?v=v8-51-progress-activity-split-pull"></script>
+  <script src="app.js?v=v8-51-progress-activity-split-pull"></script>
 </body>
 </html>
