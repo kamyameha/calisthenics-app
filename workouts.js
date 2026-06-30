@@ -178,6 +178,11 @@
       cues: ['Hang from a pull-up bar with a firm grip.', 'For the negative, step or jump to the top position with chin near the bar.', 'Lower as slowly as you can while keeping shoulders active.'],
       safety: 'Use a step or chair to reach the top safely. Step down if grip or shoulder control feels unsafe.'
     },
+    'Dead hang': {
+      purpose: 'Builds grip strength and active shoulder control for pull-ups.',
+      cues: ['Hang from the pull-up bar with a firm grip.', 'Keep shoulders active and slightly pulled down.', 'Stay still and breathe steadily until the timer ends.'],
+      safety: 'Step down if grip or shoulder control feels unsafe.'
+    },
     'Scapular pull-up': {
       purpose: 'Teaches shoulder-blade control for stronger, cleaner pull-ups.',
       cues: ['Hang from a bar with straight arms.', 'Without bending your elbows, pull shoulders down away from ears.', 'Let your body rise slightly, then return to a relaxed hang.'],
@@ -563,6 +568,36 @@
     };
   }
 
+  function splitCompoundExercise(exercise) {
+    if (exercise?.name !== 'Dead hang + negative pull-up') return [exercise];
+
+    const deadHangMatch = exercise.prescription.match(/(\d+)\s*×\s*(\d+)s/);
+    const negativeMatch = exercise.prescription.match(/\+\s*(\d+)\s*×\s*(\d+)/);
+    const deadHangPrescription = deadHangMatch ? `${deadHangMatch[1]} × ${deadHangMatch[2]}s` : '3 × 30s';
+    const negativePrescription = negativeMatch ? `${negativeMatch[1]} × ${negativeMatch[2]}` : '3 × 2';
+
+    return [
+      {
+        ...exercise,
+        trackKey: `${exercise.trackKey}-dead-hang`,
+        progressionTrackKey: exercise.trackKey,
+        name: 'Dead hang',
+        prescription: deadHangPrescription,
+        basePrescription: deadHangPrescription,
+        setCount: getSetCount(deadHangPrescription)
+      },
+      {
+        ...exercise,
+        trackKey: `${exercise.trackKey}-negative-pull-up`,
+        progressionTrackKey: exercise.trackKey,
+        name: 'Negative pull-up',
+        prescription: negativePrescription,
+        basePrescription: negativePrescription,
+        setCount: getSetCount(negativePrescription)
+      }
+    ];
+  }
+
   function buildWorkoutTracks(workout, desiredCount, profile = null) {
     const availableTracks = getTracks(profile);
     const fillByWorkout = {
@@ -593,7 +628,7 @@
       workoutName: workout.name,
       energyTitle: config.title,
       energyDescription: config.description,
-      exercises: tracks.map(trackKey => getExercise(trackKey, config, state, profile))
+      exercises: tracks.flatMap(trackKey => splitCompoundExercise(getExercise(trackKey, config, state, profile)))
     };
   }
 
