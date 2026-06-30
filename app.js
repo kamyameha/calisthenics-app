@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-58-refresh-button-fix';
+const APP_VERSION = 'v8-59-layout-regression-fix';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -1985,6 +1985,7 @@ function closeAccountModal() {
   panel.classList.add('hidden');
   showAccountView('main');
   document.body.classList.remove('account-main-active', 'account-submenu-active');
+  document.documentElement.classList.remove('account-submenu-active');
   setThemeColor('#ffffff');
   updateUpdateBanner();
 }
@@ -2008,6 +2009,7 @@ function showAccountView(view) {
   if (panel) panel.classList.toggle('account-submenu-mode', isSubmenuView);
   document.body.classList.toggle('account-main-active', isMainView);
   document.body.classList.toggle('account-submenu-active', isSubmenuView);
+  document.documentElement.classList.toggle('account-submenu-active', isSubmenuView);
   setThemeColor('#ffffff');
   if (panel) panel.scrollTop = 0;
   if (content) content.scrollTop = 0;

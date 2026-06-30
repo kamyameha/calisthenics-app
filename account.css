@@ -290,6 +290,8 @@
   overflow: hidden;
 }
 
+html.account-submenu-active,
+html.account-submenu-active body,
 body.account-submenu-active,
 body.account-submenu-active .app,
 body.account-submenu-active #accountPanel {
