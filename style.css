@@ -797,7 +797,7 @@ body.onboarding-active .app {
 
 .goal-hero .muted-light,
 .stat-card .eyebrow {
-  margin: 0 0 20px;
+  margin: 0 0 10px;
   padding-top: 33px;
   color: var(--main);
   font-size: 16px;
