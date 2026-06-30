@@ -16,6 +16,12 @@ const APP_SHELL = [
   './admin.js?v=v8-51-progress-activity-split-pull',
   './render.js?v=v8-51-progress-activity-split-pull',
   './app.js?v=v8-51-progress-activity-split-pull',
+  './app-2.js?v=v8-51-progress-activity-split-pull',
+  './app-3.js?v=v8-51-progress-activity-split-pull',
+  './app-4.js?v=v8-51-progress-activity-split-pull',
+  './app-5.js?v=v8-51-progress-activity-split-pull',
+  './app-6.js?v=v8-51-progress-activity-split-pull',
+  './app-7.js?v=v8-51-progress-activity-split-pull',
   './version.json',
   './manifest.json',
   './supabase-config.js',
@@ -79,7 +85,7 @@ self.addEventListener('fetch', event => {
   // Always try the network first for pages and core app files.
   // This prevents users from staying stuck on an old app.js/index.html.
   const isNavigation = request.mode === 'navigate';
-  const isCoreFile = /\/(index\.html|app\.js|auth\.js|workouts\.js|state\.js|account\.js|admin\.js|render\.js|style\.css|supabase-config\.js|manifest\.json|version\.json)$/.test(url.pathname);
+  const isCoreFile = /\/(index\.html|app(?:-\d+)?\.js|auth\.js|workouts\.js|state\.js|account\.js|admin\.js|render\.js|style\.css|supabase-config\.js|manifest\.json|version\.json)$/.test(url.pathname);
 
   if (isNavigation || isCoreFile) {
     event.respondWith(networkFirst(request));
