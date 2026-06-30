@@ -27,11 +27,11 @@
     })();
   </script>
   <!-- Release rule: keep CSS/JS query versions aligned with service-worker.js CACHE_NAME. -->
-  <link rel="stylesheet" href="style.css?v=v8-51-progress-activity-split-pull" />
-  <link rel="stylesheet" href="welcome.css?v=v8-51-progress-activity-split-pull" />
-  <link rel="stylesheet" href="auth.css?v=v8-51-progress-activity-split-pull" />
-  <link rel="stylesheet" href="workout.css?v=v8-51-progress-activity-split-pull" />
-  <link rel="stylesheet" href="account.css?v=v8-51-progress-activity-split-pull" />
+  <link rel="stylesheet" href="style.css?v=v8-52-recovery-activity-single-app" />
+  <link rel="stylesheet" href="welcome.css?v=v8-52-recovery-activity-single-app" />
+  <link rel="stylesheet" href="auth.css?v=v8-52-recovery-activity-single-app" />
+  <link rel="stylesheet" href="workout.css?v=v8-52-recovery-activity-single-app" />
+  <link rel="stylesheet" href="account.css?v=v8-52-recovery-activity-single-app" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -132,9 +132,10 @@
           <p class="sync-status" id="syncStatus">Progress saved.</p>
 
           <div class="account-section">
-            <h3>Plan settings</h3>
+            <h3>Workout preferences</h3>
             <button class="account-list-btn" type="button" data-account-view="goal">Focus <span id="accountGoalSummary"></span></button>
             <button class="account-list-btn" type="button" data-account-view="equipment">Equipment <span id="accountEquipmentSummary"></span></button>
+            <button class="account-list-btn" type="button" data-account-view="recovery">Recovery <span id="accountRecoverySummary"></span></button>
           </div>
 
           <div id="passwordAccountSection" class="account-section">
@@ -179,6 +180,49 @@
           <label class="option-row"><input type="checkbox" name="accountEquipment" value="jumpRope"> <span>Jump rope</span></label>
           <button id="saveAccountEquipmentBtn" class="primary-btn account-full-btn" type="button">Update equipment</button>
           <p id="accountEquipmentMessage" class="auth-message" aria-live="polite"></p>
+        </div>
+
+        <div id="accountRecoveryView" class="account-view hidden">
+          <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
+          <h2>Recovery</h2>
+          <p class="muted">Give your body the time it needs. We’ll adjust your workouts so you can keep moving safely.</p>
+          <select id="recoveryAreaInput" class="recovery-select" aria-label="Select an area">
+            <option value="">Select an area</option>
+            <option value="headNeck">Head &amp; neck</option>
+            <option value="leftShoulder">Left shoulder</option>
+            <option value="rightShoulder">Right shoulder</option>
+            <option value="leftElbow">Left elbow</option>
+            <option value="rightElbow">Right elbow</option>
+            <option value="leftWrist">Left wrist</option>
+            <option value="rightWrist">Right wrist</option>
+            <option value="leftKnee">Left knee</option>
+            <option value="rightKnee">Right knee</option>
+            <option value="leftAnkle">Left ankle</option>
+            <option value="rightAnkle">Right ankle</option>
+          </select>
+          <div class="recovery-mode-row" role="radiogroup" aria-label="Recovery mode">
+            <label class="option-row recovery-mode-option"><input type="radio" name="accountRecoveryMode" value="reduce" checked> <span>Reduce load</span></label>
+            <label class="option-row recovery-mode-option"><input type="radio" name="accountRecoveryMode" value="rest"> <span>Rest completely</span></label>
+          </div>
+          <select id="recoveryDurationInput" class="recovery-select" aria-label="Select a duration">
+            <option value="">Select a duration</option>
+            <option value="3days">3 days</option>
+            <option value="1week">1 week</option>
+            <option value="2weeks">2 weeks</option>
+            <option value="1month">1 month</option>
+            <option value="untilRemoved">Until I remove it</option>
+          </select>
+          <button id="saveAccountRecoveryBtn" class="primary-btn account-full-btn" type="button">Add recovery</button>
+          <p id="accountRecoveryMessage" class="auth-message" aria-live="polite"></p>
+          <div id="activeRecoveryCard" class="active-recovery-card hidden">
+            <h3>Active recovery</h3>
+            <strong id="activeRecoveryArea"></strong>
+            <p id="activeRecoveryUntil"></p>
+            <div class="active-recovery-actions">
+              <button id="editAccountRecoveryBtn" class="secondary-btn" type="button">Edit</button>
+              <button id="removeAccountRecoveryBtn" class="ghost-btn" type="button">Remove</button>
+            </div>
+          </div>
         </div>
 
         <div id="accountPasswordView" class="account-view hidden">
@@ -442,8 +486,8 @@
             <h3 id="historyMonthTitle">June</h3>
           </div>
           <div class="history-month-controls">
-            <button id="historyPrevMonthBtn" class="ghost-btn compact" type="button" aria-label="Previous month">←</button>
-            <button id="historyNextMonthBtn" class="ghost-btn compact" type="button" aria-label="Next month">→</button>
+            <button id="historyPrevMonthBtn" class="history-arrow-btn history-arrow-prev" type="button" aria-label="Previous month"></button>
+            <button id="historyNextMonthBtn" class="history-arrow-btn history-arrow-next" type="button" aria-label="Next month"></button>
           </div>
         </div>
         <div class="history-weekdays"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
@@ -494,18 +538,12 @@
     </div>
   </div>
 
-  <script src="auth.js?v=v8-51-progress-activity-split-pull"></script>
-  <script src="workouts.js?v=v8-51-progress-activity-split-pull"></script>
-  <script src="state.js?v=v8-51-progress-activity-split-pull"></script>
-  <script src="account.js?v=v8-51-progress-activity-split-pull"></script>
-  <script src="admin.js?v=v8-51-progress-activity-split-pull"></script>
-  <script src="render.js?v=v8-51-progress-activity-split-pull"></script>
-  <script src="app.js?v=v8-51-progress-activity-split-pull"></script>
-  <script src="app-2.js?v=v8-51-progress-activity-split-pull"></script>
-  <script src="app-3.js?v=v8-51-progress-activity-split-pull"></script>
-  <script src="app-4.js?v=v8-51-progress-activity-split-pull"></script>
-  <script src="app-5.js?v=v8-51-progress-activity-split-pull"></script>
-  <script src="app-6.js?v=v8-51-progress-activity-split-pull"></script>
-  <script src="app-7.js?v=v8-51-progress-activity-split-pull"></script>
+  <script src="auth.js?v=v8-52-recovery-activity-single-app"></script>
+  <script src="workouts.js?v=v8-52-recovery-activity-single-app"></script>
+  <script src="state.js?v=v8-52-recovery-activity-single-app"></script>
+  <script src="account.js?v=v8-52-recovery-activity-single-app"></script>
+  <script src="admin.js?v=v8-52-recovery-activity-single-app"></script>
+  <script src="render.js?v=v8-52-recovery-activity-single-app"></script>
+  <script src="app.js?v=v8-52-recovery-activity-single-app"></script>
 </body>
 </html>

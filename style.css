@@ -834,7 +834,7 @@ body.onboarding-active .app {
 .goal-hero .progress-bar {
   width: 100%;
   height: 14px;
-  margin: 0 0 33px;
+  margin: 0 0 71px;
   border-radius: 999px;
   background: rgba(1, 45, 237, 0.15);
   overflow: hidden;
@@ -916,10 +916,14 @@ body.onboarding-active .app {
   letter-spacing: 0;
 }
 
+.progress-screen .eyebrow {
+  padding-top: 0;
+}
+
 .skill-list,
 #levelsList {
   display: grid;
-  gap: 33px;
+  gap: 28px;
 }
 
 .skill-row,

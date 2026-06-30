@@ -340,6 +340,7 @@
 
 .account-panel.account-modal.account-submenu-mode #accountGoalView,
 .account-panel.account-modal.account-submenu-mode #accountEquipmentView,
+.account-panel.account-modal.account-submenu-mode #accountRecoveryView,
 .account-panel.account-modal.account-submenu-mode #accountPasswordView {
   display: flex;
   flex-wrap: wrap;
@@ -431,6 +432,96 @@
 .account-panel.account-modal.account-submenu-mode #accountEquipmentView .option-row:has(input:checked)::after {
   mask-image: url("./x.svg");
   -webkit-mask-image: url("./x.svg");
+}
+
+.account-panel.account-modal.account-submenu-mode #accountRecoveryView .muted {
+  margin-bottom: 25px;
+}
+
+.account-panel.account-modal.account-submenu-mode .recovery-select {
+  width: 100%;
+  height: 46px;
+  padding: 0 21px;
+  border: 1px solid var(--main);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--main);
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  appearance: none;
+}
+
+.account-panel.account-modal.account-submenu-mode .recovery-mode-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 19px;
+}
+
+.account-panel.account-modal.account-submenu-mode .recovery-mode-row .option-row {
+  width: 100%;
+}
+
+.account-panel.account-modal.account-submenu-mode .active-recovery-card {
+  width: 100%;
+  display: grid;
+  gap: 15px;
+  margin-top: 38px;
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--main);
+  color: #ffffff;
+}
+
+.account-panel.account-modal.account-submenu-mode .active-recovery-card.hidden {
+  display: none;
+}
+
+.account-panel.account-modal.account-submenu-mode .active-recovery-card h3,
+.account-panel.account-modal.account-submenu-mode .active-recovery-card strong,
+.account-panel.account-modal.account-submenu-mode .active-recovery-card p {
+  margin: 0;
+  color: #ffffff;
+}
+
+.account-panel.account-modal.account-submenu-mode .active-recovery-card h3 {
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.account-panel.account-modal.account-submenu-mode .active-recovery-card strong,
+.account-panel.account-modal.account-submenu-mode .active-recovery-card p {
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.account-panel.account-modal.account-submenu-mode .active-recovery-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 19px;
+  margin-top: 29px;
+}
+
+.account-panel.account-modal.account-submenu-mode .active-recovery-actions button {
+  min-height: 46px;
+  border-radius: 20px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.account-panel.account-modal.account-submenu-mode .active-recovery-actions .secondary-btn {
+  border-color: #ffffff;
+  background: #ffffff;
+  color: var(--main);
+}
+
+.account-panel.account-modal.account-submenu-mode .active-recovery-actions .ghost-btn {
+  border: 1px solid #ffffff;
+  background: transparent;
+  color: #ffffff;
 }
 
 .account-panel.account-modal.account-submenu-mode .account-full-btn {
@@ -795,7 +886,7 @@
 }
 
 .activity-screen .activity-summary-card h3 {
-  margin: 0 0 20px;
+  margin: 0 0 12px;
   color: var(--main);
   font-size: 16px;
   font-weight: 400;
@@ -844,11 +935,18 @@
   min-width: 26px;
   padding: 0;
   border: 0;
-  background: transparent;
-  color: var(--main);
-  font-size: 26px;
-  line-height: 1;
+  background: var(--main);
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
   font-weight: 400;
+  mask: url("./arrow-left.svg") center / 26px 26px no-repeat;
+  -webkit-mask: url("./arrow-left.svg") center / 26px 26px no-repeat;
+}
+
+.activity-screen .history-month-controls .history-arrow-next {
+  mask-image: url("./arrow-right.svg");
+  -webkit-mask-image: url("./arrow-right.svg");
 }
 
 .activity-screen .history-weekdays,

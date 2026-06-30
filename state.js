@@ -109,6 +109,39 @@
       };
     }
 
+    function sanitizeRecovery(recovery) {
+      if (!recovery || typeof recovery !== 'object') return null;
+      const validAreas = new Set([
+        'headNeck',
+        'leftShoulder',
+        'rightShoulder',
+        'leftElbow',
+        'rightElbow',
+        'leftWrist',
+        'rightWrist',
+        'leftKnee',
+        'rightKnee',
+        'leftAnkle',
+        'rightAnkle'
+      ]);
+      const validModes = new Set(['reduce', 'rest']);
+      const validDurations = new Set(['3days', '1week', '2weeks', '1month', 'untilRemoved']);
+      const area = validAreas.has(recovery.area) ? recovery.area : '';
+      const mode = validModes.has(recovery.mode) ? recovery.mode : 'reduce';
+      const duration = validDurations.has(recovery.duration) ? recovery.duration : '';
+      const createdAt = recovery.createdAt && !Number.isNaN(new Date(recovery.createdAt).getTime())
+        ? new Date(recovery.createdAt).toISOString()
+        : new Date().toISOString();
+      const until = recovery.until && !Number.isNaN(new Date(recovery.until).getTime())
+        ? new Date(recovery.until).toISOString()
+        : null;
+
+      if (!area || !duration) return null;
+      if (until && new Date(until).getTime() < Date.now()) return null;
+
+      return { area, mode, duration, until, createdAt };
+    }
+
     function defaultState() {
       const levels = {};
       Object.assign(levels, workoutModule.createDefaultLevels());
@@ -127,6 +160,7 @@
         includeExerciseTimer: false,
         includeRestTimer: false,
         restTimerSeconds: 60,
+        recovery: null,
         todayEmptyStateDismissed: false
       };
     }
@@ -153,6 +187,7 @@
       nextState.includeExerciseTimer = Boolean(nextState.includeExerciseTimer);
       nextState.includeRestTimer = Boolean(nextState.includeRestTimer);
       nextState.restTimerSeconds = 60;
+      nextState.recovery = sanitizeRecovery(nextState.recovery);
       nextState.todayEmptyStateDismissed = Boolean(nextState.todayEmptyStateDismissed);
       nextState.schemaVersion = STATE_SCHEMA_VERSION;
 
@@ -208,6 +243,7 @@
         includeExerciseTimer: state.includeExerciseTimer,
         includeRestTimer: state.includeRestTimer,
         restTimerSeconds: state.restTimerSeconds,
+        recovery: state.recovery,
         todayEmptyStateDismissed: state.todayEmptyStateDismissed
       };
     }

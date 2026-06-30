@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-51-progress-activity-split-pull';
+const APP_VERSION = 'v8-52-recovery-activity-single-app';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -279,6 +279,33 @@ const equipmentLabels = {
   dipBars: 'Dip bars',
   bands: 'Resistance bands',
   jumpRope: 'Jump rope'
+};
+
+const recoveryAreaLabels = {
+  headNeck: 'Head & neck',
+  leftShoulder: 'Left shoulder',
+  rightShoulder: 'Right shoulder',
+  leftElbow: 'Left elbow',
+  rightElbow: 'Right elbow',
+  leftWrist: 'Left wrist',
+  rightWrist: 'Right wrist',
+  leftKnee: 'Left knee',
+  rightKnee: 'Right knee',
+  leftAnkle: 'Left ankle',
+  rightAnkle: 'Right ankle'
+};
+
+const recoveryModeLabels = {
+  reduce: 'Reduce load',
+  rest: 'Rest completely'
+};
+
+const recoveryDurations = {
+  '3days': { label: '3 days', days: 3 },
+  '1week': { label: '1 week', days: 7 },
+  '2weeks': { label: '2 weeks', days: 14 },
+  '1month': { label: '1 month', months: 1 },
+  untilRemoved: { label: 'Until I remove it', openEnded: true }
 };
 
 const stateStore = window.SomthingreatState?.create({
@@ -670,3 +697,2199 @@ function togglePasswordVisibility(button) {
   });
 }
 
+function renderToday() {
+  document.body.classList.remove('workout-active');
+  document.querySelector('.topbar')?.classList.remove('hidden');
+  document.getElementById('exerciseList').innerHTML = '';
+  document.getElementById('completeBtn').classList.add('hidden');
+  hideCustomChecklistViews();
+
+  if (state.customChecklist) {
+    document.getElementById('energyCard').classList.remove('hidden');
+    document.getElementById('customChecklistCard')?.classList.remove('hidden');
+    document.getElementById('customChecklistForm')?.classList.remove('hidden');
+    document.getElementById('selectedEnergyCard').classList.add('hidden');
+    document.getElementById('generatedWorkoutCard').classList.add('hidden');
+    document.getElementById('exercisePreview').classList.add('hidden');
+    renderCustomChecklist();
+    return;
+  }
+
+  if (state.current) {
+    document.getElementById('energyCard').classList.add('hidden');
+    document.getElementById('selectedEnergyCard').classList.add('hidden');
+    document.getElementById('generatedWorkoutCard').classList.add('hidden');
+    document.getElementById('exercisePreview').classList.add('hidden');
+    renderExercises();
+    return;
+  }
+
+  if (state.generated) {
+    document.getElementById('energyCard').classList.add('hidden');
+    document.getElementById('selectedEnergyCard').classList.remove('hidden');
+    document.getElementById('generatedWorkoutCard').classList.remove('hidden');
+    document.getElementById('exercisePreview').classList.add('hidden');
+    renderGeneratedWorkout();
+    return;
+  }
+
+  if (state.selectedEnergy) {
+    renderSelectedEnergy();
+    return;
+  }
+
+  document.getElementById('energyCard').classList.remove('hidden');
+  document.getElementById('customChecklistCard')?.classList.remove('hidden');
+  document.getElementById('customChecklistForm')?.classList.remove('hidden');
+  document.getElementById('selectedEnergyCard').classList.add('hidden');
+  document.getElementById('generatedWorkoutCard').classList.add('hidden');
+  document.getElementById('exercisePreview').classList.add('hidden');
+
+  const emptyState = document.getElementById('todayEmptyState');
+  if (emptyState) {
+    const shouldShowEmptyState = state.history.length === 0 && !state.todayEmptyStateDismissed;
+    emptyState.classList.toggle('hidden', !shouldShowEmptyState);
+  }
+}
+
+function hideCustomChecklistViews() {
+  document.getElementById('customChecklistCard')?.classList.add('hidden');
+  document.getElementById('customChecklistForm')?.classList.add('hidden');
+  document.getElementById('customChecklistActive')?.classList.add('hidden');
+  document.getElementById('customChecklistEdit')?.classList.add('hidden');
+}
+
+function setCustomChecklistMessage(message = '', type = 'info') {
+  const el = document.getElementById('customChecklistMessage');
+  if (!el) return;
+  el.textContent = message;
+  el.dataset.type = type;
+}
+
+function setEditCustomChecklistMessage(message = '', type = 'info') {
+  const el = document.getElementById('editCustomChecklistMessage');
+  if (!el) return;
+  el.textContent = message;
+  el.dataset.type = type;
+}
+
+function openCustomChecklistForm() {
+  document.getElementById('energyCard')?.classList.add('hidden');
+  document.getElementById('customChecklistCard')?.classList.add('hidden');
+  document.getElementById('customChecklistForm')?.classList.remove('hidden');
+  setCustomChecklistMessage('');
+}
+
+function resetCustomChecklistForm() {
+  const name = document.getElementById('customChecklistNameInput');
+  const target = document.getElementById('customChecklistTargetInput');
+  const rounds = document.querySelector('input[name="customChecklistType"][value="rounds"]');
+  if (name) name.value = '';
+  if (target) target.value = '';
+  if (rounds) rounds.checked = true;
+  setCustomChecklistMessage('');
+}
+
+function customChecklistUnitLabel(type, target) {
+  if (type === 'minutes') return `${target} minute${target === 1 ? '' : 's'}`;
+  return `${target} round${target === 1 ? '' : 's'}`;
+}
+
+function customChecklistItemLabel(checklist, index) {
+  if (checklist.type === 'minutes') {
+    const start = index * 5;
+    const end = Math.min(checklist.target, start + 5);
+    return `${end} min`;
+  }
+  return `Round ${index + 1}`;
+}
+
+function createCustomChecklist() {
+  const name = document.getElementById('customChecklistNameInput')?.value.trim() || 'Custom checklist';
+  const type = document.querySelector('input[name="customChecklistType"]:checked')?.value || 'rounds';
+  const target = Math.round(Number(document.getElementById('customChecklistTargetInput')?.value || 0));
+  const max = type === 'minutes' ? 240 : 120;
+  if (!target || target < 1) {
+    setCustomChecklistMessage(type === 'minutes' ? 'Enter how many minutes to track.' : 'Enter how many rounds to track.', 'error');
+    return;
+  }
+  if (target > max) {
+    setCustomChecklistMessage(type === 'minutes' ? 'Keep it to 240 minutes or less.' : 'Keep it to 120 rounds or less.', 'error');
+    return;
+  }
+  const itemCount = type === 'minutes' ? Math.ceil(target / 5) : target;
+  state.customChecklist = {
+    name: name.slice(0, 40),
+    type,
+    target,
+    items: Array.from({ length: itemCount }, () => false)
+  };
+  resetCustomChecklistForm();
+  saveState();
+  renderToday();
+}
+
+function renderCustomChecklist() {
+  const checklist = state.customChecklist;
+  if (!checklist) return;
+  const active = document.getElementById('customChecklistActive');
+  const title = document.getElementById('customChecklistTitle');
+  const meta = document.getElementById('customChecklistMeta');
+  const items = document.getElementById('customChecklistItems');
+  const complete = document.getElementById('completeCustomChecklistBtn');
+  if (!active || !title || !meta || !items || !complete) return;
+
+  active.classList.remove('hidden');
+  title.textContent = `${checklist.name} - ${customChecklistUnitLabel(checklist.type, checklist.target)}`;
+  meta.textContent = customChecklistUnitLabel(checklist.type, checklist.target);
+  items.innerHTML = checklist.items.map((checked, index) => `
+    <label class="set-row custom-checklist-row ${checked ? 'completed' : ''}">
+      <span>${customChecklistItemLabel(checklist, index)}</span>
+      <input type="checkbox" data-custom-check-index="${index}" ${checked ? 'checked' : ''}>
+      <i aria-hidden="true"></i>
+    </label>
+  `).join('');
+  complete.disabled = false;
+}
+
+function openCustomChecklistEdit() {
+  const checklist = state.customChecklist;
+  if (!checklist) return;
+  const name = document.getElementById('editCustomChecklistNameInput');
+  const target = document.getElementById('editCustomChecklistTargetInput');
+  const type = document.querySelector(`input[name="editCustomChecklistType"][value="${checklist.type}"]`);
+  if (name) name.value = checklist.name;
+  if (target) target.value = checklist.target;
+  if (type) type.checked = true;
+  setEditCustomChecklistMessage('');
+  document.getElementById('customChecklistActive')?.classList.add('hidden');
+  document.getElementById('customChecklistEdit')?.classList.remove('hidden');
+}
+
+function closeCustomChecklistEdit() {
+  document.getElementById('customChecklistEdit')?.classList.add('hidden');
+  if (state.customChecklist) {
+    document.getElementById('customChecklistActive')?.classList.remove('hidden');
+  }
+  setEditCustomChecklistMessage('');
+}
+
+function confirmCustomChecklistEdit() {
+  const checklist = state.customChecklist;
+  if (!checklist) return;
+  const name = document.getElementById('editCustomChecklistNameInput')?.value.trim() || 'Custom checklist';
+  const type = document.querySelector('input[name="editCustomChecklistType"]:checked')?.value || checklist.type;
+  const target = Math.round(Number(document.getElementById('editCustomChecklistTargetInput')?.value || 0));
+  const max = type === 'minutes' ? 240 : 120;
+  if (!target || target < 1) {
+    setEditCustomChecklistMessage(type === 'minutes' ? 'Enter how many minutes to track.' : 'Enter how many rounds to track.', 'error');
+    return;
+  }
+  if (target > max) {
+    setEditCustomChecklistMessage(type === 'minutes' ? 'Keep it to 240 minutes or less.' : 'Keep it to 120 rounds or less.', 'error');
+    return;
+  }
+  const itemCount = type === 'minutes' ? Math.ceil(target / 5) : target;
+  state.customChecklist = {
+    name: name.slice(0, 40),
+    type,
+    target,
+    items: Array.from({ length: itemCount }, (_, index) => Boolean(checklist.items[index]))
+  };
+  saveState();
+  document.getElementById('customChecklistEdit')?.classList.add('hidden');
+  renderCustomChecklist();
+}
+
+function cancelCustomChecklist() {
+  state.customChecklist = null;
+  saveState();
+  renderToday();
+}
+
+function completeCustomChecklist(skipIncompleteConfirm = false) {
+  const checklist = state.customChecklist;
+  if (!checklist) return;
+  if (!skipIncompleteConfirm && !checklist.items.every(Boolean)) {
+    showCompletionScreen({
+      title: 'Almost there!',
+      message: 'Some items are unfinished and won’t be counted. Save this progress or go back to finish more.',
+      actionLabel: 'Save progress',
+      cancelLabel: 'Go back',
+      onConfirm: () => completeCustomChecklist(true)
+    });
+    return;
+  }
+  const completedCount = checklist.items.filter(Boolean).length;
+  const countedTarget = checklist.items.every(Boolean)
+    ? checklist.target
+    : checklist.type === 'minutes'
+      ? Math.min(checklist.target, completedCount * 5)
+      : completedCount;
+  const prescription = customChecklistUnitLabel(checklist.type, countedTarget);
+  state.history.push({
+    type: 'custom',
+    date: new Date().toISOString(),
+    workout: checklist.name,
+    mode: 'custom',
+    customType: checklist.type,
+    target: countedTarget,
+    exercises: [{ name: checklist.name, prescription, trackKey: 'custom', isAddOn: false }]
+  });
+  state.customChecklist = null;
+  saveState();
+  renderToday();
+  renderProgress();
+  renderActivity();
+  renderAccount();
+  showWorkoutStatus('Checklist saved.', 'Your custom checklist is saved in your history.');
+  updateUpdateBanner();
+}
+
+function dismissTodayEmptyState() {
+  state.todayEmptyStateDismissed = true;
+  saveState();
+  renderToday();
+}
+
+function selectEnergy(feel) {
+  state.selectedEnergy = feel;
+  state.generated = null;
+  state.includeWarmup = false;
+  state.includeStretch = false;
+  state.includeExerciseTimer = false;
+  state.includeRestTimer = false;
+  state.restTimerSeconds = 60;
+  saveState();
+  renderSelectedEnergy();
+}
+
+function renderSelectedEnergy() {
+  const option = energyOptions[state.selectedEnergy || 'normal'];
+  const previewWorkout = getTodayWorkout(option.mode);
+
+  hideCustomChecklistViews();
+  document.getElementById('energyCard').classList.add('hidden');
+  document.getElementById('selectedEnergyCard').classList.remove('hidden');
+  document.getElementById('generatedWorkoutCard').classList.add('hidden');
+  document.getElementById('exercisePreview').classList.add('hidden');
+  document.getElementById('selectedEnergyCard').dataset.energy = state.selectedEnergy || 'normal';
+
+  const mascot = document.getElementById('selectedEnergyMascot');
+  if (mascot) mascot.src = option.icon || 'Assets/Energy/normal-icon.png';
+
+  const pill = document.getElementById('selectedEnergyPill');
+  if (pill) pill.textContent = option.title;
+
+  const starMap = { exhausted: 1, tired: 3, normal: 4, great: 5 };
+  const stars = document.getElementById('selectedEnergyStars');
+  const fullStars = starMap[state.selectedEnergy || 'normal'] || 4;
+  if (stars) {
+    stars.innerHTML = Array.from({ length: 5 }, (_, index) => (
+      `<span class="energy-star ${index < fullStars ? 'filled' : ''}" aria-hidden="true">${index < fullStars ? '★' : '☆'}</span>`
+    )).join('');
+  }
+
+  const workoutName = document.getElementById('selectedWorkoutName');
+  if (workoutName) workoutName.textContent = previewWorkout.workoutName;
+
+  const workoutMeta = document.getElementById('selectedWorkoutMeta');
+  if (workoutMeta) {
+    const volumeMap = {
+      great: 'full volume',
+      normal: 'reduced volume',
+      tired: 'reduced volume',
+      reduced: 'reduced volume',
+      exhausted: 'minimum volume',
+      minimum: 'minimum volume'
+    };
+    const volume = volumeMap[previewWorkout.mode] || 'standard volume';
+    const count = (previewWorkout.exercises || []).filter(Boolean).length;
+    workoutMeta.innerHTML = `${escapeHTML(previewWorkout.workoutName)}: ${escapeHTML(volume)}<br>${count} exercises`;
+  }
+
+  const warmupInput = document.getElementById('includeWarmup');
+  const stretchInput = document.getElementById('includeStretch');
+  const exerciseTimerInput = document.getElementById('includeExerciseTimer');
+  const restTimerInput = document.getElementById('includeRestTimer');
+  const restTimerOptions = document.getElementById('restTimerOptions');
+  if (warmupInput) warmupInput.checked = Boolean(state.includeWarmup);
+  if (stretchInput) stretchInput.checked = Boolean(state.includeStretch);
+  if (exerciseTimerInput) exerciseTimerInput.checked = Boolean(state.includeExerciseTimer);
+  if (restTimerInput) restTimerInput.checked = Boolean(state.includeRestTimer);
+  if (restTimerOptions) restTimerOptions.classList.add('hidden');
+  updateAddOnSummary();
+}
+
+function updateAddOnSummary() {
+  const total = document.getElementById('sessionTotalPreview');
+  const extra = getExtraSessionMinutes();
+  if (!total) return;
+  const extras = [];
+  if (extra) extras.push(`${extra} min`);
+  if (state.includeExerciseTimer) extras.push('exercise timers');
+  if (state.includeRestTimer) extras.push(`${state.restTimerSeconds || 60}s rest`);
+  total.textContent = extras.length ? `Workout + ${extras.join(' · ')}` : 'Workout only';
+}
+
+function workoutToolSummary(workout) {
+  const base = sessionTotalLabel(workout);
+  const timerParts = [];
+  if (workout?.includeExerciseTimer) timerParts.push('exercise timers');
+  if (workout?.includeRestTimer) timerParts.push(`${workout.restTimerSeconds || 60}s rest`);
+  if (!timerParts.length) return base;
+  if (base === 'Workout only') return timerParts.join(' · ');
+  return `${base} · ${timerParts.join(' · ')}`;
+}
+
+function generateWorkout() {
+  const option = energyOptions[state.selectedEnergy || 'normal'];
+  const baseWorkout = getTodayWorkout(option.mode);
+  state.generated = applyWorkoutAddOns(baseWorkout);
+  state.generated.includeExerciseTimer = Boolean(state.includeExerciseTimer);
+  state.generated.includeRestTimer = Boolean(state.includeRestTimer);
+  state.generated.restTimerSeconds = 60;
+  saveState();
+  renderGeneratedWorkout();
+}
+
+function renderGeneratedWorkout() {
+  const generated = state.generated || getTodayWorkout('normal');
+  hideCustomChecklistViews();
+  document.getElementById('energyCard').classList.add('hidden');
+  document.getElementById('selectedEnergyCard').classList.remove('hidden');
+  document.getElementById('generatedWorkoutCard').classList.remove('hidden');
+  document.getElementById('exercisePreview').classList.add('hidden');
+  document.getElementById('workoutName').textContent = generated.workoutName;
+  document.getElementById('workoutMeta').textContent = generated.includeExerciseTimer ? 'Includes exercise timers' : 'Workout is ready';
+
+  const preview = document.getElementById('previewList');
+  preview.innerHTML = '';
+  (generated.exercises || []).filter(Boolean).forEach(exercise => {
+    const row = document.createElement('div');
+    row.className = 'preview-row';
+    row.innerHTML = `<strong>${exercise.name}</strong><span>${exercise.prescription}</span>`;
+    preview.appendChild(row);
+  });
+}
+
+function startWorkout() {
+  if (!state.generated) generateWorkout();
+  state.generated = sanitizeWorkout(state.generated);
+  if (!state.generated) {
+    state.selectedEnergy = null;
+    saveState();
+    renderToday();
+    return;
+  }
+  state.current = {
+    ...state.generated,
+    includeExerciseTimer: Boolean(state.generated.includeExerciseTimer),
+    includeRestTimer: Boolean(state.generated.includeRestTimer),
+    restTimerSeconds: 60,
+    ratings: {},
+    sets: {}
+  };
+  state.current.exercises.forEach(exercise => {
+    state.current.sets[exercise.trackKey] = Array.from({ length: exercise.setCount || 1 }, () => false);
+  });
+  openExerciseTrackKey = state.current.exercises[0]?.trackKey || null;
+  state.generated = null;
+  saveState();
+  renderExercises();
+}
+
+function areExerciseSetsComplete(exercise) {
+  if (!exercise || !state.current?.sets) return false;
+  const sets = state.current.sets[exercise.trackKey] || [];
+  return sets.length > 0 && sets.every(Boolean);
+}
+
+function isExerciseComplete(exercise) {
+  if (!areExerciseSetsComplete(exercise)) return false;
+  return Boolean(exercise.isAddOn || state.current?.ratings?.[exercise.trackKey]);
+}
+
+function firstIncompleteExerciseKey() {
+  const exercises = state.current?.exercises || [];
+  return exercises.find(exercise => !isExerciseComplete(exercise))?.trackKey || exercises[0]?.trackKey || null;
+}
+
+function openNextIncompleteExercise(afterTrackKey = null) {
+  const exercises = state.current?.exercises || [];
+  if (!exercises.length) {
+    openExerciseTrackKey = null;
+    return;
+  }
+  const startIndex = Math.max(0, exercises.findIndex(exercise => exercise.trackKey === afterTrackKey));
+  const next = exercises.slice(startIndex + 1).find(exercise => !isExerciseComplete(exercise)) ||
+    exercises.find(exercise => !isExerciseComplete(exercise));
+  openExerciseTrackKey = next?.trackKey || null;
+}
+
+function exerciseChipPrescription(exercise) {
+  const prescription = exercise?.prescription || '';
+  if (exercise?.isAddOn) return prescription.split('·')[0].trim();
+  return prescription.replace(/×/g, 'x');
+}
+
+function setControlMarkup(exercise, index, completed, timedSeconds) {
+  const label = exercise.setLabels?.[index] || `Round ${index + 1}`;
+  const iconClass = completed ? 'is-check' : timedSeconds ? 'is-timer' : 'is-square';
+  const timerData = timedSeconds
+    ? `data-timer-seconds="${timedSeconds}" data-exercise-name="${escapeHTML(exercise.name)}" data-track="${escapeHTML(exercise.trackKey)}" data-set-index="${index}" data-set-label="${escapeHTML(label)}"`
+    : '';
+  return `
+    <div class="set-row ${timedSeconds ? 'timed-set-row' : ''} ${completed ? 'completed' : ''}">
+      <span>${escapeHTML(label)}</span>
+      <button class="set-control ${iconClass}" type="button" data-track="${escapeHTML(exercise.trackKey)}" data-set-index="${index}" ${timerData} aria-label="${completed ? 'Completed' : timedSeconds ? `Start ${label} timer` : `Complete ${label}`}"></button>
+    </div>
+  `;
+}
+
+function renderExercises() {
+  hideCustomChecklistViews();
+  document.getElementById('energyCard').classList.add('hidden');
+  document.getElementById('selectedEnergyCard').classList.add('hidden');
+  document.getElementById('generatedWorkoutCard').classList.add('hidden');
+  document.getElementById('exercisePreview').classList.add('hidden');
+  document.body.classList.add('workout-active');
+  document.querySelector('.topbar')?.classList.add('hidden');
+  document.querySelector('.bottom-nav')?.classList.add('hidden');
+
+  const list = document.getElementById('exerciseList');
+  list.innerHTML = '';
+
+  const titleCard = document.createElement('div');
+  titleCard.className = 'workout-started-title';
+  titleCard.innerHTML = `<p>Today's workout</p>`;
+  list.appendChild(titleCard);
+
+  state.current = sanitizeWorkout(state.current);
+  if (!state.current) { renderToday(); return; }
+  if (!openExerciseTrackKey || !state.current.exercises.some(exercise => exercise.trackKey === openExerciseTrackKey)) {
+    openExerciseTrackKey = firstIncompleteExerciseKey();
+  }
+  state.current.exercises.forEach((exercise) => {
+    const isOpen = exercise.trackKey === openExerciseTrackKey;
+    const isComplete = isExerciseComplete(exercise);
+    const card = document.createElement('div');
+    card.className = `exercise-card workout-accordion-card ${isOpen ? 'open' : ''} ${isComplete ? 'completed' : ''}`;
+    card.dataset.track = exercise.trackKey;
+    const selectedRating = state.current.ratings[exercise.trackKey];
+    if (!state.current.sets) state.current.sets = {};
+    if (!state.current.sets[exercise.trackKey]) state.current.sets[exercise.trackKey] = Array.from({ length: exercise.setCount || 1 }, () => false);
+    const completedSets = state.current.sets[exercise.trackKey];
+    const timedSeconds = state.current.includeExerciseTimer ? getTimedExerciseSeconds(exercise) : null;
+    const setRows = Array.from({ length: exercise.setCount || completedSets.length || 1 }, (_, index) => {
+      return setControlMarkup(exercise, index, Boolean(completedSets[index]), timedSeconds);
+    }).join('');
+    const help = getExerciseHelp(exercise.name);
+    const helpButton = help ? `<button class="exercise-help-btn" type="button" data-exercise-name="${escapeHTML(exercise.name)}" aria-label="Help with ${escapeHTML(exercise.name)}">?</button>` : '';
+    const ratingBlock = exercise.isAddOn ? '' : `
+      <p class="rating-label">How was it?</p>
+      <div class="rating-row" data-track="${exercise.trackKey}">
+        <button data-rating="easy" class="${selectedRating === 'easy' ? 'selected' : ''}">Easy</button>
+        <button data-rating="good" class="${selectedRating === 'good' ? 'selected' : ''}">Good</button>
+        <button data-rating="hard" class="${selectedRating === 'hard' ? 'selected' : ''}">Hard</button>
+        <button data-rating="failed" class="${selectedRating === 'failed' ? 'selected' : ''}">Failed</button>
+      </div>`;
+    card.innerHTML = `
+      <button class="exercise-chip-toggle" type="button" data-track="${escapeHTML(exercise.trackKey)}">
+        <span>${escapeHTML(exercise.name)}</span>
+        <em>${escapeHTML(exerciseChipPrescription(exercise))}</em>
+        <i aria-hidden="true"></i>
+      </button>
+      <div class="exercise-card-body">
+        <div class="exercise-card-header">
+          <h3>${escapeHTML(exercise.name)} - ${escapeHTML(exercise.prescription)}</h3>
+          ${helpButton}
+        </div>
+        <div class="set-list">${setRows}</div>
+        ${ratingBlock}
+      </div>
+    `;
+    list.appendChild(card);
+  });
+  document.getElementById('completeBtn').classList.remove('hidden');
+}
+function showConfirmPanel({ title, message, actionLabel, onConfirm }) {
+  const panel = document.getElementById('confirmPanel');
+  const titleEl = document.getElementById('confirmTitle');
+  const messageEl = document.getElementById('confirmMessage');
+  const actionBtn = document.getElementById('confirmActionBtn');
+  if (!panel || !titleEl || !messageEl || !actionBtn) return;
+
+  lastFocusedElement = document.activeElement;
+  pendingConfirmAction = onConfirm;
+  titleEl.textContent = title;
+  messageEl.textContent = message;
+  actionBtn.textContent = actionLabel;
+  panel.classList.remove('hidden');
+  renderModule.focusFirstInteractive(panel);
+}
+
+function closeConfirmPanel() {
+  const panel = document.getElementById('confirmPanel');
+  if (panel) {
+    panel.classList.add('hidden');
+    panel.classList.remove('workout-completion-panel', 'auto-complete');
+  }
+  document.getElementById('confirmActionBtn')?.classList.remove('hidden');
+  document.getElementById('confirmCancelBtn')?.classList.remove('hidden');
+  pendingConfirmAction = null;
+  if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+    lastFocusedElement.focus();
+  }
+  lastFocusedElement = null;
+}
+
+function showExerciseHelp(exerciseName) {
+  const help = getExerciseHelp(exerciseName);
+  const panel = document.getElementById('exerciseHelpPanel');
+  if (!help || !panel) return;
+
+  lastFocusedElement = document.activeElement;
+  document.getElementById('exerciseHelpTitle').textContent = exerciseName;
+  document.getElementById('exerciseHelpPurpose').textContent = help.purpose || '';
+  const cues = document.getElementById('exerciseHelpCues');
+  if (cues) {
+    cues.innerHTML = '';
+    (help.cues || []).forEach(cue => {
+      const item = document.createElement('li');
+      item.textContent = cue;
+      cues.appendChild(item);
+    });
+  }
+  document.getElementById('exerciseHelpSafety').textContent = help.safety ? `Safety: ${help.safety}` : '';
+  panel.classList.remove('hidden');
+  renderModule.focusFirstInteractive(panel);
+}
+
+function closeExerciseHelp() {
+  document.getElementById('exerciseHelpPanel')?.classList.add('hidden');
+  if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+    lastFocusedElement.focus();
+  }
+  lastFocusedElement = null;
+}
+
+function formatTimerDuration(seconds) {
+  const safeSeconds = Math.max(0, Math.round(Number(seconds) || 0));
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainingSeconds = String(safeSeconds % 60).padStart(2, '0');
+  return `${minutes}:${remainingSeconds}`;
+}
+
+function getTimedExerciseSeconds(exercise) {
+  if (!exercise?.prescription) return null;
+  const text = `${exercise.prescription} ${exercise.basePrescription || ''}`.toLowerCase();
+  const eachMatch = text.match(/(\d+)\s*s\s+each/);
+  if (eachMatch) return Number(eachMatch[1]);
+
+  const secondsMatch = text.match(/×\s*(\d+)\s*s\b/);
+  if (secondsMatch) return Number(secondsMatch[1]);
+
+  const minutesMatch = text.match(/×\s*(\d+)\s*min\b/) || text.match(/^(\d+)\s*min\b/) || text.match(/\b(\d+)\s*min\b/);
+  if (minutesMatch) return Number(minutesMatch[1]) * 60;
+
+  return null;
+}
+
+function markWorkoutSetDone(trackKey, setIndex, done = true) {
+  if (!state.current || !trackKey || !Number.isFinite(Number(setIndex))) return;
+  if (!state.current.sets) state.current.sets = {};
+  if (!state.current.sets[trackKey]) {
+    const exercise = findCurrentExercise(trackKey);
+    state.current.sets[trackKey] = Array.from({ length: exercise?.setCount || 1 }, () => false);
+  }
+  const index = Number(setIndex);
+  state.current.sets[trackKey][index] = Boolean(done);
+  const exercise = findCurrentExercise(trackKey);
+  if (exercise && isExerciseComplete(exercise)) {
+    openNextIncompleteExercise(trackKey);
+  } else {
+    openExerciseTrackKey = trackKey;
+  }
+  saveState();
+  renderExercises();
+}
+
+function renderWorkoutTimer() {
+  if (!activeTimer) return;
+  const title = document.getElementById('timerTitle');
+  const count = document.getElementById('timerCount');
+
+  if (title) title.textContent = activeTimer.title || 'Timer';
+  if (count) {
+    if (activeTimer.phase === 'prep') {
+      count.textContent = activeTimer.prepSeconds;
+    } else if (activeTimer.remainingSeconds <= 0) {
+      count.textContent = '0';
+    } else {
+      count.textContent = String(activeTimer.remainingSeconds);
+    }
+  }
+}
+
+function tickWorkoutTimer() {
+  if (!activeTimer) return;
+  if (activeTimer.phase === 'prep') {
+    activeTimer.prepSeconds -= 1;
+    if (activeTimer.prepSeconds <= 0) {
+      activeTimer.phase = 'active';
+    }
+    renderWorkoutTimer();
+    return;
+  }
+
+  activeTimer.remainingSeconds -= 1;
+  if (activeTimer.remainingSeconds <= 0) {
+    activeTimer.remainingSeconds = 0;
+    window.navigator?.vibrate?.(120);
+    clearInterval(timerInterval);
+    timerInterval = null;
+    if (activeTimer.completeOnFinish && activeTimer.trackKey) {
+      markWorkoutSetDone(activeTimer.trackKey, activeTimer.setIndex, true);
+    }
+    if (timerAutoClose) clearTimeout(timerAutoClose);
+    timerAutoClose = window.setTimeout(() => closeWorkoutTimer(false), 2500);
+  }
+  renderWorkoutTimer();
+}
+
+function showWorkoutTimer({ title, subtitle, seconds, prepSeconds = 0, trackKey = null, setIndex = null, completeOnFinish = false }) {
+  const panel = document.getElementById('timerPanel');
+  if (!panel || !seconds) return;
+
+  closeWorkoutTimer(false);
+  lastFocusedElement = document.activeElement;
+  activeTimer = {
+    title,
+    subtitle,
+    remainingSeconds: seconds,
+    prepSeconds,
+    phase: prepSeconds ? 'prep' : 'active',
+    trackKey,
+    setIndex,
+    completeOnFinish
+  };
+  panel.classList.remove('hidden');
+  renderWorkoutTimer();
+  renderModule.focusFirstInteractive(panel);
+  timerInterval = setInterval(tickWorkoutTimer, 1000);
+}
+
+function closeWorkoutTimer(restoreFocus = true) {
+  if (timerInterval) clearInterval(timerInterval);
+  if (timerAutoClose) clearTimeout(timerAutoClose);
+  timerInterval = null;
+  timerAutoClose = null;
+  activeTimer = null;
+  document.getElementById('timerPanel')?.classList.add('hidden');
+  if (restoreFocus && lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+    lastFocusedElement.focus();
+  }
+  if (restoreFocus) lastFocusedElement = null;
+}
+
+function hasRemainingWorkoutSets() {
+  if (!state.current?.exercises || !state.current?.sets) return false;
+  return state.current.exercises.some(exercise => {
+    if (exercise.isAddOn) return false;
+    const sets = state.current.sets[exercise.trackKey] || [];
+    return sets.some(done => !done);
+  });
+}
+
+function findCurrentExercise(trackKey) {
+  return (state.current?.exercises || []).find(exercise => exercise.trackKey === trackKey) || null;
+}
+
+function isWorkoutFullyComplete() {
+  if (!state.current) return false;
+  const exercises = state.current.exercises || [];
+  const allSetsDone = exercises.every(exercise => areExerciseSetsComplete(exercise));
+  const rateableExercises = exercises.filter(exercise => !exercise.isAddOn);
+  const allRated = rateableExercises.every(exercise => state.current.ratings?.[exercise.trackKey]);
+  return allSetsDone && allRated;
+}
+
+function completeWorkout(skipMissingRatingConfirm = false) {
+  if (!state.current) return;
+  if (!skipMissingRatingConfirm && !isWorkoutFullyComplete()) {
+    showCompletionScreen({
+      title: 'Almost there!',
+      message: 'Some items are unfinished and won’t be counted. Save this progress or go back to finish more.',
+      actionLabel: 'Save progress',
+      cancelLabel: 'Go back',
+      onConfirm: () => completeWorkoutNow(false)
+    });
+    return;
+  }
+
+  completeWorkoutNow();
+}
+
+function showCompletionScreen({ title, message, actionLabel = '', cancelLabel = '', onConfirm = null, autoClose = false }) {
+  const panel = document.getElementById('confirmPanel');
+  const titleEl = document.getElementById('confirmTitle');
+  const messageEl = document.getElementById('confirmMessage');
+  const actionBtn = document.getElementById('confirmActionBtn');
+  const cancelBtn = document.getElementById('confirmCancelBtn');
+  if (!panel || !titleEl || !messageEl || !actionBtn || !cancelBtn) return;
+
+  lastFocusedElement = document.activeElement;
+  pendingConfirmAction = onConfirm;
+  titleEl.textContent = title;
+  messageEl.textContent = message;
+  actionBtn.textContent = actionLabel;
+  cancelBtn.textContent = cancelLabel;
+  panel.classList.add('workout-completion-panel');
+  panel.classList.toggle('auto-complete', Boolean(autoClose));
+  actionBtn.classList.toggle('hidden', autoClose || !actionLabel);
+  cancelBtn.classList.toggle('hidden', autoClose || !cancelLabel);
+  panel.classList.remove('hidden');
+
+  if (autoClose) {
+    window.setTimeout(() => {
+      closeConfirmPanel();
+      renderToday();
+    }, 2500);
+  } else {
+    renderModule.focusFirstInteractive(panel);
+  }
+}
+
+function completeWorkoutNow(showFullConfirmation = true) {
+  if (!state.current) return;
+  (state.current.exercises || []).forEach(exercise => {
+    const rating = state.current.ratings?.[exercise.trackKey];
+    const progressionTrackKey = exercise.progressionTrackKey || exercise.trackKey;
+    if (rating && state.levels[progressionTrackKey]) applyRating(progressionTrackKey, rating);
+  });
+  state.history.push({ date: new Date().toISOString(), workout: state.current.workoutName, mode: state.current.mode, exercises: state.current.exercises.map(ex => ({ name: ex.name, prescription: ex.prescription, trackKey: ex.trackKey, progressionTrackKey: ex.progressionTrackKey || null, isAddOn: Boolean(ex.isAddOn) })) });
+  state.rotationIndex = (state.rotationIndex + 1) % getRotation().length;
+  state.current = null;
+  state.selectedEnergy = null;
+  state.generated = null;
+  openExerciseTrackKey = null;
+  saveState();
+  renderToday();
+  renderProgress();
+  renderActivity();
+  renderAccount();
+  if (showFullConfirmation) {
+    showCompletionScreen({
+      title: 'Well done!',
+      message: 'You showed up and that counts. Your progress is saved.',
+      autoClose: true
+    });
+  }
+  updateUpdateBanner();
+}
+
+function showWorkoutStatus(titleText = 'Well done for today.', messageText = 'You showed up, and that counts. Your progress is saved.') {
+  const card = document.getElementById('workoutStatusCard');
+  if (!card) return;
+  const title = card.querySelector('h2');
+  const message = card.querySelector('p');
+  if (title) title.textContent = titleText;
+  if (message) message.textContent = messageText;
+  card.classList.remove('hidden');
+  renderModule.focusFirstInteractive(card);
+}
+
+function dismissWorkoutStatus() {
+  document.getElementById('workoutStatusCard')?.classList.add('hidden');
+}
+function getTrackLevel(trackKey) {
+  return state.levels[trackKey]?.level || 0;
+}
+
+function getGoalTrackKey(goal) {
+  return goal === 'handstand' ? 'handstand' : goal === 'lsit' ? 'lsit' : goal === 'muscleup' ? 'muscleup' : 'pullup';
+}
+
+function getGoalJourneyTitle(goal) {
+  return {
+    pullup: 'Pull-up journey',
+    muscleup: 'Muscle-up journey',
+    handstand: 'Handstand journey',
+    lsit: 'L-sit journey',
+    general: 'General fitness path'
+  }[goal] || 'Goal journey';
+}
+
+function renderGeneralGoalProgress() {
+  const total = state.history.length;
+  const percent = Math.min(100, Math.round((Math.min(total, 12) / 12) * 100));
+  const progress = document.getElementById('pullupProgressBar');
+  if (progress) progress.style.width = `${percent}%`;
+}
+
+function renderProgress() {
+  const profile = getProfile();
+  const goal = profile?.goal || 'pullup';
+  const goalTrackKey = getGoalTrackKey(goal);
+  const tracks = getTracks();
+  const track = tracks[goalTrackKey]?.length ? tracks[goalTrackKey] : tracks.pullup?.length ? tracks.pullup : baseTracks.pullup;
+  if (!Array.isArray(track) || !track.length) return;
+  const level = Math.max(0, Math.min(getTrackLevel(goalTrackKey), track.length - 1));
+  const percent = Math.round(((level + 1) / track.length) * 100);
+
+  const heroTitle = document.getElementById('goalHeroTitle');
+  if (heroTitle) heroTitle.textContent = goalLabels[goal] || 'First pull-up';
+  const progress = document.getElementById('pullupProgressBar');
+  if (progress) progress.style.width = `${percent}%`;
+  if (goal === 'general') renderGeneralGoalProgress();
+
+  const levels = document.getElementById('levelsList');
+  if (!levels) return;
+  levels.innerHTML = '';
+  const labels = {
+    pullup: 'Pull-up',
+    pushup: 'Push-up',
+    dip: 'Dip',
+    legs: 'Legs',
+    core: 'Core',
+    crow: 'Crow pose',
+    rope: 'Jump rope',
+    handstand: 'Handstand',
+    lsit: 'L-sit',
+    muscleup: 'Muscle-up'
+  };
+
+  Object.keys(labels).forEach(key => {
+    const item = state.levels[key];
+    if (!item) return;
+    const exerciseTrack = getTracks()[key] || baseTracks[key];
+    if (!Array.isArray(exerciseTrack) || !exerciseTrack.length) return;
+    const exercise = exerciseTrack[Math.min(item.level, exerciseTrack.length - 1)];
+    if (!exercise) return;
+    const row = document.createElement('div');
+    row.className = 'level-row';
+    row.innerHTML = `<strong>${labels[key]}</strong><span>Level ${item.level + 1}/${exerciseTrack.length}</span>`;
+    levels.appendChild(row);
+  });
+}
+
+function monthWeekKey(date) {
+  const start = new Date(date.getFullYear(), date.getMonth(), 1);
+  const offset = (start.getDay() + 6) % 7;
+  return Math.floor((date.getDate() + offset - 1) / 7);
+}
+
+function workoutItemsForMonth(date = new Date()) {
+  return accountModule.workoutItemsForMonth(state.history, date);
+}
+
+function workoutCountForMonth(date = new Date()) {
+  return accountModule.workoutCountForMonth(state.history, date);
+}
+
+function workoutItemsForYear(date = new Date()) {
+  const year = date.getFullYear();
+  return state.history
+    .map(item => ({ ...item, parsedDate: new Date(item.date) }))
+    .filter(item => item.parsedDate.getFullYear() === year);
+}
+
+function elapsedWeeksInMonth(date = new Date()) {
+  const weeks = new Set();
+  for (let day = 1; day <= date.getDate(); day += 1) {
+    weeks.add(monthWeekKey(new Date(date.getFullYear(), date.getMonth(), day)));
+  }
+  return weeks.size || 1;
+}
+
+function renderConsistency(monthlyCount, now = new Date()) {
+  const title = document.getElementById('consistencyTitle');
+  const message = document.getElementById('consistencyMessage');
+  if (!title || !message) return;
+
+  const activeWeeks = new Set(
+    state.history
+      .map(item => new Date(item.date))
+      .filter(date => date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear())
+      .map(date => monthWeekKey(date))
+  ).size;
+  const elapsedWeeks = elapsedWeeksInMonth(now);
+
+  if (!monthlyCount) {
+    title.textContent = 'Your rhythm starts here.';
+    message.textContent = state.history.length ? 'A quiet month is not a reset. Come back with one easy session.' : 'Start light. The first win is simply showing up.';
+    return;
+  }
+
+  if (activeWeeks >= elapsedWeeks) {
+    title.textContent = 'You showed up every week this month.';
+    message.textContent = 'That is the identity we are building: someone who comes back.';
+    return;
+  }
+
+  if (monthlyCount === 1) {
+    if (state.history.length <= 1) {
+      title.textContent = 'First workout logged.';
+      message.textContent = 'This is the start: one honest session, saved and ready to build on.';
+    } else {
+      title.textContent = 'You came back this month.';
+      message.textContent = 'One workout is still proof: the door is open again.';
+    }
+    return;
+  }
+
+  title.textContent = `You showed up in ${activeWeeks} week${activeWeeks === 1 ? '' : 's'} this month.`;
+  message.textContent = 'Keep it repeatable. Consistency is built by returning, not by being perfect.';
+}
+
+function renderOnboarding() {
+  const onboarding = document.getElementById('onboarding');
+  if (!onboarding) return;
+
+  // During password recovery, Supabase creates a temporary logged-in session.
+  // Do not show onboarding while the user is only here to set a new password.
+  if (passwordRecoveryMode || !currentUser || hasCompletedProfile()) {
+    onboarding.classList.add('hidden');
+    document.body.classList.remove('onboarding-active');
+    return;
+  }
+
+  onboarding.classList.remove('hidden');
+  document.body.classList.add('onboarding-active');
+  renderOnboardingStep();
+}
+
+function renderOnboardingStep() {
+  const stepOne = document.getElementById('onboardingStepOne');
+  const stepTwo = document.getElementById('onboardingStepTwo');
+  const confirmation = document.getElementById('onboardingConfirmation');
+  if (!stepOne || !stepTwo || !confirmation) return;
+
+  stepOne.classList.toggle('hidden', onboardingStep !== 1 || onboardingConfirmationReady);
+  stepTwo.classList.toggle('hidden', onboardingStep !== 2 || onboardingConfirmationReady);
+  confirmation.classList.toggle('hidden', !onboardingConfirmationReady);
+}
+
+function showOnboardingStepTwo() {
+  const goal = document.querySelector('input[name="goal"]:checked')?.value;
+  const equipment = Array.from(document.querySelectorAll('input[name="equipment"]:checked')).map(input => input.value);
+
+  if (!goal || equipment.length === 0) {
+    setPanelMessage('onboardingMessage', 'Choose a focus and equipment to continue.', 'error');
+    return;
+  }
+
+  setPanelMessage('onboardingMessage', '');
+  onboardingStep = 2;
+  renderOnboardingStep();
+  document.getElementById('onboarding')?.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function finishOnboarding() {
+  onboardingConfirmationReady = false;
+  onboardingStep = 1;
+  document.body.classList.remove('onboarding-active');
+  renderAll();
+}
+
+function saveProfileFromOnboarding() {
+  const goal = document.querySelector('input[name="goal"]:checked')?.value;
+  const equipment = Array.from(document.querySelectorAll('input[name="equipment"]:checked')).map(input => input.value);
+  const pushups = document.querySelector('input[name="pushups"]:checked')?.value;
+  const squats = document.querySelector('input[name="squats"]:checked')?.value;
+  const deadHang = equipment.includes('pullupBar') ? document.querySelector('input[name="deadHang"]:checked')?.value : null;
+  const negativePullup = equipment.includes('pullupBar') ? document.querySelector('input[name="negativePullup"]:checked')?.value : null;
+  const dip = equipment.includes('dipBars') ? document.querySelector('input[name="dip"]:checked')?.value : null;
+
+  if (!goal || !pushups || !squats || equipment.length === 0) {
+    setPanelMessage('onboardingMessage', 'Choose a goal, equipment, push-up level, and squat level to continue.', 'error');
+    return;
+  }
+  if (equipment.includes('pullupBar') && (!deadHang || !negativePullup)) {
+    setPanelMessage('onboardingMessage', 'Answer the pull-up bar questions to continue.', 'error');
+    return;
+  }
+  if (equipment.includes('dipBars') && !dip) {
+    setPanelMessage('onboardingMessage', 'Answer the dip bars question to continue.', 'error');
+    return;
+  }
+
+  setPanelMessage('onboardingMessage', 'Building your plan...', 'info');
+  state.profile = { goal, equipment, pushups, squats, deadHang, negativePullup, dip, createdAt: new Date().toISOString() };
+  state.levels = initialLevelsFromProfile(state.profile, state.levels);
+  state.rotationIndex = 0;
+  state.current = null;
+  state.generated = null;
+  state.selectedEnergy = null;
+  saveState();
+  setPanelMessage('onboardingMessage', '');
+  onboardingConfirmationReady = true;
+  renderOnboardingStep();
+  document.getElementById('onboarding')?.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function initialLevelsFromProfile(profile, existingLevels) {
+  const levels = { ...defaultState().levels, ...(existingLevels || {}) };
+  const pushMap = { zero: 0, oneFive: 0, sixTen: 5, tenPlus: 7 };
+  const squatMap = { zeroFive: 0, sixTen: 0, tenPlus: 1 };
+  levels.pushup = { level: pushMap[profile.pushups] ?? 0, points: 0 };
+  levels.legs = { level: squatMap[profile.squats] ?? 0, points: 0 };
+  if (profile.equipment.includes('pullupBar')) {
+    levels.pullup = { level: profile.negativePullup === 'yes' ? 1 : profile.deadHang === 'yes' ? 0 : 0, points: 0 };
+  } else {
+    levels.pullup = { level: 0, points: 0 };
+  }
+  if (profile.equipment.includes('dipBars')) {
+    levels.dip = { level: profile.dip === 'yes' ? 2 : 0, points: 0 };
+  } else {
+    levels.dip = { level: 0, points: 0 };
+  }
+  return levels;
+}
+
+function updateConditionalQuestions() {
+  const equipment = Array.from(document.querySelectorAll('input[name="equipment"]:checked')).map(input => input.value);
+  document.getElementById('pullupAssessment')?.classList.toggle('hidden', !equipment.includes('pullupBar'));
+  document.getElementById('dipAssessment')?.classList.toggle('hidden', !equipment.includes('dipBars'));
+}
+
+function isSafeToShowUpdateBanner() {
+  const accountPanel = document.getElementById('accountPanel');
+  const onboarding = document.getElementById('onboarding');
+  return Boolean(
+    updateBannerReady &&
+    !passwordRecoveryMode &&
+    !state.current &&
+    !state.selectedEnergy &&
+    !state.generated &&
+    !document.body.classList.contains('logged-out') &&
+    !accountPanel?.classList.contains('account-open') &&
+    onboarding?.classList.contains('hidden')
+  );
+}
+
+function updateUpdateBanner() {
+  const banner = document.getElementById('updateBanner');
+  if (!banner) return;
+  banner.classList.toggle('hidden', !isSafeToShowUpdateBanner());
+}
+
+function markUpdateReady(worker) {
+  waitingServiceWorker = worker || waitingServiceWorker;
+  updateBannerReady = Boolean(waitingServiceWorker) || versionUpdateReady;
+  updateUpdateBanner();
+}
+
+function markVersionUpdateReady() {
+  versionUpdateReady = true;
+  updateBannerReady = true;
+  updateUpdateBanner();
+}
+
+function applyWaitingUpdate() {
+  if (applyingUpdate) return;
+  applyingUpdate = true;
+  if (waitingServiceWorker) {
+    waitingServiceWorker.postMessage({ type: 'SKIP_WAITING' });
+    return;
+  }
+  window.location.reload();
+}
+
+async function checkLiveVersion() {
+  if (versionCheckInProgress || document.hidden) return;
+  versionCheckInProgress = true;
+  try {
+    const response = await fetch(`./version.json?ts=${Date.now()}`, { cache: 'no-store' });
+    if (!response.ok) return;
+    const data = await response.json();
+    if (data?.version && data.version !== APP_VERSION) {
+      markVersionUpdateReady();
+    }
+  } catch (error) {
+    // Version polling is only a helper; service-worker update checks still run.
+  } finally {
+    versionCheckInProgress = false;
+  }
+}
+
+
+function enforceScreenSeparation() {
+  const panel = document.getElementById('accountPanel');
+  const loggedOut = document.getElementById('loggedOutAccount');
+  const loggedIn = document.getElementById('loggedInAccount');
+  const onboarding = document.getElementById('onboarding');
+  const screens = document.querySelectorAll('.screen');
+  const bottomNav = document.querySelector('.bottom-nav');
+  const accountBtn = document.getElementById('accountBtn');
+
+  if (passwordRecoveryMode) {
+    document.body.classList.add('logged-out');
+    document.documentElement.classList.add('recovery-boot');
+    setWelcomeVisible(false);
+    panel?.classList.remove('hidden', 'account-modal', 'account-open');
+    loggedOut?.classList.remove('hidden');
+    loggedIn?.classList.add('hidden');
+    setAuthMode('reset');
+    onboarding?.classList.add('hidden');
+    screens.forEach(screen => screen.classList.add('auth-locked'));
+    bottomNav?.classList.add('hidden');
+    accountBtn?.classList.add('hidden');
+    return;
+  }
+
+  document.documentElement.classList.remove('recovery-boot');
+
+  if (!currentUser) {
+    panel?.classList.remove('hidden', 'account-modal', 'account-open');
+    loggedOut?.classList.remove('hidden');
+    loggedIn?.classList.add('hidden');
+    onboarding?.classList.add('hidden');
+    screens.forEach(screen => screen.classList.add('auth-locked'));
+    bottomNav?.classList.add('hidden');
+    accountBtn?.classList.add('hidden');
+    return;
+  }
+
+  const profileDone = hasCompletedProfile();
+  screens.forEach(screen => screen.classList.toggle('auth-locked', !profileDone));
+  bottomNav?.classList.toggle('hidden', !profileDone);
+  accountBtn?.classList.toggle('hidden', !profileDone && !currentUser);
+}
+function renderAll() {
+  renderAccount();
+  renderOnboarding();
+  if (!passwordRecoveryMode && currentUser && hasCompletedProfile()) {
+    renderToday();
+    renderProgress();
+    renderActivity();
+  }
+  enforceScreenSeparation();
+  updateWelcomeGate();
+  updateUpdateBanner();
+}
+
+function renderAccount() {
+  const panel = document.getElementById('accountPanel');
+  const loggedOut = document.getElementById('loggedOutAccount');
+  const loggedIn = document.getElementById('loggedInAccount');
+  const email = document.getElementById('accountEmail');
+  const accountBtn = document.getElementById('accountBtn');
+  const bottomNav = document.querySelector('.bottom-nav');
+  const screens = document.querySelectorAll('.screen');
+
+  document.body.classList.toggle('logged-out', !currentUser);
+
+  if (!panel || !loggedOut || !loggedIn) return;
+
+  panel.classList.toggle('account-modal', Boolean(currentUser));
+
+  if (!SUPABASE_READY) {
+    panel.classList.remove('hidden');
+    panel.classList.remove('account-modal');
+    loggedOut.classList.remove('hidden');
+    loggedIn.classList.add('hidden');
+    screens.forEach(screen => screen.classList.add('auth-locked'));
+    if (bottomNav) bottomNav.classList.add('hidden');
+    if (accountBtn) accountBtn.classList.add('hidden');
+    const muted = loggedOut.querySelector('.muted');
+    if (muted) muted.textContent = 'Account connection is not configured yet.';
+    return;
+  }
+
+  if (passwordRecoveryMode) {
+    panel.classList.remove('hidden');
+    panel.classList.remove('account-modal', 'account-open');
+    loggedOut.classList.remove('hidden');
+    loggedIn.classList.add('hidden');
+    setAuthMode('reset');
+    screens.forEach(screen => screen.classList.add('auth-locked'));
+    if (bottomNav) bottomNav.classList.add('hidden');
+    if (accountBtn) accountBtn.classList.add('hidden');
+    return;
+  }
+
+  if (currentUser) {
+    setAuthMessage('');
+    loggedOut.classList.add('hidden');
+    loggedIn.classList.remove('hidden');
+    const profileDone = hasCompletedProfile();
+    screens.forEach(screen => screen.classList.toggle('auth-locked', !profileDone));
+    if (bottomNav) bottomNav.classList.toggle('hidden', !profileDone);
+    if (accountBtn) {
+      accountBtn.classList.remove('hidden');
+      accountBtn.textContent = 'Account';
+    }
+    if (email) email.textContent = currentUser.email;
+    renderAccountMainSummary();
+    if (!panel.classList.contains('account-open')) panel.classList.add('hidden');
+  } else {
+    panel.classList.remove('hidden');
+    panel.classList.remove('account-modal', 'account-open');
+    loggedOut.classList.remove('hidden');
+    loggedIn.classList.add('hidden');
+    screens.forEach(screen => screen.classList.add('auth-locked'));
+    if (bottomNav) bottomNav.classList.add('hidden');
+    if (accountBtn) accountBtn.classList.add('hidden');
+  }
+}
+
+function openAccountModal() {
+  const panel = document.getElementById('accountPanel');
+  if (!panel || !currentUser) return;
+  panel.classList.add('account-modal', 'account-open');
+  panel.classList.remove('hidden');
+  showAccountView('main');
+  renderModule.focusFirstInteractive(panel);
+}
+
+function closeAccountModal() {
+  const panel = document.getElementById('accountPanel');
+  if (!panel) return;
+  panel.classList.remove('account-open', 'account-main-mode', 'account-submenu-mode');
+  panel.classList.add('hidden');
+  showAccountView('main');
+  updateUpdateBanner();
+}
+
+function showAccountView(view) {
+  if (view === 'password' && !canChangePassword()) view = 'main';
+  document.querySelectorAll('#loggedInAccount .account-view').forEach(item => item.classList.add('hidden'));
+  const target = document.getElementById(`account${view[0].toUpperCase()}${view.slice(1)}View`);
+  if (target) target.classList.remove('hidden');
+  const title = document.getElementById('accountModalTitle');
+  if (title) title.textContent = 'somthingreat';
+  const closeBtn = document.getElementById('closeAccountModalBtn');
+  if (closeBtn) closeBtn.classList.remove('hidden');
+  const panel = document.getElementById('accountPanel');
+  const content = document.getElementById('loggedInAccount');
+  const submenuViews = ['goal', 'equipment', 'recovery', 'password', 'support', 'admin'];
+  if (panel) panel.classList.remove('account-password-mode');
+  if (panel) panel.classList.toggle('account-main-mode', view === 'main');
+  if (panel) panel.classList.toggle('account-submenu-mode', submenuViews.includes(view));
+  if (panel) panel.scrollTop = 0;
+  if (content) content.scrollTop = 0;
+  if (view === 'goal') populateAccountGoal();
+  if (view === 'equipment') populateAccountEquipment();
+  if (view === 'recovery') populateAccountRecovery();
+  if (view === 'support') resetSupportForm();
+  if (view === 'admin') renderAdminDashboard();
+  setPanelMessage('accountGoalMessage', '');
+  setPanelMessage('accountEquipmentMessage', '');
+  setPanelMessage('accountRecoveryMessage', '');
+  setPanelMessage('supportMessage', '');
+}
+
+function renderAccountMainSummary() {
+  const profile = getProfile() || {};
+  const goalSummary = document.getElementById('accountGoalSummary');
+  const equipmentSummary = document.getElementById('accountEquipmentSummary');
+  const recoverySummary = document.getElementById('accountRecoverySummary');
+  const adminSection = document.getElementById('adminAccountSection');
+  const passwordSection = document.getElementById('passwordAccountSection');
+  if (adminSection) adminSection.classList.toggle('hidden', !isAdminUser());
+  if (passwordSection) passwordSection.classList.toggle('hidden', !canChangePassword());
+  if (goalSummary) goalSummary.textContent = goalLabels[profile.goal] || 'Not set';
+  if (equipmentSummary) {
+    const equipment = profile.equipment || [];
+    equipmentSummary.textContent = equipment.length ? equipment.map(item => equipmentLabels[item] || item).join(', ') : 'Not set';
+  }
+  if (recoverySummary) {
+    const recovery = getActiveRecovery();
+    recoverySummary.textContent = recovery ? recoveryAreaLabels[recovery.area] || 'Active' : '';
+  }
+}
+
+function populateAccountGoal() {
+  const goal = getProfile()?.goal || 'pullup';
+  const input = document.querySelector(`input[name="accountGoal"][value="${goal}"]`);
+  if (input) input.checked = true;
+}
+
+function populateAccountEquipment() {
+  const equipment = getProfile()?.equipment || ['none'];
+  document.querySelectorAll('input[name="accountEquipment"]').forEach(input => {
+    input.checked = equipment.includes(input.value);
+  });
+}
+
+function getActiveRecovery() {
+  const recovery = state.recovery;
+  if (!recovery || typeof recovery !== 'object') return null;
+  if (recovery.until && !Number.isNaN(new Date(recovery.until).getTime()) && new Date(recovery.until).getTime() < Date.now()) return null;
+  return recovery.area ? recovery : null;
+}
+
+function recoveryEndDate(duration) {
+  const config = recoveryDurations[duration];
+  if (!config || config.openEnded) return null;
+  const date = new Date();
+  if (config.days) date.setDate(date.getDate() + config.days);
+  if (config.months) date.setMonth(date.getMonth() + config.months);
+  return date;
+}
+
+function formatRecoveryDate(date) {
+  if (!date || Number.isNaN(new Date(date).getTime())) return '';
+  const d = new Date(date);
+  const month = d.toLocaleDateString('en-US', { month: 'short' });
+  return `${month}. ${d.getDate()} ${d.getFullYear()}`;
+}
+
+function recoveryStatusText(recovery) {
+  if (!recovery) return '';
+  const mode = recoveryModeLabels[recovery.mode] || 'Reduce load';
+  if (!recovery.until) return `${mode} until you remove it`;
+  return `${mode} until ${formatRecoveryDate(recovery.until)}`;
+}
+
+function populateAccountRecovery() {
+  const recovery = getActiveRecovery();
+  const areaInput = document.getElementById('recoveryAreaInput');
+  const durationInput = document.getElementById('recoveryDurationInput');
+  const saveBtn = document.getElementById('saveAccountRecoveryBtn');
+  const card = document.getElementById('activeRecoveryCard');
+  const cardArea = document.getElementById('activeRecoveryArea');
+  const cardUntil = document.getElementById('activeRecoveryUntil');
+
+  if (areaInput) areaInput.value = recovery?.area || '';
+  if (durationInput) durationInput.value = recovery?.duration || '';
+  document.querySelectorAll('input[name="accountRecoveryMode"]').forEach(input => {
+    input.checked = (recovery?.mode || 'reduce') === input.value;
+  });
+  if (saveBtn) saveBtn.textContent = recovery ? 'Update recovery' : 'Add recovery';
+
+  if (card) card.classList.toggle('hidden', !recovery);
+  if (cardArea) cardArea.textContent = recovery ? recoveryAreaLabels[recovery.area] || '' : '';
+  if (cardUntil) cardUntil.textContent = recoveryStatusText(recovery);
+}
+
+async function saveAccountRecovery() {
+  const area = document.getElementById('recoveryAreaInput')?.value || '';
+  const duration = document.getElementById('recoveryDurationInput')?.value || '';
+  const mode = document.querySelector('input[name="accountRecoveryMode"]:checked')?.value || 'reduce';
+  if (!area) return setPanelMessage('accountRecoveryMessage', 'Select an area first.', 'error');
+  if (!duration) return setPanelMessage('accountRecoveryMessage', 'Select a duration first.', 'error');
+  const until = recoveryEndDate(duration);
+  state.recovery = {
+    area,
+    mode,
+    duration,
+    until: until ? until.toISOString() : null,
+    createdAt: new Date().toISOString()
+  };
+  state.current = null;
+  state.generated = null;
+  state.selectedEnergy = null;
+  saveState();
+  populateAccountRecovery();
+  renderAccountMainSummary();
+  setPanelMessage('accountRecoveryMessage', 'Recovery saved.', 'success');
+}
+
+function editAccountRecovery() {
+  populateAccountRecovery();
+  document.getElementById('recoveryAreaInput')?.focus();
+}
+
+function removeAccountRecovery() {
+  state.recovery = null;
+  state.current = null;
+  state.generated = null;
+  state.selectedEnergy = null;
+  saveState();
+  populateAccountRecovery();
+  renderAccountMainSummary();
+  setPanelMessage('accountRecoveryMessage', 'Recovery removed.', 'success');
+}
+
+async function saveAccountGoal() {
+  const goal = document.querySelector('input[name="accountGoal"]:checked')?.value;
+  if (!goal) return setPanelMessage('accountGoalMessage', 'Choose a goal first.', 'error');
+  setPanelMessage('accountGoalMessage', 'Saving goal...', 'info');
+  state.profile = { ...(state.profile || {}), goal, updatedAt: new Date().toISOString() };
+  state.current = null;
+  state.generated = null;
+  state.selectedEnergy = null;
+  saveState();
+  renderAll();
+  openAccountModal();
+  showAccountView('main');
+}
+
+async function saveAccountEquipment() {
+  const equipment = Array.from(document.querySelectorAll('input[name="accountEquipment"]:checked')).map(input => input.value);
+  if (equipment.length === 0) return setPanelMessage('accountEquipmentMessage', 'Choose at least one equipment option.', 'error');
+  setPanelMessage('accountEquipmentMessage', 'Saving equipment...', 'info');
+  state.profile = { ...(state.profile || {}), equipment, updatedAt: new Date().toISOString() };
+  state.current = null;
+  state.generated = null;
+  state.selectedEnergy = null;
+  saveState();
+  renderAll();
+  openAccountModal();
+  showAccountView('main');
+}
+
+async function changePasswordFromAccount() {
+  return withButtonLoading('saveAccountPasswordBtn', 'Sending...', async () => {
+    if (!supabaseClient || !currentUser) return;
+    const message = document.getElementById('accountPasswordMessage');
+    const email = currentUser.email || document.getElementById('accountEmail')?.textContent.trim();
+    renderModule.setMessage(message, '', 'info');
+    if (!email) {
+      renderModule.setMessage(message, 'Log in again before changing your password.', 'error');
+      return;
+    }
+    renderModule.setMessage(message, 'Sending reset link...', 'info');
+    const { error } = await sendPasswordResetToEmail(email);
+    if (error) {
+      renderModule.setMessage(message, friendlyAuthError(error.message), 'error');
+      return;
+    }
+    renderModule.setMessage(message, 'Password reset link sent. Check your email.', 'success');
+  });
+}
+
+function resetSupportForm() {
+  setPanelMessage('supportMessage', '');
+}
+
+async function sendSupportMessage() {
+  return withButtonLoading('sendSupportBtn', 'Submitting...', async () => {
+    const subjectInput = document.getElementById('supportSubjectInput');
+    const messageInput = document.getElementById('supportMessageInput');
+    const message = document.getElementById('supportMessage');
+    const subject = subjectInput?.value.trim() || '';
+    const body = messageInput?.value.trim() || '';
+
+    if (!subject || !body) {
+      renderModule.setMessage(message, 'Add a subject and message first.', 'error');
+      return;
+    }
+    if (!supabaseClient || !currentUser) {
+      renderModule.setMessage(message, 'Log in again before sending support.', 'error');
+      return;
+    }
+
+    renderModule.setMessage(message, 'Sending...', 'info');
+    const { error } = await supabaseClient.functions.invoke('support-email', {
+      body: {
+        subject,
+        message: body,
+        email: currentUser.email || ''
+      }
+    });
+
+    if (error) {
+      renderModule.setMessage(message, 'Could not send it yet. Try again in a moment.', 'error');
+      return;
+    }
+
+    if (subjectInput) subjectInput.value = '';
+    if (messageInput) messageInput.value = '';
+    renderModule.setMessage(message, 'Message sent. We’ll get back to you soon.', 'success');
+  });
+}
+function renderActivity() {
+  const yearSummary = document.getElementById('historyYearSummary');
+  const monthSummary = document.getElementById('historyMonthSummary');
+  const yearTitle = document.getElementById('historyYearTitle');
+  const title = document.getElementById('historyMonthTitle');
+  const calendar = document.getElementById('historyCalendar');
+  const list = document.getElementById('historyList');
+  if (!yearSummary || !monthSummary || !yearTitle || !title || !calendar || !list) return;
+
+  const month = accountHistoryMonth.getMonth();
+  const year = accountHistoryMonth.getFullYear();
+  const now = new Date();
+  const yearItems = workoutItemsForYear(accountHistoryMonth);
+  const yearCount = yearItems.length;
+  const monthItems = workoutItemsForMonth(accountHistoryMonth).sort((a, b) => a.parsedDate - b.parsedDate);
+  const monthCount = monthItems.length;
+  yearSummary.textContent = `This year: ${yearCount} workout${yearCount === 1 ? '' : 's'}`;
+  monthSummary.textContent = `This month: ${monthCount} workout${monthCount === 1 ? '' : 's'}`;
+  yearTitle.textContent = String(year);
+  title.textContent = accountHistoryMonth.toLocaleDateString('en-US', { month: 'long' });
+
+  const byDay = new Map();
+  monthItems.forEach(item => {
+    const day = item.parsedDate.getDate();
+    if (!byDay.has(day)) byDay.set(day, []);
+    byDay.get(day).push(item);
+  });
+
+  const selectedWorkoutDay = accountHistorySelectedDay && byDay.has(accountHistorySelectedDay)
+    ? accountHistorySelectedDay
+    : null;
+  accountHistorySelectedDay = selectedWorkoutDay;
+
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const mondayOffset = (firstDay.getDay() + 6) % 7;
+  const isCurrentMonth = now.getFullYear() === year && now.getMonth() === month;
+  document.querySelectorAll('#activity .history-weekdays span').forEach((item, index) => {
+    item.classList.toggle('is-today-weekday', isCurrentMonth && index === ((now.getDay() + 6) % 7));
+  });
+  calendar.innerHTML = '';
+  for (let i = 0; i < mondayOffset; i += 1) {
+    const empty = document.createElement('div');
+    empty.className = 'history-day history-empty';
+    calendar.appendChild(empty);
+  }
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = new Date(year, month, day);
+    const hasWorkout = byDay.has(day);
+    const isToday = date.toDateString() === now.toDateString();
+    const isSelected = selectedWorkoutDay === day;
+    const isPast = date < new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.historyDay = String(day);
+    button.className = [
+      'history-day',
+      hasWorkout ? 'has-workout' : '',
+      isPast && !hasWorkout ? 'past-empty' : '',
+      !isPast && !isToday && !hasWorkout ? 'future-empty' : '',
+      isToday ? 'is-today' : '',
+      isSelected ? 'is-selected' : ''
+    ].filter(Boolean).join(' ');
+    button.disabled = !hasWorkout;
+    button.innerHTML = `<span>${day}</span>`;
+    calendar.appendChild(button);
+  }
+
+  const selectedItems = selectedWorkoutDay ? byDay.get(selectedWorkoutDay) || [] : [];
+  list.innerHTML = selectedItems.length
+    ? selectedItems.map(item => {
+      const dateLabel = item.parsedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+      const label = item.type === 'custom'
+        ? `${item.workout || 'Custom checklist'} - Custom`
+        : `${item.workout || 'Workout'} - ${energyOptions[item.mode]?.title || item.mode || 'Done'}`;
+      return `<div class="history-item"><strong>${escapeHTML(dateLabel)}</strong><span>${escapeHTML(label)}</span></div>`;
+    }).join('')
+    : '';
+}
+
+async function renderAdminDashboard() {
+  const summary = document.getElementById('adminDashboardSummary');
+  const message = document.getElementById('adminDashboardMessage');
+  const list = document.getElementById('adminDashboardList');
+  const toggle = document.getElementById('toggleAdminUsersBtn');
+  if (!summary || !message || !list) return;
+
+  if (!isAdminUser()) {
+    summary.textContent = 'Admin access only.';
+    message.textContent = 'Admin access only.';
+    list.innerHTML = '';
+    return;
+  }
+
+  if (!supabaseClient) {
+    summary.textContent = 'Supabase is not configured.';
+    message.textContent = 'Supabase is not configured.';
+    list.innerHTML = '';
+    return;
+  }
+
+  summary.textContent = 'Loading dashboard...';
+  message.textContent = 'Loading users...';
+  list.innerHTML = '';
+  if (toggle) toggle.classList.remove('is-open');
+  if (toggle) toggle.setAttribute('aria-expanded', 'false');
+  list.classList.add('hidden');
+
+  const [{ data: profiles, error: profileError }, { data: savedStates, error: stateError }] = await Promise.all([
+    supabaseClient
+      .from('workout_profiles')
+      .select('id,email,current_auth_user_id,deleted_at,updated_at')
+      .order('updated_at', { ascending: false }),
+    supabaseClient
+      .from('workout_states_v2')
+      .select('profile_id,state,updated_at')
+  ]);
+
+  if (profileError || stateError) {
+    summary.textContent = 'Could not load dashboard.';
+    message.textContent = 'Could not load admin dashboard. Check Supabase admin policies.';
+    return;
+  }
+
+  const statesByProfile = new Map((savedStates || []).map(item => [item.profile_id, item]));
+  const now = new Date();
+  const rows = (profiles || []).filter(profile => !profile.deleted_at).map(profile => {
+    const stateRow = statesByProfile.get(profile.id);
+    const savedState = stateRow?.state || null;
+    return {
+      email: profile.email || 'Unknown',
+      active: formatAdminActive(profile, savedState, now),
+      goal: formatAdminGoal(savedState),
+      completed: getCompletedWorkoutCount(savedState),
+      updatedAt: stateRow?.updated_at || profile.updated_at
+    };
+  });
+
+  const activeCount = rows.filter(row => row.active === 'Y').length;
+  const goalCounts = rows.reduce((counts, row) => {
+    counts[row.goal] = (counts[row.goal] || 0) + 1;
+    return counts;
+  }, {});
+  const topGoal = Object.entries(goalCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Not set';
+  summary.innerHTML = [
+    `Total users: ${rows.length}`,
+    `Active users: ${activeCount}`,
+    `Most selected focus: ${escapeHTML(topGoal)}`
+  ].join('<br>');
+  message.textContent = '';
+  list.innerHTML = rows.length
+    ? rows.map(row => `
+      <div class="admin-user-row">
+        <span>${escapeHTML(row.email)}</span>
+        <strong>${row.completed}</strong>
+      </div>
+    `).join('')
+    : '<p class="muted">No active profiles found yet.</p>';
+}
+
+async function initCloudSync() {
+  if (!supabaseClient) {
+    renderAll();
+    return;
+  }
+
+  passwordRecoveryMode = passwordRecoveryMode || isPasswordRecoveryUrl();
+
+  if (passwordRecoveryMode) {
+    welcomeDismissed = true;
+    setWelcomeVisible(false);
+    setAuthMode('reset');
+    await ensureRecoverySession();
+    setAuthMode('reset');
+  } else {
+    const { data } = await supabaseClient.auth.getSession();
+    currentUser = data.session?.user || null;
+    currentProfileId = null;
+    if (currentUser) await loadCloudState();
+  }
+
+  renderAll();
+
+  supabaseClient.auth.onAuthStateChange(async (event, session) => {
+    currentUser = session?.user || null;
+    currentProfileId = null;
+    if (event === 'PASSWORD_RECOVERY') passwordRecoveryMode = true;
+    if (hasRecoveryBootFlag()) passwordRecoveryMode = true;
+    if (event === 'SIGNED_IN' && !passwordRecoveryMode) passwordRecoveryMode = false;
+    if (event === 'SIGNED_OUT') passwordRecoveryMode = false;
+    if (passwordRecoveryMode) {
+      welcomeDismissed = true;
+      setWelcomeVisible(false);
+      setAuthMode('reset');
+      if (!currentUser) await ensureRecoverySession();
+    }
+
+    // Do not block the UI on cloud sync. If Supabase profile/state loading is slow,
+    // users must still leave the auth screen instead of staying on “Logging in...”.
+    renderAll();
+    if (currentUser && !passwordRecoveryMode) loadCloudStateInBackground();
+  });
+}
+
+async function signUp() {
+  return withButtonLoading('signupBtn', 'Creating...', async () => {
+    passwordRecoveryMode = false;
+    clearRecoveryBootFlag();
+    if (!supabaseClient) return setAuthMessage('Account connection is not configured yet.', 'error');
+    const email = document.getElementById('signupEmailInput')?.value.trim();
+    const password = document.getElementById('signupPasswordInput')?.value;
+    const confirmPassword = document.getElementById('signupConfirmPasswordInput')?.value;
+    if (!email || !password || !confirmPassword) return setAuthMessage('Enter your email, password, and confirmation.', 'error');
+    if (password.length < 6) return setAuthMessage('Password must be at least 6 characters.', 'error');
+    if (password !== confirmPassword) return setAuthMessage('Passwords do not match.', 'error');
+    setAuthMessage('Creating your account...', 'info');
+    const { data, error } = await supabaseClient.auth.signUp({ email, password });
+    if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
+    currentUser = data?.session?.user || data?.user || currentUser;
+    currentProfileId = null;
+    if (currentUser) await loadCloudState();
+    setAuthMessage('Account created. Let’s build your plan.', 'success');
+    renderAll();
+  });
+}
+
+async function login() {
+  return withButtonLoading('loginBtn', 'Logging in...', async () => {
+    passwordRecoveryMode = false;
+    clearRecoveryBootFlag();
+    if (!supabaseClient) return setAuthMessage('Account connection is not configured yet.', 'error');
+    const email = document.getElementById('loginEmailInput')?.value.trim();
+    const password = document.getElementById('loginPasswordInput')?.value;
+    if (!email || !password) return setAuthMessage('Enter your email and password.', 'error');
+
+    setAuthMessage('Logging in...', 'info');
+
+    try {
+      const { data, error } = await withTimeout(
+        supabaseClient.auth.signInWithPassword({ email, password }),
+        12000,
+        'Login is taking too long. Check your connection and try again.'
+      );
+
+      if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
+
+      passwordRecoveryMode = false;
+      currentUser = data?.session?.user || currentUser;
+      currentProfileId = null;
+
+      setAuthMessage('Logged in. Loading your progress...', 'success');
+      renderAll();
+      loadCloudStateInBackground();
+    } catch (error) {
+      setAuthMessage(error.message || 'Login failed. Please try again.', 'error');
+    }
+  });
+}
+
+async function loginWithGoogle() {
+  passwordRecoveryMode = false;
+  clearRecoveryBootFlag();
+  if (!supabaseClient) return setAuthMessage('Google connection is not configured yet.', 'error');
+
+  setAuthMessage('Opening Google...', 'info');
+  const redirectTo = `${window.location.origin}${window.location.pathname}`;
+  const { error } = await supabaseClient.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo }
+  });
+  if (error) setAuthMessage(friendlyAuthError(error.message), 'error');
+}
+
+async function sendPasswordReset() {
+  return withButtonLoading('forgotPasswordBtn', 'Sending...', async () => {
+    if (!supabaseClient) return setAuthMessage('Account connection is not configured yet.', 'error');
+    const email = document.getElementById('loginEmailInput')?.value.trim();
+    if (!email) return setAuthMessage('Enter your email first, then tap Forgot password.', 'error');
+
+    setAuthMessage('Sending reset link...', 'info');
+    const { error } = await sendPasswordResetToEmail(email);
+    if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
+    setAuthMessage('Password reset link sent. Check your email.', 'success');
+  });
+}
+
+async function updatePasswordFromRecovery() {
+  return withButtonLoading('resetPasswordBtn', 'Updating...', async () => {
+    if (!supabaseClient) return setAuthMessage('Account connection is not configured yet.', 'error');
+
+    passwordRecoveryMode = true;
+    const session = await ensureRecoverySession();
+    if (!session?.user) return setAuthMessage('This reset link was not recognised. Please request a new reset link and open it directly from your email.', 'error');
+    currentUser = session.user;
+
+    const password = document.getElementById('resetPasswordInput')?.value;
+    const confirmPassword = document.getElementById('resetConfirmPasswordInput')?.value;
+    if (!password || !confirmPassword) return setAuthMessage('Enter and confirm your new password.', 'error');
+    if (password.length < 6) return setAuthMessage('Password must be at least 6 characters.', 'error');
+    if (password !== confirmPassword) return setAuthMessage('Passwords do not match.', 'error');
+
+    setAuthMessage('Updating password...', 'info');
+    const client = activeRecoveryClient || supabaseClient;
+    const { error } = await client.auth.updateUser({ password });
+    if (error) {
+      const lower = (error.message || '').toLowerCase();
+      if (lower.includes('current password') || lower.includes('auth session missing') || lower.includes('session missing')) {
+        return setAuthMessage('This reset session was not recognised. Please request a new reset link and open it directly from your email.', 'error');
+      }
+      return setAuthMessage(friendlyAuthError(error.message), 'error');
+    }
+    await finishResetToLogin(client);
+  });
+}
+
+async function logout() {
+  if (!supabaseClient) return;
+  await signOutClient(supabaseClient);
+  currentUser = null;
+  currentProfileId = null;
+  passwordRecoveryMode = false;
+  clearAuthFields();
+  welcomeDismissed = false;
+  setAuthMode('welcome');
+  renderAll();
+}
+
+document.addEventListener('mousedown', event => {
+  if (event.target.closest('[data-toggle-password]')) event.preventDefault();
+});
+
+document.addEventListener('touchend', event => {
+  const toggle = event.target.closest('[data-toggle-password]');
+  if (!toggle) return;
+  event.preventDefault();
+  togglePasswordVisibility(toggle);
+}, { passive: false });
+
+document.addEventListener('keydown', event => {
+  const timerPanel = document.getElementById('timerPanel');
+  if (timerPanel && !timerPanel.classList.contains('hidden')) {
+    if (event.key === 'Escape') closeWorkoutTimer();
+    renderModule.trapTabKey(event, timerPanel);
+    return;
+  }
+
+  const confirmPanel = document.getElementById('confirmPanel');
+  if (confirmPanel && !confirmPanel.classList.contains('hidden')) {
+    if (event.key === 'Escape') closeConfirmPanel();
+    renderModule.trapTabKey(event, confirmPanel);
+    return;
+  }
+
+  const exerciseHelpPanel = document.getElementById('exerciseHelpPanel');
+  if (exerciseHelpPanel && !exerciseHelpPanel.classList.contains('hidden')) {
+    if (event.key === 'Escape') closeExerciseHelp();
+    renderModule.trapTabKey(event, exerciseHelpPanel);
+    return;
+  }
+
+  const accountPanel = document.getElementById('accountPanel');
+  if (accountPanel?.classList.contains('account-open')) {
+    if (event.key === 'Escape') closeAccountModal();
+    renderModule.trapTabKey(event, accountPanel);
+  }
+});
+
+document.addEventListener('click', event => {
+  if (event.target.id === 'welcomeNextBtn') {
+    welcomeDismissed = true;
+    updateWelcomeGate();
+    // Re-apply auth/onboarding visibility after the welcome screen is dismissed.
+    // Without this, the hidden app shell can reappear with the active Today screen
+    // still mounted behind the logged-out auth form.
+    renderAccount();
+    renderOnboarding();
+    return;
+  }
+
+  if (event.target.id === 'welcomeLoginBtn') {
+    welcomeDismissed = true;
+    setAuthMode('login');
+    updateWelcomeGate();
+    renderAccount();
+    renderOnboarding();
+    return;
+  }
+
+  if (event.target.id === 'applyUpdateBtn') applyWaitingUpdate();
+  if (event.target.id === 'confirmCancelBtn') closeConfirmPanel();
+  if (event.target.id === 'confirmActionBtn') {
+    const action = pendingConfirmAction;
+    closeConfirmPanel();
+    if (typeof action === 'function') action();
+  }
+  if (event.target.id === 'skipTimerBtn' || event.target.id === 'timerPanel') closeWorkoutTimer();
+  if (event.target.id === 'closeExerciseHelpBtn' || event.target.id === 'exerciseHelpPanel') closeExerciseHelp();
+  const exerciseHelpButton = event.target.closest('.exercise-help-btn');
+  if (exerciseHelpButton) showExerciseHelp(exerciseHelpButton.dataset.exerciseName);
+
+  const exerciseToggle = event.target.closest('.exercise-chip-toggle');
+  if (exerciseToggle) {
+    const trackKey = exerciseToggle.dataset.track;
+    openExerciseTrackKey = openExerciseTrackKey === trackKey ? null : trackKey;
+    renderExercises();
+    return;
+  }
+
+  const setControl = event.target.closest('.set-control');
+  if (setControl) {
+    const trackKey = setControl.dataset.track;
+    const setIndex = Number(setControl.dataset.setIndex);
+    const currentDone = Boolean(state.current?.sets?.[trackKey]?.[setIndex]);
+    if (setControl.dataset.timerSeconds && !currentDone) {
+      const seconds = Number(setControl.dataset.timerSeconds);
+      const exerciseName = setControl.dataset.exerciseName || 'Exercise';
+      const setLabel = setControl.dataset.setLabel || 'Round';
+      openExerciseTrackKey = trackKey;
+      saveState();
+      renderExercises();
+      showWorkoutTimer({
+        title: exerciseName,
+        subtitle: setLabel,
+        seconds,
+        prepSeconds: 3,
+        trackKey,
+        setIndex,
+        completeOnFinish: true
+      });
+      return;
+    }
+    const exercise = findCurrentExercise(trackKey);
+    markWorkoutSetDone(trackKey, setIndex, !currentDone);
+    if (!currentDone && state.current?.includeRestTimer && !exercise?.isAddOn && hasRemainingWorkoutSets()) {
+      showWorkoutTimer({
+        title: 'Rest',
+        subtitle: 'Rest',
+        seconds: 60
+      });
+    }
+    return;
+  }
+
+  const exerciseTimerButton = event.target.closest('.set-timer-btn');
+  if (exerciseTimerButton) {
+    const seconds = Number(exerciseTimerButton.dataset.timerSeconds);
+    const exerciseName = exerciseTimerButton.dataset.exerciseName || 'Exercise';
+    const setLabel = exerciseTimerButton.dataset.setLabel || 'Set';
+    showWorkoutTimer({
+      title: exerciseName,
+      subtitle: `${setLabel} starts after a short countdown.`,
+      seconds,
+      prepSeconds: 3
+    });
+  }
+
+  const feelButton = event.target.closest('.feel-btn');
+  if (feelButton) selectEnergy(feelButton.dataset.feel);
+  if (event.target.id === 'dismissTodayEmptyState') dismissTodayEmptyState();
+  if (event.target.id === 'dismissWorkoutStatusBtn') dismissWorkoutStatus();
+  if (event.target.id === 'openCustomChecklistBtn') openCustomChecklistForm();
+  if (event.target.id === 'cancelCustomChecklistFormBtn') {
+    resetCustomChecklistForm();
+    renderToday();
+  }
+  if (event.target.id === 'createCustomChecklistBtn') createCustomChecklist();
+  if (event.target.id === 'cancelCustomChecklistBtn') cancelCustomChecklist();
+  if (event.target.id === 'completeCustomChecklistBtn') completeCustomChecklist();
+  if (event.target.id === 'editCustomChecklistBtn') openCustomChecklistEdit();
+  if (event.target.id === 'closeCustomChecklistEditBtn' || event.target.id === 'cancelEditCustomChecklistBtn') closeCustomChecklistEdit();
+  if (event.target.id === 'confirmEditCustomChecklistBtn') confirmCustomChecklistEdit();
+
+  if (event.target.matches('input[type="checkbox"][data-custom-check-index]')) {
+    if (!state.customChecklist) return;
+    const index = Number(event.target.dataset.customCheckIndex);
+    state.customChecklist.items[index] = event.target.checked;
+    saveState();
+    renderCustomChecklist();
+  }
+
+  if (event.target.id === 'changeEnergyBtn') {
+    state.selectedEnergy = null;
+    state.generated = null;
+    saveState();
+    renderToday();
+  }
+
+  if (['includeWarmup', 'includeStretch', 'includeExerciseTimer', 'includeRestTimer'].includes(event.target.id)) {
+    state.includeWarmup = Boolean(document.getElementById('includeWarmup')?.checked);
+    state.includeStretch = Boolean(document.getElementById('includeStretch')?.checked);
+    state.includeExerciseTimer = Boolean(document.getElementById('includeExerciseTimer')?.checked);
+    state.includeRestTimer = Boolean(document.getElementById('includeRestTimer')?.checked);
+    state.restTimerSeconds = 60;
+    saveState();
+    renderSelectedEnergy();
+    updateAddOnSummary();
+  }
+
+  if (event.target.matches('input[name="restTimerSeconds"]')) {
+    state.restTimerSeconds = 60;
+    saveState();
+    updateAddOnSummary();
+  }
+
+  if (event.target.id === 'generateWorkoutBtn') generateWorkout();
+  if (event.target.id === 'regenerateWorkoutBtn') {
+    state.generated = null;
+    saveState();
+    renderSelectedEnergy();
+  }
+  if (event.target.id === 'startWorkoutBtn') startWorkout();
+
+  if (event.target.matches('input[type="checkbox"][data-set-index]')) {
+    if (!state.current) return;
+    const trackKey = event.target.dataset.track;
+    const setIndex = Number(event.target.dataset.setIndex);
+    if (!state.current.sets) state.current.sets = {};
+    if (!state.current.sets[trackKey]) state.current.sets[trackKey] = [false, false, false];
+    state.current.sets[trackKey][setIndex] = event.target.checked;
+    saveState();
+    const exercise = findCurrentExercise(trackKey);
+    if (event.target.checked && state.current.includeRestTimer && !exercise?.isAddOn && hasRemainingWorkoutSets()) {
+      const restSeconds = 60;
+      showWorkoutTimer({
+        title: 'Rest',
+        subtitle: `Take ${restSeconds}s before the next set.`,
+        seconds: restSeconds
+      });
+    }
+  }
+
+  if (event.target.matches('.rating-row button')) {
+    const row = event.target.closest('.rating-row');
+    row.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
+    event.target.classList.add('selected');
+    state.current.ratings[row.dataset.track] = event.target.dataset.rating;
+    const exercise = findCurrentExercise(row.dataset.track);
+    if (exercise && isExerciseComplete(exercise)) {
+      openNextIncompleteExercise(row.dataset.track);
+    }
+    saveState();
+    renderExercises();
+  }
+
+  if (event.target.id === 'completeBtn') completeWorkout();
+
+  if (event.target.id === 'accountBtn' && currentUser) openAccountModal();
+  if (event.target.id === 'closeAccountModalBtn') closeAccountModal();
+  if (event.target.id === 'accountPanel' && event.target.classList.contains('account-modal')) closeAccountModal();
+  const accountViewButton = event.target.closest('[data-account-view]');
+  if (accountViewButton) showAccountView(accountViewButton.dataset.accountView);
+  if (event.target.id === 'saveAccountGoalBtn') saveAccountGoal();
+  if (event.target.id === 'saveAccountEquipmentBtn') saveAccountEquipment();
+  if (event.target.id === 'saveAccountRecoveryBtn') saveAccountRecovery();
+  if (event.target.id === 'editAccountRecoveryBtn') editAccountRecovery();
+  if (event.target.id === 'removeAccountRecoveryBtn') removeAccountRecovery();
+  if (event.target.id === 'saveAccountPasswordBtn') changePasswordFromAccount();
+  if (event.target.id === 'sendSupportBtn') sendSupportMessage();
+  if (event.target.id === 'historyPrevMonthBtn') {
+    accountHistoryMonth = new Date(accountHistoryMonth.getFullYear(), accountHistoryMonth.getMonth() - 1, 1);
+    accountHistorySelectedDay = null;
+    renderActivity();
+  }
+  if (event.target.id === 'historyNextMonthBtn') {
+    accountHistoryMonth = new Date(accountHistoryMonth.getFullYear(), accountHistoryMonth.getMonth() + 1, 1);
+    accountHistorySelectedDay = null;
+    renderActivity();
+  }
+  if (event.target.id === 'toggleAdminUsersBtn') {
+    const list = document.getElementById('adminDashboardList');
+    const isOpen = !list?.classList.contains('hidden');
+    list?.classList.toggle('hidden', isOpen);
+    event.target.classList.toggle('is-open', !isOpen);
+    event.target.setAttribute('aria-expanded', String(!isOpen));
+  }
+  const historyDayButton = event.target.closest('[data-history-day]');
+  if (historyDayButton && !historyDayButton.disabled) {
+    accountHistorySelectedDay = Number(historyDayButton.dataset.historyDay);
+    renderActivity();
+  }
+  if (event.target.id === 'refreshAdminDashboardBtn') renderAdminDashboard();
+  const googleAuthButton = event.target.closest('[data-google-auth]');
+  if (event.target.id === 'showLoginBtn') setAuthMode('login');
+  if (event.target.id === 'backToAuthWelcomeFromLogin') setAuthMode('welcome');
+  if (['signupBtn', 'loginBtn', 'forgotPasswordBtn', 'resetPasswordBtn'].includes(event.target.id) || googleAuthButton) {
+    blurActiveAuthField();
+  }
+  if (event.target.id === 'signupBtn') signUp();
+  if (event.target.id === 'loginBtn') login();
+  if (googleAuthButton) loginWithGoogle();
+  if (event.target.id === 'forgotPasswordBtn') sendPasswordReset();
+  if (event.target.id === 'resetPasswordBtn') updatePasswordFromRecovery();
+  if (event.target.id === 'logoutBtn') logout();
+  const passwordToggle = event.target.closest('[data-toggle-password]');
+  if (passwordToggle) togglePasswordVisibility(passwordToggle);
+  if (event.target.id === 'onboardingNextBtn') showOnboardingStepTwo();
+  if (event.target.id === 'saveProfileBtn') saveProfileFromOnboarding();
+  if (event.target.id === 'startOnboardingPlanBtn') finishOnboarding();
+
+  if (event.target.matches('.nav-btn')) {
+    document.querySelectorAll('.nav-btn').forEach(b => {
+      b.classList.remove('active');
+      b.removeAttribute('aria-current');
+    });
+    event.target.classList.add('active');
+    event.target.setAttribute('aria-current', 'page');
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(event.target.dataset.screen).classList.add('active');
+    if (event.target.dataset.screen === 'today') {
+      renderToday();
+    } else {
+      document.body.classList.remove('workout-active');
+      document.querySelector('.topbar')?.classList.remove('hidden');
+      document.querySelector('.bottom-nav')?.classList.remove('hidden');
+    }
+    const title = document.getElementById('screenTitle');
+    if (title) title.textContent = event.target.textContent;
+    renderProgress();
+    renderActivity();
+  }
+});
+
+document.addEventListener('change', event => {
+  if (event.target.matches('input[name="equipment"]')) {
+    const none = document.querySelector('input[name="equipment"][value="none"]');
+    const others = Array.from(document.querySelectorAll('input[name="equipment"]:not([value="none"])'));
+    if (event.target.value === 'none' && event.target.checked) others.forEach(input => input.checked = false);
+    if (event.target.value !== 'none' && event.target.checked && none) none.checked = false;
+    updateConditionalQuestions();
+  }
+
+  if (event.target.matches('input[name="accountEquipment"]')) {
+    const none = document.querySelector('input[name="accountEquipment"][value="none"]');
+    const others = Array.from(document.querySelectorAll('input[name="accountEquipment"]:not([value="none"])'));
+    if (event.target.value === 'none' && event.target.checked) others.forEach(input => input.checked = false);
+    if (event.target.value !== 'none' && event.target.checked && none) none.checked = false;
+  }
+});
+
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!applyingUpdate) return;
+    window.location.reload();
+  });
+
+  navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' }).then(registration => {
+    const checkForUpdate = () => {
+      registration.update().catch(error => {
+        console.warn('Service worker update check failed:', error);
+      });
+    };
+
+    if (registration.waiting) {
+      markUpdateReady(registration.waiting);
+    }
+
+    registration.addEventListener('updatefound', () => {
+      const newWorker = registration.installing;
+      if (!newWorker) return;
+
+      newWorker.addEventListener('statechange', () => {
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          markUpdateReady(newWorker);
+        }
+      });
+    });
+
+    // Check quietly on app open, resume, focus, and periodically while open.
+    // The new worker activates only after the user taps Refresh.
+    checkForUpdate();
+    checkLiveVersion();
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        checkForUpdate();
+        checkLiveVersion();
+        checkCurrentAuthSession();
+      }
+    });
+    window.addEventListener('focus', () => {
+      checkForUpdate();
+      checkLiveVersion();
+      checkCurrentAuthSession();
+    });
+    window.setInterval(() => {
+      if (!document.hidden) {
+        checkForUpdate();
+        checkLiveVersion();
+      }
+    }, 60 * 1000);
+  }).catch(error => {
+    console.warn('Service worker registration failed:', error);
+  });
+}
+
+registerServiceWorker();
+
+setupStarAnimation();
+renderAll();
+initCloudSync();
