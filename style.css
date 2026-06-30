@@ -927,7 +927,7 @@ body.onboarding-active .app {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 20px;
+  gap: 10px;
   padding: 0;
   border: 0;
 }
@@ -962,7 +962,7 @@ body.onboarding-active .app {
   border-radius: 20px;
   background: var(--main);
   color: #ffffff;
-  text-align: center;
+  text-align: left;
 }
 
 .consistency-card .muted-light {
