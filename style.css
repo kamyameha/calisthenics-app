@@ -981,7 +981,7 @@ body.onboarding-active .app {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0;
-  padding: 0 22px env(safe-area-inset-bottom);
+  padding: 0 35px env(safe-area-inset-bottom);
   border: 0;
   border-radius: 0;
   background: #fafafa;
@@ -1017,7 +1017,7 @@ body.onboarding-active .app {
 
 .nav-btn {
   min-height: 74px;
-  padding: 5px 0 0;
+  padding: 0px 0 0;
   border: 0;
   border-radius: 0;
   background: transparent;
