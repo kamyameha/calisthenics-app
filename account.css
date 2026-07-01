@@ -369,11 +369,14 @@ body.account-submenu-active #accountPanel {
 .account-panel.account-modal.account-submenu-mode #accountGoalView,
 .account-panel.account-modal.account-submenu-mode #accountEquipmentView,
 .account-panel.account-modal.account-submenu-mode #accountRecoveryView,
-.account-panel.account-modal.account-submenu-mode #accountPasswordView {
+.account-panel.account-modal.account-submenu-mode #accountPasswordView,
+.account-panel.account-modal.account-submenu-mode #accountSupportView,
+.account-panel.account-modal.account-submenu-mode #accountAdminView {
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
-  gap: 19px;
+  column-gap: 20px;
+  row-gap: 19px;
   color: var(--main);
 }
 
@@ -382,10 +385,12 @@ body.account-submenu-active #accountPanel {
 }
 
 .account-panel.account-modal.account-submenu-mode .account-view > .text-btn {
+  flex: 0 0 26px;
   width: 26px;
   height: 26px;
   min-width: 26px;
-  margin: 0 0 -9px;
+  margin: 10px 0 20px;
+  align-self: center;
   padding: 0;
   border: 0;
   background: var(--main);
@@ -397,8 +402,10 @@ body.account-submenu-active #accountPanel {
 }
 
 .account-panel.account-modal.account-submenu-mode .account-view h2 {
-  width: 100%;
-  margin: 0;
+  flex: 1 1 calc(100% - 46px);
+  width: auto;
+  margin: 0 0 20px;
+  align-self: center;
   color: var(--main);
   font-size: 32px;
   line-height: 1.1;
@@ -406,8 +413,9 @@ body.account-submenu-active #accountPanel {
 }
 
 .account-panel.account-modal.account-submenu-mode .account-view > .muted {
+  flex: 0 0 100%;
   width: 100%;
-  margin: 1px 0 25px;
+  margin: 0 0 25px;
   color: var(--main);
   font-size: 18px;
   line-height: 1.2;
@@ -672,9 +680,6 @@ body.account-submenu-active #accountPanel {
 
 .account-panel.account-modal.account-submenu-mode #accountSupportView,
 .account-panel.account-modal.account-submenu-mode #accountAdminView {
-  display: grid;
-  align-content: flex-start;
-  gap: 0;
   color: var(--main);
 }
 
@@ -691,19 +696,20 @@ body.account-submenu-active #accountPanel {
 }
 
 .account-panel.account-modal.account-submenu-mode #accountSupportView > .muted {
-  margin-bottom: 44px;
+  margin-bottom: 25px;
 }
 
 .account-panel.account-modal.account-submenu-mode #accountAdminView > .muted {
-  margin-bottom: 44px;
+  margin-bottom: 25px;
   font-size: 16px;
   line-height: 1.45;
 }
 
 .account-panel.account-modal.account-submenu-mode #accountSupportView .support-input {
+  flex: 0 0 100%;
   width: 100%;
   height: 46px;
-  margin: 0 0 19px;
+  margin: 0;
   border: 1px solid rgba(1, 45, 237, 0.35);
   border-radius: 20px;
   background: transparent;
@@ -724,10 +730,12 @@ body.account-submenu-active #accountPanel {
 }
 
 .account-panel.account-modal.account-submenu-mode #accountSupportView .account-full-btn {
+  flex: 0 0 100%;
   margin-top: 52px;
 }
 
 .account-panel.account-modal.account-submenu-mode .admin-users-toggle {
+  flex: 0 0 100%;
   width: 100%;
   height: 46px;
   min-height: 46px;

@@ -65,13 +65,22 @@ body {
   background-color: #ffffff !important;
 }
 
+html.logged-out,
+html.logged-out body,
+html.welcome-active,
+html.welcome-active body {
+  background: #ffffff !important;
+}
+
 body.logged-out {
   min-height: 100dvh;
   overflow: hidden;
 }
 
 body.logged-out::before,
+html.logged-out::before,
 body.welcome-active::before,
+html.welcome-active::before,
 html.account-submenu-active::before,
 body.account-submenu-active::before {
   content: "";
@@ -591,8 +600,24 @@ button:disabled {
 /* auth styles moved to auth.css. */
 
 /* Onboarding */
+html.onboarding-active,
+html.onboarding-active body,
 body.onboarding-active {
+  background: var(--main) !important;
+  overflow: hidden;
+}
+
+html.onboarding-active::before,
+body.onboarding-active::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
   background: var(--main);
+  pointer-events: none;
+  z-index: 10000;
 }
 
 body.onboarding-active .topbar,
@@ -603,6 +628,7 @@ body.onboarding-active #accountBtn {
 
 body.onboarding-active .app {
   max-width: 560px;
+  height: 100dvh;
   min-height: 100dvh;
   padding: 0;
   background: var(--main);
@@ -610,15 +636,19 @@ body.onboarding-active .app {
 
 .onboarding-panel {
   width: 100%;
+  height: 100dvh;
   min-height: 100dvh;
   margin: 0;
-  padding: 102px 30px 60px;
+  padding: calc(var(--space-5) + env(safe-area-inset-top)) var(--screen-x) calc(20px + env(safe-area-inset-bottom));
   background: var(--main);
   color: #ffffff;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .onboarding-step {
-  min-height: calc(100dvh - 162px);
+  min-height: auto;
+  padding-bottom: 20px;
 }
 
 .onboarding-step-head {
@@ -677,6 +707,16 @@ body.onboarding-active .app {
   display: flex;
   flex-wrap: wrap;
   gap: 19px;
+}
+
+.equipment-chip-grid {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.equipment-chip-grid .onboarding-chip {
+  flex: 0 0 auto;
+  width: auto;
 }
 
 .focus-chip-grid,
@@ -767,15 +807,18 @@ body.onboarding-active .app {
 }
 
 .onboarding-confirmation {
-  min-height: calc(100dvh - 162px);
-  display: grid;
-  place-items: center;
+  min-height: calc(100dvh - var(--space-5) - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
 }
 
 .onboarding-confirmation-content {
   width: 100%;
-  max-width: 430px;
+  max-width: 353px;
+  margin: 0 auto;
+  text-align: center;
 }
 
 .onboarding-confirmation h2 {

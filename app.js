@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-66-workout-polish';
+const APP_VERSION = 'v8-67-targeted-ui';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -223,6 +223,8 @@ function setWelcomeVisible(visible) {
   const app = document.querySelector('.app');
   const bottomNav = document.querySelector('.bottom-nav');
 
+  document.documentElement.classList.toggle('welcome-active', visible);
+  document.body.classList.toggle('welcome-active', visible);
   if (visible) setThemeColor('#ffffff');
   if (welcome) welcome.classList.toggle('hidden', !visible);
   if (app) app.classList.toggle('hidden', visible);
@@ -654,6 +656,7 @@ function setAuthMode(mode = 'welcome') {
   // onboarding or app screens, even though Supabase temporarily logs the user in.
   if (isReset) {
     document.body.classList.add('logged-out');
+    document.documentElement.classList.add('logged-out');
     document.documentElement.classList.add('recovery-boot');
     setWelcomeVisible(false);
     document.getElementById('accountPanel')?.classList.remove('hidden');
@@ -1741,11 +1744,13 @@ function renderOnboarding() {
   // Do not show onboarding while the user is only here to set a new password.
   if (passwordRecoveryMode || !currentUser || hasCompletedProfile()) {
     onboarding.classList.add('hidden');
+    document.documentElement.classList.remove('onboarding-active');
     document.body.classList.remove('onboarding-active');
     return;
   }
 
   onboarding.classList.remove('hidden');
+  document.documentElement.classList.add('onboarding-active');
   document.body.classList.add('onboarding-active');
   renderOnboardingStep();
 }
@@ -1779,6 +1784,7 @@ function showOnboardingStepTwo() {
 function finishOnboarding() {
   onboardingConfirmationReady = false;
   onboardingStep = 1;
+  document.documentElement.classList.remove('onboarding-active');
   document.body.classList.remove('onboarding-active');
   renderAll();
 }
@@ -1915,6 +1921,7 @@ function enforceScreenSeparation() {
 
   if (passwordRecoveryMode) {
     document.body.classList.add('logged-out');
+    document.documentElement.classList.add('logged-out');
     document.documentElement.classList.add('recovery-boot');
     setWelcomeVisible(false);
     panel?.classList.remove('hidden', 'account-modal', 'account-open');
@@ -1968,6 +1975,7 @@ function renderAccount() {
   const bottomNav = document.querySelector('.bottom-nav');
   const screens = document.querySelectorAll('.screen');
 
+  document.documentElement.classList.toggle('logged-out', !currentUser);
   document.body.classList.toggle('logged-out', !currentUser);
 
   if (!panel || !loggedOut || !loggedIn) return;

@@ -9,7 +9,7 @@
 
 .today-empty-state {
   position: relative;
-  padding: var(--space-5);
+  padding: 20px;
   margin-bottom: 34px;
   border-radius: var(--radius);
   background: var(--main);
@@ -23,9 +23,11 @@
 #energyCard .today-empty-state h2,
 .today-empty-state h2 {
   color: #ffffff;
-  font-size: var(--title-lg);
-  margin: 0 0 12px;
-  padding-right: 48px;
+  font-size: 24px;
+  line-height: 1.15;
+  font-weight: 500;
+  margin: 0 0 15px;
+  padding-right: 34px;
 }
 
 #energyCard .today-empty-state p,
@@ -39,20 +41,28 @@
 
 .today-empty-close {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: 20px;
+  right: 20px;
   min-width: 44px;
-  width: 44px;
-  height: 44px;
+  width: 26px;
+  height: 26px;
   padding: 0;
-  display: grid;
-  place-items: center;
-  border-color: rgba(255, 255, 255, 0.9);
-  border-radius: 50%;
+  border: 0;
+  border-radius: 0;
   background: transparent;
-  color: #ffffff;
-  font-size: 22px;
-  line-height: 1;
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
+}
+
+.today-empty-close::before {
+  content: "";
+  display: block;
+  width: 26px;
+  height: 26px;
+  background: #ffffff;
+  -webkit-mask: url("x.svg") center / 26px 26px no-repeat;
+  mask: url("x.svg") center / 26px 26px no-repeat;
 }
 
 .energy-grid {
@@ -1050,7 +1060,7 @@ body.workout-active .bottom-nav {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 19px;
-  margin: 51px 0 0;
+  margin: 46px 0 0;
   padding: 0;
   border: 0;
 }

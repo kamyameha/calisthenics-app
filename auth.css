@@ -10,10 +10,16 @@ body.logged-out {
   overflow: auto;
 }
 
+html.logged-out,
+html.logged-out body,
+body.logged-out {
+  background: #ffffff !important;
+}
+
 .logged-out .app {
   min-height: 100dvh;
-  padding: 75px 24px 0;
-  background: var(--bg);
+  padding: calc(var(--space-5) + env(safe-area-inset-top)) var(--screen-x) 0;
+  background: #ffffff;
 }
 
 .logged-out .topbar {
@@ -95,7 +101,7 @@ body.logged-out {
   background: transparent;
   color: var(--main);
   caret-color: var(--main);
-  padding: 0 40px;
+  padding: 0 16px;
   font-size: 16px;
   line-height: 46px;
   font-weight: 400;
@@ -114,7 +120,7 @@ body.logged-out {
 #loggedOutAccount .password-field .text-input {
   height: 46px;
   margin: 0;
-  padding-right: 76px;
+  padding-right: 60px;
 }
 
 .logged-out .auth-content > .text-input:last-child,
