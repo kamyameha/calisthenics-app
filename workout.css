@@ -888,7 +888,7 @@ body.workout-active .bottom-nav {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 19px;
-  margin: 0 0 25px;
+  margin: 0 0 14px;
 }
 
 .custom-type-row label {
@@ -921,6 +921,10 @@ body.workout-active .bottom-nav {
 .custom-checklist-form .panel-message {
   grid-column: 1 / -1;
   margin: -19px 0 0;
+}
+
+.custom-checklist-form .panel-message:empty {
+  display: none;
 }
 
 .custom-checklist-form #createCustomChecklistBtn {
@@ -975,7 +979,7 @@ body.workout-active .bottom-nav {
 }
 
 .energy-stars {
-  display: flex;
+  display: none;
   gap: 2px;
   margin-bottom: 2px;
 }
@@ -998,8 +1002,8 @@ body.workout-active .bottom-nav {
   padding: 0;
   border: 0;
   border-radius: 0;
-  background: transparent;
-  color: var(--main);
+  background: transparent !important;
+  color: var(--main) !important;
   font-size: 14px;
   font-weight: 400;
   line-height: 1.1;
@@ -1022,7 +1026,7 @@ body.workout-active .bottom-nav {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 19px;
-  margin: 56px 0 0;
+  margin: 51px 0 0;
   padding: 0;
   border: 0;
 }
@@ -1145,8 +1149,8 @@ body.workout-active .bottom-nav {
 
 .generated-close-btn::before {
   content: "";
-  width: 14px;
-  height: 14px;
+  width: 24px;
+  height: 24px;
   background: #ffffff;
   -webkit-mask: url("x.svg") center / contain no-repeat;
   mask: url("x.svg") center / contain no-repeat;

@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-62-privacy-footer-fix';
+const APP_VERSION = 'v8-63-requested-fixes';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -989,13 +989,9 @@ function renderSelectedEnergy() {
   const pill = document.getElementById('selectedEnergyPill');
   if (pill) pill.textContent = option.title;
 
-  const starMap = { exhausted: 1, tired: 3, normal: 4, great: 5 };
   const stars = document.getElementById('selectedEnergyStars');
-  const fullStars = starMap[state.selectedEnergy || 'normal'] || 4;
   if (stars) {
-    stars.innerHTML = Array.from({ length: 5 }, (_, index) => (
-      `<span class="energy-star ${index < fullStars ? 'filled' : ''}" aria-hidden="true">${index < fullStars ? '★' : '☆'}</span>`
-    )).join('');
+    stars.innerHTML = '';
   }
 
   const workoutName = document.getElementById('selectedWorkoutName');

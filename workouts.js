@@ -31,11 +31,13 @@
     ],
     legs: [
       { name: 'Bodyweight squat', prescription: '3 × 10' },
-      { name: 'Bodyweight squat', prescription: '3 × 15' },
+      { name: 'Glute bridge', prescription: '3 × 12' },
       { name: 'Reverse lunge', prescription: '3 × 8/side' },
-      { name: 'Reverse lunge', prescription: '3 × 10/side' },
-      { name: 'Kettlebell deadlift', prescription: '3 × 10' },
-      { name: 'Goblet squat', prescription: '3 × 8' }
+      { name: 'Step-up', prescription: '3 × 8/side' },
+      { name: 'Wall sit', prescription: '3 × 30s' },
+      { name: 'Calf raise', prescription: '3 × 15' },
+      { name: 'Split squat', prescription: '3 × 8/side' },
+      { name: 'Lateral lunge', prescription: '3 × 6/side' }
     ],
     core: [
       { name: 'Plank', prescription: '3 × 20s' },
@@ -132,24 +134,46 @@
   };
 
   const workoutAddOns = {
-    warmup: {
-      trackKey: 'warmup',
-      name: 'Warm-up',
-      prescription: '2 min · 30s each',
-      setCount: 4,
-      isAddOn: true,
-      addOnType: 'warmup',
-      setLabels: ['March in place', 'Arm circles', 'Hip circles', 'Bodyweight squats']
-    },
-    stretch: {
-      trackKey: 'stretch',
-      name: '2-min full-body stretch',
-      prescription: '2 min · 30s each',
-      setCount: 4,
-      isAddOn: true,
-      addOnType: 'stretch',
-      setLabels: ['Hamstring stretch', 'Quad stretch', 'Chest opener', "Child's pose"]
-    }
+    warmups: [
+      {
+        trackKey: 'warmup',
+        name: 'Warm-up',
+        prescription: '2 min · 30s each',
+        setCount: 4,
+        isAddOn: true,
+        addOnType: 'warmup',
+        setLabels: ['March in place', 'Arm circles', 'Hip circles', 'Bodyweight squats']
+      },
+      {
+        trackKey: 'warmup',
+        name: 'Warm-up',
+        prescription: '2 min · 30s each',
+        setCount: 4,
+        isAddOn: true,
+        addOnType: 'warmup',
+        setLabels: ['Step touch', 'Shoulder rolls', 'Good mornings', 'Ankle bounces']
+      }
+    ],
+    stretches: [
+      {
+        trackKey: 'stretch',
+        name: 'Stretch',
+        prescription: '2 min · 30s each',
+        setCount: 4,
+        isAddOn: true,
+        addOnType: 'stretch',
+        setLabels: ['Hamstring stretch', 'Quad stretch', 'Chest opener', "Child\'s pose"]
+      },
+      {
+        trackKey: 'stretch',
+        name: 'Stretch',
+        prescription: '2 min · 30s each',
+        setCount: 4,
+        isAddOn: true,
+        addOnType: 'stretch',
+        setLabels: ['Calf stretch', 'Hip flexor stretch', 'Shoulder stretch', 'Forward fold']
+      }
+    ]
   };
 
   const exerciseHelp = {
@@ -237,6 +261,31 @@
       purpose: 'Builds single-leg strength and balance.',
       cues: ['Step back softly.', 'Keep front foot planted.', 'Push through the front leg to stand.'],
       safety: 'Hold a wall or chair if balance is shaky.'
+    },
+    'Glute bridge': {
+      purpose: 'Builds glute and posterior-chain strength without equipment.',
+      cues: ['Lie on your back with knees bent and feet flat.', 'Press through your heels to lift hips.', 'Lower with control.'],
+      safety: 'Use a smaller lift if your lower back takes over.'
+    },
+    'Step-up': {
+      purpose: 'Builds single-leg strength using a step, stair, or sturdy low surface.',
+      cues: ['Place one full foot on the step.', 'Push through that foot to stand tall.', 'Step down slowly.'],
+      safety: 'Use a stable surface and keep the height comfortable.'
+    },
+    'Wall sit': {
+      purpose: 'Builds leg endurance with a simple static hold.',
+      cues: ['Lean your back on a wall.', 'Slide down only as far as comfortable.', 'Keep feet flat and breathe steadily.'],
+      safety: 'Stand up if knees feel sharp pain.'
+    },
+    'Calf raise': {
+      purpose: 'Strengthens calves and ankles with no equipment.',
+      cues: ['Stand tall.', 'Rise onto the balls of your feet.', 'Lower slowly with control.'],
+      safety: 'Hold a wall if balance is unsteady.'
+    },
+    'Lateral lunge': {
+      purpose: 'Builds side-to-side leg strength and hip control.',
+      cues: ['Step to the side and sit hips back.', 'Keep the other leg long.', 'Push back to center with control.'],
+      safety: 'Keep the range small if hips or knees feel irritated.'
     },
     'Split squat': {
       purpose: 'Builds single-leg strength with a fixed stance.',
@@ -438,11 +487,13 @@
 
     tracks.legs = [
       { name: 'Bodyweight squat', prescription: '3 × 10' },
-      { name: 'Bodyweight squat', prescription: '3 × 15' },
+      { name: 'Glute bridge', prescription: '3 × 12' },
       { name: 'Reverse lunge', prescription: '3 × 8/side' },
-      { name: 'Reverse lunge', prescription: '3 × 10/side' },
+      { name: 'Step-up', prescription: '3 × 8/side' },
+      { name: 'Wall sit', prescription: '3 × 30s' },
       { name: 'Split squat', prescription: '3 × 6/side' },
-      { name: 'Split squat', prescription: '3 × 8/side' }
+      { name: 'Calf raise', prescription: '3 × 15' },
+      { name: 'Lateral lunge', prescription: '3 × 6/side' }
     ];
 
     if (!hasPullupBar) {
@@ -598,17 +649,53 @@
     ];
   }
 
-  function buildWorkoutTracks(workout, desiredCount, profile = null) {
+  function getActiveRecovery(state = {}) {
+    const recovery = state?.recovery;
+    if (!recovery?.area) return null;
+    if (recovery.until && !Number.isNaN(new Date(recovery.until).getTime()) && new Date(recovery.until).getTime() < Date.now()) return null;
+    return recovery;
+  }
+
+  function recoveryAreaType(recovery) {
+    const area = `${recovery?.area || ''}`.toLowerCase();
+    if (area.includes('shoulder')) return 'shoulder';
+    if (area.includes('knee')) return 'knee';
+    if (area.includes('wrist')) return 'wrist';
+    if (area.includes('ankle')) return 'ankle';
+    return '';
+  }
+
+  function recoveryBlocksTrack(trackKey, recovery) {
+    if (!recovery) return false;
+    const area = recoveryAreaType(recovery);
+
+    if (area === 'shoulder') return ['pullup', 'pushup', 'dip', 'handstand', 'muscleup'].includes(trackKey);
+    if (area === 'wrist') return ['pushup', 'handstand', 'crow'].includes(trackKey);
+    if (area === 'ankle') return trackKey === 'rope';
+    if (area === 'knee') return false;
+    return false;
+  }
+
+  function applyRecoveryToExercise(exercise, recovery) {
+    if (!exercise || !recovery) return exercise;
+    const area = recoveryAreaType(recovery);
+    if (area === 'ankle' && /jump|rope|hop|plyo/i.test(exercise.name)) return null;
+    if (area === 'knee' && /jump|rope|pistol/i.test(exercise.name)) return null;
+    return exercise;
+  }
+
+  function buildWorkoutTracks(workout, desiredCount, profile = null, state = {}) {
     const availableTracks = getTracks(profile);
+    const recovery = getActiveRecovery(state);
     const fillByWorkout = {
       Push: ['pushup', 'dip', 'core', 'legs', 'rope'],
       Pull: ['pullup', 'core', 'rope', 'legs', 'pushup'],
       'Legs + Core': ['legs', 'core', 'rope', 'pushup', 'pullup'],
       Skills: ['core', 'lsit', 'crow', 'handstand', 'pullup', 'rope']
     };
-    const tracks = [...workout.tracks].filter(trackKey => isTrackAvailable(trackKey, availableTracks));
+    const tracks = [...workout.tracks].filter(trackKey => isTrackAvailable(trackKey, availableTracks) && !recoveryBlocksTrack(trackKey, recovery));
     const fillers = (fillByWorkout[workout.name] || ['core', 'legs', 'pushup', 'pullup', 'rope'])
-      .filter(trackKey => isTrackAvailable(trackKey, availableTracks));
+      .filter(trackKey => isTrackAvailable(trackKey, availableTracks) && !recoveryBlocksTrack(trackKey, recovery));
 
     fillers.forEach(trackKey => {
       if (tracks.length < desiredCount && !tracks.includes(trackKey)) tracks.push(trackKey);
@@ -621,14 +708,18 @@
     const rotation = getRotation(profile);
     const workout = rotation[(state.rotationIndex || 0) % rotation.length];
     const config = getEnergyConfig(mode);
-    const tracks = buildWorkoutTracks(workout, config.exerciseCount, profile);
+    const tracks = buildWorkoutTracks(workout, config.exerciseCount, profile, state);
+    const recovery = getActiveRecovery(state);
 
     return {
       mode: config.mode,
       workoutName: workout.name,
       energyTitle: config.title,
       energyDescription: config.description,
-      exercises: tracks.flatMap(trackKey => splitCompoundExercise(getExercise(trackKey, config, state, profile)))
+      exercises: tracks
+        .flatMap(trackKey => splitCompoundExercise(getExercise(trackKey, config, state, profile)))
+        .map(exercise => applyRecoveryToExercise(exercise, recovery))
+        .filter(Boolean)
     };
   }
 
@@ -637,9 +728,10 @@
   }
 
   function applyWorkoutAddOns(workout, addOns = {}) {
+    const variantIndex = Math.floor(Date.now() / 86400000) % 2;
     const exercises = [...(workout.exercises || [])];
-    if (addOns.warmup) exercises.unshift(clone(workoutAddOns.warmup));
-    if (addOns.stretch) exercises.push(clone(workoutAddOns.stretch));
+    if (addOns.warmup) exercises.unshift(clone(workoutAddOns.warmups[variantIndex]));
+    if (addOns.stretch) exercises.push(clone(workoutAddOns.stretches[variantIndex]));
     return {
       ...workout,
       includeWarmup: Boolean(addOns.warmup),

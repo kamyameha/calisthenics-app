@@ -1030,7 +1030,7 @@ body.onboarding-active .app {
   bottom: 0;
   transform: translateX(-50%);
   width: min(393px, 100%);
-  height: calc(74px + env(safe-area-inset-bottom));
+  height: calc(50px + env(safe-area-inset-bottom));
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0;
@@ -1069,7 +1069,7 @@ body.onboarding-active .app {
 }
 
 .nav-btn {
-  min-height: 74px;
+  min-height: 50px;
   padding: 15px 0 0;
   border: 0;
   border-radius: 0;
