@@ -976,7 +976,7 @@ body.onboarding-active .app {
   left: 50%;
   bottom: 0;
   transform: translateX(-50%);
-  width: min(393px, 100%);
+  width: 100%;
   height: calc(74px + env(safe-area-inset-bottom));
   display: grid;
   grid-template-columns: repeat(3, 1fr);
