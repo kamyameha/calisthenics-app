@@ -900,7 +900,7 @@ body.onboarding-active .app {
 .skill-list,
 #levelsList {
   display: grid;
-  gap: 33px;
+  gap: 20px;
 }
 
 .skill-row,
@@ -908,7 +908,7 @@ body.onboarding-active .app {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 20px;
+  gap: 10px;
   padding: 0;
   border: 0;
 }
