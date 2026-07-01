@@ -26,8 +26,8 @@
 .welcome-star {
   width: min(369px, calc(100vw - 48px));
   height: min(395px, calc((100vw - 48px) * 1.0705));
-  padding-top: 59px;
-  margin: 0 auto 71px;
+  padding-top: 71px;
+  margin: 0 auto 91px;
   display: block;
   object-fit: contain;
 }
