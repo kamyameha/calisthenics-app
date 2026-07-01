@@ -450,7 +450,7 @@ button:disabled {
 .workout-completion-panel .confirm-actions {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 19px;
-  margin-top: 44px;
+  margin-top: 33px;
 }
 
 .workout-completion-panel.auto-complete .confirm-actions {
@@ -564,7 +564,7 @@ body.onboarding-active .app {
 }
 
 .onboarding-panel h2 {
-  margin: 0 0 44px;
+  margin: 0 0 33px;
   color: #ffffff;
   font-size: 40px;
   font-weight: 700;
@@ -577,19 +577,19 @@ body.onboarding-active .app {
 }
 
 .focus-block {
-  margin-bottom: 71px;
+  margin-bottom: 51px;
 }
 
 .equipment-block {
-  margin-bottom: 44px;
+  margin-bottom: 33px;
 }
 
 .conditional-block {
-  margin-bottom: 44px;
+  margin-bottom: 33px;
 }
 
 .level-block h2 {
-  margin-bottom: 44px;
+  margin-bottom: 33px;
 }
 
 .field-label {
@@ -614,11 +614,11 @@ body.onboarding-active .app {
 }
 
 .level-chip-grid {
-  margin-bottom: 44px;
+  margin-bottom: 33px;
 }
 
 .conditional-block .yes-no-chip-grid {
-  margin-bottom: 44px;
+  margin-bottom: 33px;
 }
 
 .conditional-block .yes-no-chip-grid:last-child {
@@ -722,7 +722,7 @@ body.onboarding-active .app {
 }
 
 .onboarding-confirmation .onboarding-primary {
-  margin-top: 44px;
+  margin-top: 33px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -779,7 +779,7 @@ body.onboarding-active .app {
 .goal-hero .muted-light,
 .stat-card .eyebrow {
   margin: 0 0 20px;
-  padding-top: 44px;
+  padding-top: 33px;
   color: var(--main);
   font-size: 16px;
   font-weight: 400;
@@ -798,12 +798,12 @@ body.onboarding-active .app {
 }
 
 .stat-card .big-number {
-  margin-bottom: 44px;
+  margin-bottom: 33px;
 }
 
 .progress-screen .stat-card .eyebrow {
   margin: 0 0 20px;
-  padding-top: 44px;
+  padding-top: 33px;
   font-size: 16px;
   font-weight: 400;
 }
@@ -815,7 +815,7 @@ body.onboarding-active .app {
 .goal-hero .progress-bar {
   width: 100%;
   height: 14px;
-  margin: 0 0 44px;
+  margin: 0 0 33px;
   border-radius: 999px;
   background: rgba(1, 45, 237, 0.15);
   overflow: hidden;
@@ -888,7 +888,7 @@ body.onboarding-active .app {
 .focus-screen .eyebrow,
 .progress-screen .eyebrow {
   margin: 0 0 33px;
-  padding-top: 44px;
+  padding-top: 33px;
   color: var(--main);
   font-size: 24px;
   font-weight: 700;
@@ -1017,7 +1017,7 @@ body.onboarding-active .app {
 
 .nav-btn {
   min-height: 74px;
-  padding: 15px 0 0;
+  padding: 5px 0 0;
   border: 0;
   border-radius: 0;
   background: transparent;
