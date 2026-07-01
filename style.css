@@ -65,6 +65,19 @@ body.logged-out {
   overflow: hidden;
 }
 
+body.logged-out::before,
+html.account-submenu-active::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  background: #ffffff;
+  pointer-events: none;
+  z-index: 10000;
+}
+
 h1,
 h2,
 h3,
@@ -948,6 +961,10 @@ body.onboarding-active .app {
   line-height: 1.1;
   text-transform: none;
   letter-spacing: 0;
+}
+
+.progress-screen .eyebrow {
+  padding-top: 18px;
 }
 
 .skill-list,

@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-64-layout-polish';
+const APP_VERSION = 'v8-65-recovery-spacing';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -221,6 +221,7 @@ function setWelcomeVisible(visible) {
   const app = document.querySelector('.app');
   const bottomNav = document.querySelector('.bottom-nav');
 
+  if (visible) setThemeColor('#ffffff');
   if (welcome) welcome.classList.toggle('hidden', !visible);
   if (app) app.classList.toggle('hidden', visible);
   // Only force-hide the bottom nav while the welcome screen is open.
@@ -638,6 +639,7 @@ async function loadCloudStateInBackground() {
 
 function setAuthMode(mode = 'welcome') {
   blurActiveAuthField();
+  setThemeColor('#ffffff');
   const welcome = document.getElementById('authWelcome');
   const login = document.getElementById('authLoginForm');
   const reset = document.getElementById('authResetForm');

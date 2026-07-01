@@ -684,6 +684,59 @@
     return exercise;
   }
 
+  const recoveryFallbackExercises = {
+    shoulder: [
+      { trackKey: 'legs', name: 'Bodyweight squat', prescription: '3 × 10' },
+      { trackKey: 'legs', name: 'Glute bridge', prescription: '3 × 12' },
+      { trackKey: 'core', name: 'Reverse crunch', prescription: '3 × 8' },
+      { trackKey: 'legs', name: 'Wall sit', prescription: '3 × 30s' },
+      { trackKey: 'legs', name: 'Calf raise', prescription: '3 × 15' }
+    ],
+    wrist: [
+      { trackKey: 'legs', name: 'Bodyweight squat', prescription: '3 × 10' },
+      { trackKey: 'legs', name: 'Glute bridge', prescription: '3 × 12' },
+      { trackKey: 'core', name: 'Forearm plank', prescription: '3 × 20s' },
+      { trackKey: 'core', name: 'Reverse crunch', prescription: '3 × 8' },
+      { trackKey: 'legs', name: 'Wall sit', prescription: '3 × 30s' }
+    ],
+    knee: [
+      { trackKey: 'pushup', name: 'Incline push-up', prescription: '3 × 8' },
+      { trackKey: 'core', name: 'Plank', prescription: '3 × 20s' },
+      { trackKey: 'core', name: 'Hollow hold', prescription: '3 × 15s' },
+      { trackKey: 'core', name: 'Reverse crunch', prescription: '3 × 8' },
+      { trackKey: 'pushup', name: 'Knee push-up', prescription: '3 × 5' }
+    ],
+    ankle: [
+      { trackKey: 'pushup', name: 'Incline push-up', prescription: '3 × 8' },
+      { trackKey: 'legs', name: 'Bodyweight squat', prescription: '3 × 10' },
+      { trackKey: 'legs', name: 'Glute bridge', prescription: '3 × 12' },
+      { trackKey: 'core', name: 'Plank', prescription: '3 × 20s' },
+      { trackKey: 'core', name: 'Reverse crunch', prescription: '3 × 8' }
+    ]
+  };
+
+  function fillRecoveryExercises(exercises, config, recovery) {
+    if (!recovery || exercises.length >= config.exerciseCount) return exercises;
+    const fallbacks = recoveryFallbackExercises[recoveryAreaType(recovery)] || [];
+    const usedNames = new Set(exercises.map(exercise => exercise.name));
+
+    for (const fallback of fallbacks) {
+      if (exercises.length >= config.exerciseCount) break;
+      if (usedNames.has(fallback.name)) continue;
+      const prescription = adaptPrescription(fallback.prescription, config);
+      const exercise = normalizeExercise({
+        ...fallback,
+        prescription,
+        basePrescription: fallback.prescription
+      });
+      if (!exercise) continue;
+      exercises.push(exercise);
+      usedNames.add(exercise.name);
+    }
+
+    return exercises;
+  }
+
   function buildWorkoutTracks(workout, desiredCount, profile = null, state = {}) {
     const availableTracks = getTracks(profile);
     const recovery = getActiveRecovery(state);
@@ -711,15 +764,17 @@
     const tracks = buildWorkoutTracks(workout, config.exerciseCount, profile, state);
     const recovery = getActiveRecovery(state);
 
+    const exercises = tracks
+      .flatMap(trackKey => splitCompoundExercise(getExercise(trackKey, config, state, profile)))
+      .map(exercise => applyRecoveryToExercise(exercise, recovery))
+      .filter(Boolean);
+
     return {
       mode: config.mode,
       workoutName: workout.name,
       energyTitle: config.title,
       energyDescription: config.description,
-      exercises: tracks
-        .flatMap(trackKey => splitCompoundExercise(getExercise(trackKey, config, state, profile)))
-        .map(exercise => applyRecoveryToExercise(exercise, recovery))
-        .filter(Boolean)
+      exercises: fillRecoveryExercises(exercises, config, recovery)
     };
   }
 
