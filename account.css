@@ -247,8 +247,7 @@
 
 .account-panel.account-modal.account-main-mode #accountEmail,
 .account-panel.account-modal.account-main-mode #logoutBtn {
-  position: absolute;
-  bottom: 0;
+  position: static;
   margin: 0;
   color: #ffffff;
   font-size: 18px;
@@ -257,15 +256,13 @@
 }
 
 .account-panel.account-modal.account-main-mode #accountEmail {
-  left: 0;
-  max-width: 62%;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
   white-space: nowrap;
 }
 
 .account-panel.account-modal.account-main-mode #logoutBtn {
-  right: 0;
   width: auto;
   min-height: auto;
   padding: 0;

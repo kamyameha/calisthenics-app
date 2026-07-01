@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-63-requested-fixes';
+const APP_VERSION = 'v8-64-layout-polish';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -1600,7 +1600,7 @@ function renderProgress() {
     if (!exercise) return;
     const row = document.createElement('div');
     row.className = 'level-row';
-    row.innerHTML = `<strong>${labels[key]}</strong><span>Level ${item.level + 1}/${exerciseTrack.length}</span>`;
+    row.innerHTML = `<strong>${labels[key]}</strong><span>${item.level + 1}/${exerciseTrack.length}</span>`;
     levels.appendChild(row);
   });
 }
