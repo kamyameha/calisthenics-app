@@ -1053,13 +1053,19 @@ body.account-submenu-active #accountPanel {
 .activity-screen .history-item {
   display: grid;
   gap: 15px;
-  min-height: 144px;
-  align-content: center;
+  min-height: auto;
+  align-content: start;
   padding: 20px;
   border: 0;
   border-radius: 20px;
   background: var(--main);
   color: #ffffff;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .activity-screen .history-item {
+    transition: background-color 180ms ease, color 180ms ease, opacity 180ms ease, transform 180ms ease;
+  }
 }
 
 .activity-screen .history-item + .history-item {

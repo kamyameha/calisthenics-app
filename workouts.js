@@ -437,10 +437,55 @@
       cues: ['Do each listed movement for about 30 seconds.', 'Move lightly and breathe steadily.', 'Treat it as preparation, not a test.'],
       safety: 'Keep it easy and pain-free.'
     },
+    'Stretch': {
+      purpose: 'Helps you cool down and leave the session calmly.',
+      cues: ['Do each listed stretch for about 30 seconds.', 'Ease into the position slowly and breathe.', 'Shoulder stretch: bring one arm across your chest and keep the shoulder low.', 'Hamstring stretch: extend one leg and hinge forward gently.', 'Quad stretch: hold your ankle or use a wall for balance.', 'Chest opener: open the chest without forcing the shoulders back.'],
+      safety: 'Stretch should feel gentle, not sharp.'
+    },
     '2-min full-body stretch': {
       purpose: 'Helps you cool down and leave the session calmly.',
       cues: ['Do each listed stretch for about 30 seconds.', 'Ease into each position and breathe slowly.', 'Do not force range.'],
       safety: 'Stretch should feel gentle, not sharp.'
+    },
+    'Shoulder stretch': {
+      purpose: 'Releases the shoulder gently after upper-body work.',
+      cues: ['Bring one arm across your chest.', 'Use the other hand to pull lightly above the elbow.', 'Keep the shoulder down and breathe.'],
+      safety: 'Do not pull into sharp shoulder pain.'
+    },
+    'Hamstring stretch': {
+      purpose: 'Gently stretches the back of the thigh.',
+      cues: ['Extend one leg forward.', 'Keep a soft bend in the knee.', 'Hinge forward from the hips until you feel a gentle stretch.'],
+      safety: 'Do not bounce.'
+    },
+    'Quad stretch': {
+      purpose: 'Gently stretches the front of the thigh.',
+      cues: ['Hold a wall or chair for balance.', 'Bring one heel toward your glute and hold the ankle or foot.', 'Keep knees close and stand tall.'],
+      safety: 'Skip if it irritates the knee.'
+    },
+    'Chest opener': {
+      purpose: 'Opens the front of the chest and shoulders.',
+      cues: ['Clasp hands behind your back or place hands on a doorway.', 'Lift the chest gently.', 'Keep ribs calm and breathe.'],
+      safety: 'Use a small range if shoulders feel tight.'
+    },
+    "Child's pose": {
+      purpose: 'Calms the back, hips, and shoulders.',
+      cues: ['Sit hips back toward heels.', 'Reach arms forward.', 'Let your breathing slow down.'],
+      safety: 'Place a cushion under knees if needed.'
+    },
+    'Calf stretch': {
+      purpose: 'Gently stretches calves after jumping or leg work.',
+      cues: ['Step one foot back.', 'Keep the back heel down.', 'Lean forward until the stretch feels gentle.'],
+      safety: 'Keep it easy if ankles feel sensitive.'
+    },
+    'Hip flexor stretch': {
+      purpose: 'Gently opens the front of the hip.',
+      cues: ['Use a half-kneeling or lunge position.', 'Tuck the pelvis slightly.', 'Shift forward a little without arching your back.'],
+      safety: 'Pad the back knee if needed.'
+    },
+    'Forward fold': {
+      purpose: 'Gently stretches the back body.',
+      cues: ['Stand tall, then fold forward.', 'Keep knees soft.', 'Let the head and arms relax.'],
+      safety: 'Come up slowly.'
     }
   };
 

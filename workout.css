@@ -514,9 +514,10 @@
   background: rgba(178, 180, 184, 0.7);
 }
 
+#timerPanel .timer-count,
 .timer-count {
   margin: 0;
-  color: #000000;
+  color: #000000 !important;
   font-size: 128px;
   font-weight: 500;
   line-height: 1;
@@ -763,6 +764,29 @@ body.workout-active .bottom-nav {
 .workout-accordion-card .rating-row button.selected {
   background: #ffffff;
   color: var(--main);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .generated-workout-overlay,
+  .custom-checklist-overlay,
+  #timerPanel,
+  #exerciseHelpPanel,
+  #confirmPanel {
+    transition: opacity 180ms ease;
+  }
+
+  .generated-workout-modal,
+  .custom-checklist-modal,
+  .timer-card,
+  .exercise-help-card,
+  .confirm-card,
+  .workout-accordion-card,
+  .exercise-chip-toggle,
+  .workout-accordion-card .exercise-card-body,
+  .set-row,
+  .rating-row button {
+    transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease, opacity 180ms ease, transform 180ms ease;
+  }
 }
 
 #completeBtn {

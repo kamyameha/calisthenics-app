@@ -60,13 +60,20 @@ body {
   line-height: 1.35;
 }
 
+html,
+body {
+  background-color: #ffffff !important;
+}
+
 body.logged-out {
   min-height: 100dvh;
   overflow: hidden;
 }
 
 body.logged-out::before,
-html.account-submenu-active::before {
+body.welcome-active::before,
+html.account-submenu-active::before,
+body.account-submenu-active::before {
   content: "";
   position: fixed;
   top: 0;

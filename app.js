@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-65-recovery-spacing';
+const APP_VERSION = 'v8-66-workout-polish';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -42,8 +42,10 @@ let timerInterval = null;
 let timerAutoClose = null;
 let activeTimer = null;
 let openExerciseTrackKey = null;
+let workoutWakeLock = null;
 let onboardingStep = 1;
 let onboardingConfirmationReady = false;
+let accountHistoryDismissedDayKey = null;
 
 function clearLegacyPasswordSession() {
   try {
@@ -394,8 +396,8 @@ function normaliseEmail(email = '') {
 function setThemeColor(color = '#ffffff') {
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', color);
-  document.documentElement.style.backgroundColor = color;
-  document.body.style.backgroundColor = color;
+  document.documentElement.style.setProperty('background-color', color, 'important');
+  document.body.style.setProperty('background-color', color, 'important');
 }
 
 function isAdminUser() {
@@ -1096,29 +1098,36 @@ function startWorkout() {
     ratings: {},
     sets: {}
   };
-  state.current.exercises.forEach(exercise => {
-    state.current.sets[exercise.trackKey] = Array.from({ length: exercise.setCount || 1 }, () => false);
+  state.current.exercises = (state.current.exercises || []).map((exercise, index) => ({
+    ...exercise,
+    sessionKey: exerciseSessionKey(exercise, index)
+  }));
+  state.current.exercises.forEach((exercise, index) => {
+    const exerciseKey = exerciseSessionKey(exercise, index);
+    state.current.sets[exerciseKey] = Array.from({ length: exercise.setCount || 1 }, () => false);
   });
-  openExerciseTrackKey = state.current.exercises[0]?.trackKey || null;
+  openExerciseTrackKey = exerciseSessionKey(state.current.exercises[0], 0) || null;
   state.generated = null;
   saveState();
   renderExercises();
+  requestWorkoutWakeLock();
 }
 
 function areExerciseSetsComplete(exercise) {
   if (!exercise || !state.current?.sets) return false;
-  const sets = state.current.sets[exercise.trackKey] || [];
+  const sets = state.current.sets[exerciseSessionKey(exercise)] || [];
   return sets.length > 0 && sets.every(Boolean);
 }
 
 function isExerciseComplete(exercise) {
   if (!areExerciseSetsComplete(exercise)) return false;
-  return Boolean(exercise.isAddOn || state.current?.ratings?.[exercise.trackKey]);
+  return Boolean(exercise.isAddOn || state.current?.ratings?.[exerciseSessionKey(exercise)]);
 }
 
 function firstIncompleteExerciseKey() {
   const exercises = state.current?.exercises || [];
-  return exercises.find(exercise => !isExerciseComplete(exercise))?.trackKey || null;
+  const exercise = exercises.find(item => !isExerciseComplete(item));
+  return exercise ? exerciseSessionKey(exercise) : null;
 }
 
 function openNextIncompleteExercise(afterTrackKey = null) {
@@ -1127,10 +1136,10 @@ function openNextIncompleteExercise(afterTrackKey = null) {
     openExerciseTrackKey = null;
     return;
   }
-  const startIndex = Math.max(0, exercises.findIndex(exercise => exercise.trackKey === afterTrackKey));
+  const startIndex = Math.max(0, exercises.findIndex(exercise => exerciseSessionKey(exercise) === afterTrackKey));
   const next = exercises.slice(startIndex + 1).find(exercise => !isExerciseComplete(exercise)) ||
     exercises.find(exercise => !isExerciseComplete(exercise));
-  openExerciseTrackKey = next?.trackKey || null;
+  openExerciseTrackKey = next ? exerciseSessionKey(next) : null;
 }
 
 function exerciseChipPrescription(exercise) {
@@ -1145,17 +1154,57 @@ function exerciseDisplayName(exerciseOrName) {
   return name || '';
 }
 
-function setControlMarkup(exercise, index, completed, timedSeconds) {
+function slugForKey(value = '') {
+  return String(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '') || 'exercise';
+}
+
+function exerciseSessionKey(exercise, index = 0) {
+  if (!exercise) return '';
+  if (exercise.sessionKey) return exercise.sessionKey;
+  return `${exercise.trackKey || 'exercise'}-${index}-${slugForKey(exercise.name || exerciseDisplayName(exercise))}`;
+}
+
+function activityDayKey(date, day) {
+  return `${date.getFullYear()}-${date.getMonth()}-${day}`;
+}
+
+async function requestWorkoutWakeLock() {
+  if (!('wakeLock' in navigator) || workoutWakeLock) return;
+  try {
+    workoutWakeLock = await navigator.wakeLock.request('screen');
+    workoutWakeLock.addEventListener('release', () => {
+      workoutWakeLock = null;
+    });
+  } catch (error) {}
+}
+
+async function releaseWorkoutWakeLock() {
+  if (!workoutWakeLock) return;
+  const lock = workoutWakeLock;
+  workoutWakeLock = null;
+  try { await lock.release(); } catch (error) {}
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && (state.current || activeTimer)) {
+    requestWorkoutWakeLock();
+  }
+});
+
+function setControlMarkup(exercise, exerciseKey, index, completed, timedSeconds) {
   const label = exercise.setLabels?.[index] || `Round ${index + 1}`;
   const iconClass = completed ? 'is-check' : timedSeconds ? 'is-timer' : 'is-square';
   const exerciseName = exerciseDisplayName(exercise);
   const timerData = timedSeconds
-    ? `data-timer-seconds="${timedSeconds}" data-exercise-name="${escapeHTML(exerciseName)}" data-track="${escapeHTML(exercise.trackKey)}" data-set-index="${index}" data-set-label="${escapeHTML(label)}"`
+    ? `data-timer-seconds="${timedSeconds}" data-exercise-name="${escapeHTML(exerciseName)}" data-track="${escapeHTML(exerciseKey)}" data-set-index="${index}" data-set-label="${escapeHTML(label)}"`
     : '';
   return `
     <div class="set-row ${timedSeconds ? 'timed-set-row' : ''} ${completed ? 'completed' : ''}">
       <span>${escapeHTML(label)}</span>
-      <button class="set-control ${iconClass}" type="button" data-track="${escapeHTML(exercise.trackKey)}" data-set-index="${index}" ${timerData} aria-label="${completed ? 'Completed' : timedSeconds ? `Start ${label} timer` : `Complete ${label}`}"></button>
+      <button class="set-control ${iconClass}" type="button" data-track="${escapeHTML(exerciseKey)}" data-set-index="${index}" ${timerData} aria-label="${completed ? 'Completed' : timedSeconds ? `Start ${label} timer` : `Complete ${label}`}"></button>
     </div>
   `;
 }
@@ -1185,37 +1234,43 @@ function renderExercises() {
 
   state.current = sanitizeWorkout(state.current);
   if (!state.current) { renderToday(); return; }
-  if (!openExerciseTrackKey || !state.current.exercises.some(exercise => exercise.trackKey === openExerciseTrackKey)) {
+  state.current.exercises = (state.current.exercises || []).map((exercise, index) => ({
+    ...exercise,
+    sessionKey: exerciseSessionKey(exercise, index)
+  }));
+  requestWorkoutWakeLock();
+  if (!openExerciseTrackKey || !state.current.exercises.some(exercise => exerciseSessionKey(exercise) === openExerciseTrackKey)) {
     openExerciseTrackKey = firstIncompleteExerciseKey();
   }
-  state.current.exercises.forEach((exercise) => {
-    const isOpen = exercise.trackKey === openExerciseTrackKey;
+  state.current.exercises.forEach((exercise, index) => {
+    const exerciseKey = exerciseSessionKey(exercise, index);
+    const isOpen = exerciseKey === openExerciseTrackKey;
     const isComplete = isExerciseComplete(exercise);
     const chipPrescription = isComplete ? '' : `<em>${escapeHTML(exerciseChipPrescription(exercise))}</em>`;
     const card = document.createElement('div');
     card.className = `exercise-card workout-accordion-card ${isOpen ? 'open' : ''} ${isComplete ? 'completed' : ''}`;
-    card.dataset.track = exercise.trackKey;
-    const selectedRating = state.current.ratings[exercise.trackKey];
+    card.dataset.track = exerciseKey;
+    const selectedRating = state.current.ratings[exerciseKey];
     if (!state.current.sets) state.current.sets = {};
-    if (!state.current.sets[exercise.trackKey]) state.current.sets[exercise.trackKey] = Array.from({ length: exercise.setCount || 1 }, () => false);
-    const completedSets = state.current.sets[exercise.trackKey];
+    if (!state.current.sets[exerciseKey]) state.current.sets[exerciseKey] = Array.from({ length: exercise.setCount || 1 }, () => false);
+    const completedSets = state.current.sets[exerciseKey];
     const timedSeconds = state.current.includeExerciseTimer ? getTimedExerciseSeconds(exercise) : null;
     const exerciseName = exerciseDisplayName(exercise);
     const setRows = Array.from({ length: exercise.setCount || completedSets.length || 1 }, (_, index) => {
-      return setControlMarkup(exercise, index, Boolean(completedSets[index]), timedSeconds);
+      return setControlMarkup(exercise, exerciseKey, index, Boolean(completedSets[index]), timedSeconds);
     }).join('');
     const help = getExerciseHelp(exerciseName);
     const helpButton = help ? `<button class="exercise-help-btn" type="button" data-exercise-name="${escapeHTML(exerciseName)}" aria-label="Help with ${escapeHTML(exerciseName)}">?</button>` : '';
     const ratingBlock = exercise.isAddOn ? '' : `
       <p class="rating-label">How was it?</p>
-      <div class="rating-row" data-track="${exercise.trackKey}">
+      <div class="rating-row" data-track="${exerciseKey}">
         <button data-rating="easy" class="${selectedRating === 'easy' ? 'selected' : ''}">Easy</button>
         <button data-rating="good" class="${selectedRating === 'good' ? 'selected' : ''}">Good</button>
         <button data-rating="hard" class="${selectedRating === 'hard' ? 'selected' : ''}">Hard</button>
         <button data-rating="failed" class="${selectedRating === 'failed' ? 'selected' : ''}">Failed</button>
       </div>`;
     card.innerHTML = `
-      <button class="exercise-chip-toggle" type="button" data-track="${escapeHTML(exercise.trackKey)}">
+      <button class="exercise-chip-toggle" type="button" data-track="${escapeHTML(exerciseKey)}">
         <span>${escapeHTML(exerciseName)}</span>
         ${chipPrescription}
         <i aria-hidden="true"></i>
@@ -1385,6 +1440,7 @@ function showWorkoutTimer({ title, subtitle, seconds, prepSeconds = 0, trackKey 
   const panel = document.getElementById('timerPanel');
   if (!panel || !seconds) return;
 
+  requestWorkoutWakeLock();
   closeWorkoutTimer(false);
   lastFocusedElement = document.activeElement;
   activeTimer = {
@@ -1430,13 +1486,13 @@ function hasRemainingWorkoutSets() {
   if (!state.current?.exercises || !state.current?.sets) return false;
   return state.current.exercises.some(exercise => {
     if (exercise.isAddOn) return false;
-    const sets = state.current.sets[exercise.trackKey] || [];
+    const sets = state.current.sets[exerciseSessionKey(exercise)] || [];
     return sets.some(done => !done);
   });
 }
 
 function findCurrentExercise(trackKey) {
-  return (state.current?.exercises || []).find(exercise => exercise.trackKey === trackKey) || null;
+  return (state.current?.exercises || []).find(exercise => exerciseSessionKey(exercise) === trackKey) || null;
 }
 
 function isWorkoutFullyComplete() {
@@ -1444,7 +1500,7 @@ function isWorkoutFullyComplete() {
   const exercises = state.current.exercises || [];
   const allSetsDone = exercises.every(exercise => areExerciseSetsComplete(exercise));
   const rateableExercises = exercises.filter(exercise => !exercise.isAddOn);
-  const allRated = rateableExercises.every(exercise => state.current.ratings?.[exercise.trackKey]);
+  const allRated = rateableExercises.every(exercise => state.current.ratings?.[exerciseSessionKey(exercise)]);
   return allSetsDone && allRated;
 }
 
@@ -1496,8 +1552,8 @@ function showCompletionScreen({ title, message, actionLabel = '', cancelLabel = 
 
 function completeWorkoutNow(showFullConfirmation = true) {
   if (!state.current) return;
-  (state.current.exercises || []).forEach(exercise => {
-    const rating = state.current.ratings?.[exercise.trackKey];
+  (state.current.exercises || []).forEach((exercise, index) => {
+    const rating = state.current.ratings?.[exerciseSessionKey(exercise, index)];
     const progressionTrackKey = exercise.progressionTrackKey || exercise.trackKey;
     if (rating && state.levels[progressionTrackKey]) applyRating(progressionTrackKey, rating);
   });
@@ -1507,6 +1563,7 @@ function completeWorkoutNow(showFullConfirmation = true) {
   state.selectedEnergy = null;
   state.generated = null;
   openExerciseTrackKey = null;
+  releaseWorkoutWakeLock();
   saveState();
   renderToday();
   renderProgress();
@@ -2261,15 +2318,19 @@ function renderActivity() {
     byDay.get(day).push(item);
   });
 
-  const selectedWorkoutDay = accountHistorySelectedDay && byDay.has(accountHistorySelectedDay)
-    ? accountHistorySelectedDay
-    : null;
-  accountHistorySelectedDay = selectedWorkoutDay;
-
   const firstDay = new Date(year, month, 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const mondayOffset = (firstDay.getDay() + 6) % 7;
   const isCurrentMonth = now.getFullYear() === year && now.getMonth() === month;
+  const todayDay = now.getDate();
+  const todayHistoryKey = activityDayKey(accountHistoryMonth, todayDay);
+  if (!accountHistorySelectedDay && isCurrentMonth && byDay.has(todayDay) && accountHistoryDismissedDayKey !== todayHistoryKey) {
+    accountHistorySelectedDay = todayDay;
+  }
+  const selectedWorkoutDay = accountHistorySelectedDay && byDay.has(accountHistorySelectedDay)
+    ? accountHistorySelectedDay
+    : null;
+  accountHistorySelectedDay = selectedWorkoutDay;
   document.querySelectorAll('#activity .history-weekdays span').forEach((item, index) => {
     item.classList.toggle('is-today-weekday', isCurrentMonth && index === ((now.getDay() + 6) % 7));
   });
@@ -2792,11 +2853,13 @@ document.addEventListener('click', event => {
   if (event.target.id === 'historyPrevMonthBtn') {
     accountHistoryMonth = new Date(accountHistoryMonth.getFullYear(), accountHistoryMonth.getMonth() - 1, 1);
     accountHistorySelectedDay = null;
+    accountHistoryDismissedDayKey = null;
     renderActivity();
   }
   if (event.target.id === 'historyNextMonthBtn') {
     accountHistoryMonth = new Date(accountHistoryMonth.getFullYear(), accountHistoryMonth.getMonth() + 1, 1);
     accountHistorySelectedDay = null;
+    accountHistoryDismissedDayKey = null;
     renderActivity();
   }
   if (event.target.id === 'toggleAdminUsersBtn') {
@@ -2808,7 +2871,15 @@ document.addEventListener('click', event => {
   }
   const historyDayButton = event.target.closest('[data-history-day]');
   if (historyDayButton && !historyDayButton.disabled) {
-    accountHistorySelectedDay = Number(historyDayButton.dataset.historyDay);
+    const selectedDay = Number(historyDayButton.dataset.historyDay);
+    const selectedKey = activityDayKey(accountHistoryMonth, selectedDay);
+    if (accountHistorySelectedDay === selectedDay) {
+      accountHistorySelectedDay = null;
+      accountHistoryDismissedDayKey = selectedKey;
+    } else {
+      accountHistorySelectedDay = selectedDay;
+      accountHistoryDismissedDayKey = null;
+    }
     renderActivity();
   }
   if (event.target.id === 'refreshAdminDashboardBtn') renderAdminDashboard();
