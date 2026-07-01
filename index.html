@@ -27,11 +27,11 @@
     })();
   </script>
   <!-- Release rule: keep CSS/JS query versions aligned with service-worker.js CACHE_NAME. -->
-  <link rel="stylesheet" href="style.css?v=v8-60-navbar-height-fix" />
-  <link rel="stylesheet" href="welcome.css?v=v8-60-navbar-height-fix" />
-  <link rel="stylesheet" href="auth.css?v=v8-60-navbar-height-fix" />
-  <link rel="stylesheet" href="workout.css?v=v8-60-navbar-height-fix" />
-  <link rel="stylesheet" href="account.css?v=v8-60-navbar-height-fix" />
+  <link rel="stylesheet" href="style.css?v=v8-61-privacy-page" />
+  <link rel="stylesheet" href="welcome.css?v=v8-61-privacy-page" />
+  <link rel="stylesheet" href="auth.css?v=v8-61-privacy-page" />
+  <link rel="stylesheet" href="workout.css?v=v8-61-privacy-page" />
+  <link rel="stylesheet" href="account.css?v=v8-61-privacy-page" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -128,7 +128,13 @@
         </div>
 
         <div id="accountMainView" class="account-view">
-          <p class="muted" id="accountEmail"></p>
+          <div class="account-menu-footer">
+            <div class="account-menu-footer-left">
+              <p class="muted" id="accountEmail"></p>
+              <a id="privacyPolicyLink" class="menu-footer-link" href="/privacy/">Privacy policy</a>
+            </div>
+            <button id="logoutBtn" class="ghost-btn account-full-btn" type="button">Log out</button>
+          </div>
           <p class="sync-status" id="syncStatus">Progress saved.</p>
 
           <div class="account-section">
@@ -152,8 +158,6 @@
             <h3>Admin</h3>
             <button class="account-list-btn" type="button" data-account-view="admin">Dashboard <span id="accountAdminSummary">Users</span></button>
           </div>
-
-          <button id="logoutBtn" class="ghost-btn account-full-btn" type="button">Log out</button>
         </div>
 
         <div id="accountGoalView" class="account-view hidden">
@@ -537,12 +541,12 @@
     </div>
   </div>
 
-  <script src="auth.js?v=v8-60-navbar-height-fix"></script>
-  <script src="workouts.js?v=v8-60-navbar-height-fix"></script>
-  <script src="state.js?v=v8-60-navbar-height-fix"></script>
-  <script src="account.js?v=v8-60-navbar-height-fix"></script>
-  <script src="admin.js?v=v8-60-navbar-height-fix"></script>
-  <script src="render.js?v=v8-60-navbar-height-fix"></script>
-  <script src="app.js?v=v8-60-navbar-height-fix"></script>
+  <script src="auth.js?v=v8-61-privacy-page"></script>
+  <script src="workouts.js?v=v8-61-privacy-page"></script>
+  <script src="state.js?v=v8-61-privacy-page"></script>
+  <script src="account.js?v=v8-61-privacy-page"></script>
+  <script src="admin.js?v=v8-61-privacy-page"></script>
+  <script src="render.js?v=v8-61-privacy-page"></script>
+  <script src="app.js?v=v8-61-privacy-page"></script>
 </body>
 </html>
